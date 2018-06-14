@@ -161,6 +161,7 @@ if [ "$setCheck" == "" ]; then
   logMe "Helper is resetting the settings plist"
   rm -f "$ourHome/settings.plist"
   /usr/libexec/PlistBuddy -c "Add :keytime integer 0" "$ourHome/settings.plist"
+  /usr/libexec/PlistBuddy -c "Add :version string $bVer" "$ourHome/settings.plist"
   # commenting these out for 1.5, creation of variables should be more robust now
 #  /usr/libexec/PlistBuddy -c "Add :portcache integer -1" "$ourHome/settings.plist"
 #  /usr/libexec/PlistBuddy -c "Add :serial string 0" "$ourHome/settings.plist"

@@ -251,6 +251,7 @@ else
     #this may be a first run or first after a clone
     /usr/libexec/PlistBuddy -c "Add :serial string $hwNum" "$ourHome/settings.plist" 2> /dev/null
     /usr/libexec/PlistBuddy -c "Set :serial $hwNum" "$ourHome/settings.plist"
+    /usr/libexec/PlistBuddy -c "Add :version string $bVer" "$ourHome/settings.plist"
     serialNum="$hwNum"
     reKey
     #do any other first run steps here
