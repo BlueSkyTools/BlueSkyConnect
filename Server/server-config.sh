@@ -98,12 +98,12 @@ if [ "$mysqlRootPass" == "" ]; then
   echo "Please enter a root password for MySQL. Leave it blank and we'll generate one."
   read mysqlRootPass
   if [ "$mysqlRootPass" == "" ]; then
-    mysqlRootPass=`tr -dc A-Za-z0-9 < /dev/urandom | head -c 48 | xargs`
+    mysqlRootPass=$(tr -dc A-Za-z0-9 < /dev/urandom | head -c 48 | xargs)
   fi
 fi
 
 ## variables no one will care about
-mysqlCollectorPass=`tr -dc A-Za-z0-9 < /dev/urandom | head -c 48 | xargs`
+mysqlCollectorPass=$(tr -dc A-Za-z0-9 < /dev/urandom | head -c 48 | xargs)
 
 ## double-check permissions on uploaded BlueSky files
 chown -R root:root /usr/local/bin/BlueSky/Server

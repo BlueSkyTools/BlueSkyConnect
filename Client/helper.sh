@@ -31,7 +31,7 @@ function logMe {
   if [ ! -e "$logFile" ]; then
     touch "$logFile"
   fi
-  dateStamp=`date '+%Y-%m-%d %H:%M:%S'`
+  dateStamp=$(date '+%Y-%m-%d %H:%M:%S')
   echo "$dateStamp - v$bVer - $logMsg" >> "$logFile"
   if [ -e "$ourHome/.debug" ]; then
     echo "$logMsg"
@@ -39,8 +39,8 @@ function logMe {
 }
 
 function killShells {
-    kill -9 `ps -ax | grep "$ourHome/autossh" | grep -v grep | awk '{ print $1 }'`
-    shellList=`ps -ax | grep ssh | grep 'bluesky\@' | awk '{ print $1 }'`
+    kill -9 "$(ps -ax | grep "$ourHome/autossh" | grep -v grep | awk '{ print $1 }')"
+    shellList=$(ps -ax | grep ssh | grep 'bluesky\@' | awk '{ print $1 }')
     for shellPid in $shellList; do
         kill -9 $shellPid
         logMe "Killed stale shell on $shellPid"
@@ -69,7 +69,7 @@ if [[ -e /Library/Mac-MSP/BlueSky/helper.sh || ! -z $(pkgutil --pkgs | grep com.
 fi
 
 if [ -e "$ourHome/.getHelp" ]; then
-  helpWithWhat=`cat "$ourHome/.getHelp"`
+  helpWithWhat=$(cat "$ourHome/.getHelp")
   rm -f "$ourHome/.getHelp"
 fi
 
@@ -84,12 +84,12 @@ if [ "$helpWithWhat" == "selfdestruct" ]; then
 fi
 
 # get the version of the OS so we can ensure compatiblity
-osRaw=`sw_vers -productVersion`
-osVersionMajor=`echo "$osRaw" | awk -F . '{ print $1 }'`
-osVersionMinor=`echo "$osRaw" | awk -F . '{ print $2 }'`
+osRaw=$(sw_vers -productVersion)
+osVersionMajor=$(echo "$osRaw" | awk -F . '{ print $1 }')
+osVersionMinor=$(echo "$osRaw" | awk -F . '{ print $2 }')
 
 #check if user exists and create if necessary
-userCheck=`dscl . -read /Users/bluesky RealName`
+userCheck=$(dscl . -read /Users/bluesky RealName)
 if [ "$userCheck" == "" ]; then
     # user doesn't exist, lets try to set it up
     logMe "Creating our user account"
@@ -99,12 +99,12 @@ if [ "$userCheck" == "" ]; then
     uidTest=491
     while :
     do
-        uidCheck=`dscl . -search /Users UniqueID $uidTest`
+        uidCheck=$(dscl . -search /Users UniqueID $uidTest)
         if [ "$uidCheck" == "" ]; then
             dscl . -create /Users/bluesky UniqueID $uidTest
             break
         else
-            uidTest=`jot -r 1 400 490`
+            uidTest=$(jot -r 1 400 490)
         fi
     done
     logMe "Created on UID $uidTest"
@@ -128,7 +128,7 @@ chown -R bluesky "$ourHome"
 #help me help you.  help me... help you.
 dseditgroup -o edit -a bluesky -t user com.apple.access_ssh 2> /dev/null
 systemsetup -setremotelogin on &> /dev/null
-if [ ${osVersionMajor:-10} -eq 10 && ${osVersionMinor} -lt 15 ]; then
+if [ ${osVersionMajor:-10} -eq 10 ] && [ ${osVersionMinor} -lt 15 ]; then
   systemsetup -setremotelogin on &> /dev/null
 else
   launchctl load -w /System/Library/LaunchDaemons/ssh.plist
@@ -136,7 +136,7 @@ fi
 
 # commenting out on 1.12
 # re-intro when we can test a more reliable method of determining a VNC server
-# vncOn=`ps -ax | grep ARDAgent | grep -v grep`
+# vncOn=$(ps -ax | grep ARDAgent | grep -v grep)
 # if [ "$vncOn" == "" ]; then
 #   logMe "Starting ARD agent"
 #   /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -configure -activate -access -on -privs -ControlObserve -allowAccessFor -allUsers -quiet
@@ -150,7 +150,7 @@ if [ "$helpWithWhat" == "fixPerms" ]; then
 fi
 
 #GSS API config lines mess up client connections in 10.12+
-gssCheck=`grep -e ^'GSSAPIKeyExchange' -e ^'GSSAPITrustDNS' -e ^'GSSAPIDelegateCredentials' /etc/ssh/ssh_config`
+gssCheck=$(grep -e ^'GSSAPIKeyExchange' -e ^'GSSAPITrustDNS' -e ^'GSSAPIDelegateCredentials' /etc/ssh/ssh_config)
 if [ "$gssCheck" != "" ] && ( ([ ${osVersionMajor:-10} -eq 10 ] && [ ${osVersionMinor:-0} -gt 11 ]) || [ ${osVersionMajor:-10} -gt 10 ]); then
   grep -v ^'GSSAPIKeyExchange' /etc/ssh/ssh_config | grep -v ^'GSSAPITrustDNS' | grep -v ^'GSSAPIDelegateCredentials' > /tmp/ssh_config && mv /tmp/ssh_config /etc/ssh/ssh_config
 fi
@@ -162,7 +162,7 @@ if [ "$helpWithWhat" == "contractKiller" ]; then
 fi
 
 #workaround for bug that is creating empty settings file
-setCheck=`grep keytime "$ourHome/settings.plist"`
+setCheck=$(grep keytime "$ourHome/settings.plist")
 if [ "$setCheck" == "" ]; then
   logMe "Helper is resetting the settings plist"
   rm -f "$ourHome/settings.plist"
@@ -174,7 +174,7 @@ if [ "$setCheck" == "" ]; then
 fi
 
 #ensure proper version in settings file
-setCheck=`/usr/libexec/PlistBuddy -c "Print :version" "$ourHome/settings.plist"`
+setCheck=$(/usr/libexec/PlistBuddy -c "Print :version" "$ourHome/settings.plist")
 if [ "$setCheck" == "" ]; then
   logMe "Adding version to the settings plist"
   /usr/libexec/PlistBuddy -c "Add :version string $bVer" "$ourHome/settings.plist"
@@ -187,8 +187,8 @@ fi
 chmod a+x /var/bluesky/helper.sh /var/bluesky/bluesky.sh /var/bluesky/autossh /var/bluesky/corkscrew /var/bluesky/proxy-config /var/bluesky/.ssh/wrapper.sh
 
 # babysit the bluesky process
-prevPid=`/usr/libexec/PlistBuddy -c "Print :pid" "$ourHome/settings.plist"  2> /dev/null`
-currPid=`ps -ax | grep "$ourHome/bluesky.sh"$ | grep -v grep | awk '{ print $1 }' | head -n 1`
+prevPid=$(/usr/libexec/PlistBuddy -c "Print :pid" "$ourHome/settings.plist"  2> /dev/null)
+currPid=$(ps -ax | grep "$ourHome/bluesky.sh"$ | grep -v grep | awk '{ print $1 }' | head -n 1)
 if [ "$currPid" != "" ]; then
     if [ "$currPid" == "$prevPid" ]; then
         # bluesky.sh must be stuck if it's still there 5 min later.  kill it.
@@ -201,7 +201,7 @@ if [ "$currPid" != "" ]; then
 fi
 
 # if main launchd is not running, let's check perms and start it
-weLaunched=`launchctl list | grep com.solarwindsmsp.bluesky | wc -l`
+weLaunched=$(launchctl list | grep com.solarwindsmsp.bluesky | wc -l)
 if [ ${weLaunched:-0} -lt 4 ]; then
   logMe "LaunchDaemons don't appear to be loaded.  Fixing."
   if [ ! -e /Library/LaunchDaemons/com.solarwindsmsp.bluesky.plist ]; then

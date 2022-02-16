@@ -31,7 +31,7 @@ function allGood {
 	echo "OK"
 	myQry="update computers set status='Connection is good',datetime='$timeStamp' where serialnum='$serialNum'"
 	$myCmd "$myQry"
-	timeEpoch=`date +%s`
+	timeEpoch=$(date +%s)
 	myQry="update computers set timestamp='$timeEpoch' where serialnum='$serialNum'"
 	$myCmd "$myQry"
 }
@@ -43,23 +43,23 @@ function snMismatch {
 }
 
 myCmd="/usr/bin/mysql --defaults-file=/var/local/my.cnf BlueSky -N -B -e"
-timeStamp=`date '+%Y-%m-%d %H:%M:%S %Z'`
+timeStamp=$(date '+%Y-%m-%d %H:%M:%S %Z')
 
 case "$actionStep" in
 
 "register")
 # adds the computer to the database
 myQry="select id from computers where serialnum='$serialNum'"
-compRec=`$myCmd "$myQry"`
+compRec=$($myCmd "$myQry")
 
 #get the default bluesky user name
-loginName=`cat /usr/local/bin/BlueSky/Server/defaultLogin.txt 2> /dev/null`
+loginName=$(cat /usr/local/bin/BlueSky/Server/defaultLogin.txt 2> /dev/null)
 
 if [ "$compRec" == "" ]; then
 
   #fetch unique ID
   myQry="SELECT MIN(t1.blueskyid + 1) AS nextID FROM computers t1 LEFT JOIN computers t2 ON t1.blueskyid + 1 = t2.blueskyid WHERE t2.blueskyid IS NULL"
-  bluId=`$myCmd "$myQry"`
+  bluId=$($myCmd "$myQry")
 
   if [ "$bluId" == "NULL" ] || [ "$bluId" == "" ]; then
   	bluId=1
@@ -76,7 +76,7 @@ else
   # if we have a default user name, and if the existing field is blank, then set it
   if [ "$loginName" != "" ]; then
 	  myQry="select username from computers where id='$compRec'"
-	  existingUser=`$myCmd "$myQry"`
+	  existingUser=$($myCmd "$myQry")
 	  if [ "$existingUser" == "" ] || [ "$existingUser" == "NULL" ]; then
 		myQry="update computers set username='$loginName' where id='$compRec'"
 		$myCmd "$myQry"
@@ -95,7 +95,7 @@ fi
 "port")
 # looks up the port number and sends it
 myQry="select blueskyid from computers where serialnum='$serialNum'"
-myPort=`$myCmd "$myQry"`
+myPort=$($myCmd "$myQry")
 if [ "$myPort" != "" ]; then
   echo "$myPort"
 fi
@@ -104,12 +104,12 @@ fi
 "user")
 # looks up the default user if any and sends it
 myQry="select username from computers where serialnum='$serialNum'"
-myUser=`$myCmd "$myQry"`
+myUser=$($myCmd "$myQry")
 if [ "$myUser" != "" ] && [ "$myUser" != "NULL" ]; then
   echo "$myUser"
 else
   # TODO: put default login in global table
-  myUser=`cat /usr/local/bin/BlueSky/Server/defaultLogin.txt`
+  myUser=$(cat /usr/local/bin/BlueSky/Server/defaultLogin.txt)
   if [ "$myUser" != "" ]; then
     echo "$myUser"
   fi
@@ -122,7 +122,7 @@ fi
 
 # self destruct
 myQry="select selfdestruct from computers where serialnum='$serialNum'"
-selfDestruct=`$myCmd "$myQry"`
+selfDestruct=$($myCmd "$myQry")
 #TODO - read notes and only concat if empty
 if [ "$selfDestruct" == "1" ]; then
 	echo "selfdestruct"
@@ -135,9 +135,9 @@ fi
 
 # can we hit it?
 myQry="select blueskyid from computers where serialnum='$serialNum'"
-myPort=`$myCmd "$myQry"`
+myPort=$($myCmd "$myQry")
 sshPort=$((22000 + myPort))
-testConn=`ssh -p $sshPort -o StrictHostKeyChecking=no -o ConnectTimeout=10 -l bluesky -o BatchMode=yes -i /usr/local/bin/BlueSky/Server/blueskyd localhost "/usr/bin/defaults read /var/bluesky/settings serial"`
+testConn=$(ssh -p $sshPort -o StrictHostKeyChecking=no -o ConnectTimeout=10 -l bluesky -o BatchMode=yes -i /usr/local/bin/BlueSky/Server/blueskyd localhost "/usr/bin/defaults read /var/bluesky/settings serial")
 testExit=$?
 if [ $testExit -eq 0 ]; then
   if [ "$testConn" == "$serialNum" ]; then
@@ -146,7 +146,7 @@ if [ $testExit -eq 0 ]; then
     snMismatch
   fi
 else #either down or defaults is messed up, try using PlistBuddy
-	testConn2=`ssh -p $sshPort -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes -l bluesky -i /usr/local/bin/BlueSky/Server/blueskyd localhost "/usr/libexec/PlistBuddy -c 'Print serial' /var/bluesky/settings.plist" 2>&1`
+	testConn2=$(ssh -p $sshPort -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes -l bluesky -i /usr/local/bin/BlueSky/Server/blueskyd localhost "/usr/libexec/PlistBuddy -c 'Print serial' /var/bluesky/settings.plist" 2>&1)
 	testExit2=$?
 	if [ $testExit2 -eq 0 ]; then
 		if [ "$testConn2" == "$serialNum" ]; then
@@ -173,23 +173,23 @@ fi
 
 # notify
 myQry="select notify from computers where serialnum='$serialNum'"
-notifyMe=`$myCmd "$myQry"`
+notifyMe=$($myCmd "$myQry")
 if [ "$notifyMe" == "1" ]; then
 	myQry="select email from computers where serialnum='$serialNum'"
-	emailAddr=`$myCmd "$myQry"`
+	emailAddr=$($myCmd "$myQry")
 	if [ "$emailAddr" == "" ] || [ "$emailAddr" == "NULL" ]; then
 		myQry="select defaultemail from computers"
-		emailAddr=`$myCmd "$myQry"`
+		emailAddr=$($myCmd "$myQry")
 	fi
 	myQry="select hostname from computers where serialnum='$serialNum'"
-	hostName=`$myCmd "$myQry"`
+	hostName=$($myCmd "$myQry")
 	myQry="select status from computers where serialnum='$serialNum'"
-	currStat=`$myCmd "$myQry"`
+	#currStat=$($myCmd "$myQry")
 	myQry="select status from username where serialnum='$serialNum'"
-	myUser=`$myCmd "$myQry"`
+	myUser=$($myCmd "$myQry")
 
 	if [ -e /usr/local/bin/BlueSky/Server/emailHelper.sh ]; then
-		serverFQDN=`cat /usr/local/bin/BlueSky/Server/server.txt`
+		serverFQDN=$(cat /usr/local/bin/BlueSky/Server/server.txt)
 		/usr/local/bin/BlueSky/Server/emailHelper.sh "BlueSky Notification $serialNum" "You requested to be notified when we next saw $hostName with serial number $serialNum, ID: $myPort.
 https://$serverFQDN/blu=$myPort
 SSH bluesky://com.solarwindsmsp.bluesky.admin?blueSkyID=$myPort&user=$myUser&action=ssh

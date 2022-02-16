@@ -14,7 +14,7 @@ function logMe {
   if [ ! -e "$logFile" ]; then
     touch "$logFile"
   fi
-  dateStamp=`date '+%Y-%m-%d %H:%M:%S'`
+  dateStamp=$(date '+%Y-%m-%d %H:%M:%S')
   echo "$dateStamp - $logMsg" >> "$logFile"
   if [ -e "$ourHome/.debug" ]; then
     echo "$logMsg"

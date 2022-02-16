@@ -20,7 +20,7 @@
 # checks it and then hands it off to gatekeeper by way of inoticoming
 
 dataUp="$1"
-tmpName=`uuidgen`
+tmpName=$(uuidgen)
 
 # decrypt. if admin fails, try client. if both fail, reject it.  Whichever one passes, note the type.
 echo "$dataUp" | openssl smime -decrypt -inform PEM -inkey /usr/local/bin/BlueSky/Server/blueskyclient.key -out /tmp/$tmpName.pub
@@ -36,18 +36,18 @@ else
 	targetLoc="bluesky"
 fi
 
-pubKey=`cat /tmp/$tmpName.pub`
+pubKey=$(cat /tmp/$tmpName.pub)
 
-keyValid=`ssh-keygen -l -f /tmp/$tmpName.pub`
+keyValid=$(ssh-keygen -l -f /tmp/$tmpName.pub)
 # keyValid contains the hash that will appear in auth.log
 # 256 SHA256:Sahm5Rft8nvUQ5425YgrrSNGosZA4hf/P2NmhRr2NL0 uploaded@1510761187 sysadmin@Sidekick.local (ECDSA)
-fingerPrint=`echo "$keyValid" | awk '{ print $2 }' | cut -d : -f 2`
+#fingerPrint=$(echo "$keyValid" | awk '{ print $2 }' | cut -d : -f 2)
 if [[ "$keyValid" == *"ED25519"* ]] || [[ "$keyValid" == *"RSA"* ]]; then
   mv /tmp/$tmpName.pub /home/$targetLoc/newkeys/$tmpName.pub
   echo "Installed"
   if [ "$targetLoc" == "admin" ] && [ -e /usr/local/bin/BlueSky/Server/emailHelper.sh ]; then
     #email the subscriber about it
-    keyID=`echo "$pubKey" | awk '{ print $NF }'`
+    keyID=$(echo "$pubKey" | awk '{ print $NF }')
     /usr/local/bin/BlueSky/Server/emailHelper.sh "BlueSky Admin Key Registered" "A new admin key with identifier $keyID was registered in your server. If you did not expect this, please invoke Emergency Stop."
   fi
 else

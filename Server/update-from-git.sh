@@ -21,10 +21,10 @@
 ## TODO - ensure this is run by root
 
 ## get variables
-serverFQDN=`cat /usr/local/bin/BlueSky/Server/server.txt`
-mysqlRootPass=`grep password /var/local/my.cnf | awk '{ print $NF }'`
+serverFQDN=$(cat /usr/local/bin/BlueSky/Server/server.txt)
+mysqlRootPass=$(grep password /var/local/my.cnf | awk '{ print $NF }')
 ## TODO test this
-mysqlCollectorPass=`grep localhost /usr/lib/cgi-bin/collector.php | head -n 1 | awk '{ print $5 }' | tr -d ,\'`
+mysqlCollectorPass=$(grep localhost /usr/lib/cgi-bin/collector.php | head -n 1 | awk '{ print $5 }' | tr -d ,\')
 
 ## error for blank variables
 if [ "$serverFQDN" == "" ]; then
@@ -37,7 +37,7 @@ if [ "$mysqlRootPass" == "" ]; then
 fi
 
 # do the pull
-cd /usr/local/bin/BlueSky
+cd /usr/local/bin/BlueSky || exit 1
 git fetch
 git reset --hard origin/master
 
@@ -46,7 +46,7 @@ myCmd="/usr/bin/mysql --defaults-file=/var/local/my.cnf BlueSky -N -B -e"
 ## if git pull was ran ahead of this script, we lost collector password. need to reset
 if [ "$mysqlCollectorPass" == "" ]; then
 	echo "Collector creds got trashed. Will reset."
-  mysqlCollectorPass=`tr -dc A-Za-z0-9 < /dev/urandom | head -c 48 | xargs`
+  mysqlCollectorPass=$(tr -dc A-Za-z0-9 < /dev/urandom | head -c 48 | xargs)
   myQry="drop user 'collector'@'localhost';"
   $myCmd "$myQry"
   myQry="create user 'collector'@'localhost' identified by '$mysqlCollectorPass';"
@@ -78,18 +78,18 @@ chown admin /var/local/my.cnf
 # this can be removed in future versions, it's only for trailblazers who took arrows
 remakePlist=0
 # fix the ciphers and MACs
-cipherCheck=`grep arcfour /etc/ssh/sshd_config`
+cipherCheck=$(grep arcfour /etc/ssh/sshd_config)
 if [ "$cipherCheck" != "" ]; then
 	sed -i '/Ciphers chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,arcfour256,arcfour128,arcfour/d' /etc/ssh/sshd_config
 	echo 'Ciphers chacha20-poly1305@openssh.com,aes256-ctr' >> /etc/ssh/sshd_config
 fi
-maCheck=`grep hmac-sha1 /etc/ssh/sshd_config`
+maCheck=$(grep hmac-sha1 /etc/ssh/sshd_config)
 if [ "$maCheck" != "" ]; then
 	sed -i '/MACs hmac-sha2-512,hmac-sha1,hmac-ripemd160,hmac-sha2-512-etm@openssh.com/d' /etc/ssh/sshd_config
 	echo 'MACs hmac-sha2-512-etm@openssh.com,hmac-ripemd160' >> /etc/ssh/sshd_config
 fi
 # put the ed25519 key back
-edKeyPresent=`grep ssh_host_ed25519_key /etc/ssh/sshd_config`
+edKeyPresent=$(grep ssh_host_ed25519_key /etc/ssh/sshd_config)
 if [ "$edKeyPresent" == "" ]; then
 	# trade: ecdsa goes away in favor of ed25519
 	sed -i 's/HostKey \/etc\/ssh\/ssh_host_ecdsa_key/HostKey \/etc\/ssh\/ssh_host_ed25519_key/g' /etc/ssh/sshd_config
@@ -97,9 +97,9 @@ if [ "$edKeyPresent" == "" ]; then
 	remakePlist=1
 fi
 # put the rsa key back
-rsaKeyPresent=`grep ssh_host_rsa_key /etc/ssh/sshd_config`
+rsaKeyPresent=$(grep ssh_host_rsa_key /etc/ssh/sshd_config)
 if [ "$rsaKeyPresent" == "" ]; then
-    hostLine=`grep -n 'HostKeys for protocol version 2' /etc/ssh/sshd_config | awk -F : '{ print $1 }'`
+    hostLine=$(grep -n 'HostKeys for protocol version 2' /etc/ssh/sshd_config | awk -F : '{ print $1 }')
     if [ "$hostLine" != "" ]; then
         # put it back into sshd_config
         head -n $hostLine /etc/ssh/sshd_config > /tmp/sshd_config
@@ -116,9 +116,9 @@ if [ "$rsaKeyPresent" == "" ]; then
 fi
 if [ $remakePlist -eq 1 ]; then
     # remake Client/server.plist
-    hostKey=`ssh-keyscan -t ed25519 localhost | awk '{ print $2,$3 }'`
-    hostKeyRSA=`ssh-keyscan -t rsa localhost | awk '{ print $2,$3 }'`
-    ipAddress=`curl ipinfo.io | grep '"ip":' | awk '{ print $NF }' | tr -d \",`
+    hostKey=$(ssh-keyscan -t ed25519 localhost | awk '{ print $2,$3 }')
+    hostKeyRSA=$(ssh-keyscan -t rsa localhost | awk '{ print $2,$3 }')
+    ipAddress=$(curl ipinfo.io | grep '"ip":' | awk '{ print $NF }' | tr -d \",)
     echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
 <plist version=\"1.0\">
@@ -135,7 +135,7 @@ fi
 
 ## get emailAlertAddress from mysql
 myQry="select defaultemail from global"
-emailAlertAddress=`$myCmd "$myQry"`
+emailAlertAddress=$($myCmd "$myQry")
 
 ## setup credentials in /usr/local/bin/BlueSky/Server/html/config.php
 sed -i "s/MYSQLROOT/$mysqlRootPass/g" /usr/local/bin/BlueSky/Server/html/config.php

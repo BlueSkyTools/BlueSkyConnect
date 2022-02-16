@@ -59,7 +59,7 @@ rm -f /tmp/pkg/.bom
 ( cd /tmp/pkg-flat && xar --compression none -cf "${PKG_LOCATION}" * )
 echo "osx package has been built: ${PKG_LOCATION}"
 
-RANDOM_DIR=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w ${1:-32} | head -n 1`
+RANDOM_DIR=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w ${1:-32} | head -n 1)
 mkdir /var/www/html/"${RANDOM_DIR}"
 ln -s "${PKG_LOCATION}" /var/www/html/"${RANDOM_DIR}"/
 cat <<EOF >> /var/www/html/hooks/agent-links.php

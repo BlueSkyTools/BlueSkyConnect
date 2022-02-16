@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/bin/bash
+
 on_die()
 {
 	fail2ban-client stop

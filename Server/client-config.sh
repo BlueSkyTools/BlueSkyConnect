@@ -26,7 +26,7 @@ if [[ ${USE_HTTP} ]]; then
 	apacheConf="000-default"
 fi
 if [[ -z "${SERVERFQDN}" ]]; then
-	hostName=`grep ServerName /etc/apache2/sites-enabled/"$apacheConf".conf | awk '{ print $NF }'`
+	hostName=$(grep ServerName /etc/apache2/sites-enabled/"$apacheConf".conf | awk '{ print $NF }')
 	if [ "$hostName" == "" ]; then
 		echo "Server FQDN is not readable from apache. Please double check your server setup."
 		exit 2
@@ -111,12 +111,12 @@ if [ "$reKey" == "" ]; then
 		ln -fs /certs/blueskyd /usr/local/bin/BlueSky/Server/
 	fi
 	chown www-data /usr/local/bin/BlueSky/Server/blueskyd
-	echo command=\"/var/bluesky/.ssh/wrapper.sh\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty `cat /usr/local/bin/BlueSky/Server/blueskyd.pub` > /usr/local/bin/BlueSky/Client/.ssh/authorized_keys
+	echo command=\"/var/bluesky/.ssh/wrapper.sh\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty "$(cat /usr/local/bin/BlueSky/Server/blueskyd.pub)" > /usr/local/bin/BlueSky/Client/.ssh/authorized_keys
 
 	# create server.plist
-	hostKey=`ssh-keyscan -t ed25519 localhost | awk '{ print $2,$3 }'`
-	hostKeyRSA=`ssh-keyscan -t rsa localhost | awk '{ print $2,$3 }'`
-	ipAddress=`curl -s http://ipinfo.io/ip`
+	hostKey=$(ssh-keyscan -t ed25519 localhost | awk '{ print $2,$3 }')
+	hostKeyRSA=$(ssh-keyscan -t rsa localhost | awk '{ print $2,$3 }')
+	ipAddress=$(curl -s http://ipinfo.io/ip)
 	echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
 <plist version=\"1.0\">

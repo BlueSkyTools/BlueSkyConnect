@@ -37,7 +37,7 @@ function logMe {
   if [ ! -e "$logFile" ]; then
     touch "$logFile"
   fi
-  dateStamp=`date '+%Y-%m-%d %H:%M:%S'`
+  dateStamp=$(date '+%Y-%m-%d %H:%M:%S')
   echo "$dateStamp - v$bVer - $logMsg" >> "$logFile"
   if [ -e "$ourHome/.debug" ]; then
     echo "$logMsg"
@@ -45,9 +45,9 @@ function logMe {
 }
 
 function getAutoPid {
-  autoPid=`head -n 1 "$ourHome/autossh.pid"`
+  autoPid=$(head -n 1 "$ourHome/autossh.pid")
   if [ "$autoPid" != "" ]; then
-  	autoCheck=`ps -ax | awk '{ print $1 }' | grep ^"$autoPid"`
+  	autoCheck=$(ps -ax | awk '{ print $1 }' | grep ^"$autoPid")
   else
   	autoCheck=""
   fi
@@ -57,9 +57,9 @@ function getAutoPid {
     logMe "autossh not present on saved pid"
     autoPid=""
     #see if its running rogue
-    autoProc=`ps -ax | grep "$ourHome/autossh" | grep -v grep`
+    autoProc=$(ps -ax | grep "$ourHome/autossh" | grep -v grep)
     if [ "$autoProc" != "" ]; then
-      autoPid=`echo "$autoProc" | awk '{ print $1 }'`
+      autoPid=$(echo "$autoProc" | awk '{ print $1 }')
       echo "$autoPid" > "$ourHome/autossh.pid"
       logMe "found autossh rogue on $autoPid"
     fi
@@ -75,13 +75,13 @@ function killShells {
     kill -9 "$autoPid"
   fi
   #now go after any rogue SSH processes
-  shellList=`ps -ax | grep ssh | grep 'bluesky\@' | awk '{ print $1 }'`
+  shellList=$(ps -ax | grep ssh | grep 'bluesky\@' | awk '{ print $1 }')
   for shellPid in $shellList; do
     kill -9 $shellPid
   done
   #if they are still alive, ask for help
   getAutoPid
-  shellList=`ps -ax | grep ssh | grep 'bluesky\@' | awk '{ print $1 }'`
+  shellList=$(ps -ax | grep ssh | grep 'bluesky\@' | awk '{ print $1 }')
   if [ "$shellList" != "" ] || [ "$autoPid" != "" ]; then
   	echo "contractKiller" > "$ourHome/.getHelp"
   	sleep 1
@@ -103,7 +103,7 @@ function rollLog {
       fi
       rollCount=$prevCount
     done
-    timeStamp=`date "+%Y-%m-%d %H:%M:%S"`
+    timeStamp=$(date "+%Y-%m-%d %H:%M:%S")
     echo "Log file created at $timeStamp" > "$ourHome/$logName"
   fi
 }
@@ -112,10 +112,10 @@ function startMeUp {
   export AUTOSSH_PIDFILE="$ourHome/autossh.pid"
   export AUTOSSH_LOGFILE="$ourHome/autossh.log"
   #rollLog autossh.log
-  timeStamp=`date "+%Y-%m-%d %H:%M:%S"`
+  timeStamp=$(date "+%Y-%m-%d %H:%M:%S")
   echo "$timeStamp BlueSky starting AutoSSH"
   # check for alternate SSH port
-  altPort=`/usr/libexec/PlistBuddy -c "Print :altport" "$ourHome/settings.plist"  2> /dev/null`
+  altPort=$(/usr/libexec/PlistBuddy -c "Print :altport" "$ourHome/settings.plist"  2> /dev/null)
   if [ "$altPort" == "" ]; then
     altPort=22
   else
@@ -137,7 +137,7 @@ function startMeUp {
   # are we live?
   sleep 5
   while [ ${autoTimer:-0} -lt 35 ]; do
-	sshProc=`ps -ax | grep ssh | grep 'bluesky\@'`
+	sshProc=$(ps -ax | grep ssh | grep 'bluesky\@')
 	if [ "$sshProc" != "" ]; then
 		break
 	fi
@@ -150,7 +150,7 @@ function startMeUp {
     logMe "ERROR - autossh wont start, check logs. Exiting."
     exit 1
   else
-  	sshProc=`ps -ax | grep ssh | grep 'bluesky\@'`
+  	sshProc=$(ps -ax | grep ssh | grep 'bluesky\@')
   	if [ "$sshProc" != "" ]; then
 	  logMe "autossh started successfully"
 	else
@@ -171,7 +171,7 @@ function reKey {
   rm -f "$ourHome/.ssh/bluesky_client"
   rm -f "$ourHome/.ssh/bluesky_client.pub"
   ssh-keygen -q -t $keyAlg -N "" -f "$ourHome/.ssh/bluesky_client" -C "$serialNum"
-  pubKey=`cat "$ourHome/.ssh/bluesky_client.pub"`
+  pubKey=$(cat "$ourHome/.ssh/bluesky_client.pub")
   if [ "$pubKey" == "" ]; then
     logMe "ERROR - reKey failed and we are broken. Please reinstall."
   	exit 1
@@ -182,14 +182,14 @@ function reKey {
   chmod 600 "$ourHome/.ssh/bluesky_client.pub"
 
   # server will require encryption
-  pubKey=`openssl smime -encrypt -aes256 -in ~/.ssh/bluesky_client.pub -outform PEM "$ourHome/blueskyclient.pub"`
+  pubKey=$(openssl smime -encrypt -aes256 -in ~/.ssh/bluesky_client.pub -outform PEM "$ourHome/blueskyclient.pub")
   if [ "$pubKey" == "" ]; then
     logMe "ERROR - reKey failed and we are broken. Please reinstall."
   	exit 1
   fi
 
   # upload pubkey
-  installResult=`curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "newpub=$pubKey" https://$blueskyServer/cgi-bin/collector.php`
+  installResult=$(curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "newpub=$pubKey" https://$blueskyServer/cgi-bin/collector.php)
   curlExit=$?
   if [ "$installResult" != "Installed" ] || [ $curlExit -ne 0 ]; then
     logMe "ERROR - upload of new public key failed. Exiting."
@@ -197,34 +197,34 @@ function reKey {
   fi
 
   # get sharing name and Watchman Monitoring client group if present
-  hostName=`scutil --get ComputerName`
+  hostName=$(scutil --get ComputerName)
   if [ "$hostName" == "" ]; then
- 	hostName=`hostname`
+ 	hostName=$(hostname)
   fi
-  wmCG=`defaults read /Library/MonitoringClient/ClientSettings ClientGroup`
+  wmCG=$(defaults read /Library/MonitoringClient/ClientSettings ClientGroup)
   if [ "$wmCG" != "" ]; then
   	hostName="$wmCG - $hostName"
   fi
 
   # upload info to get registered
-  uploadResult=`curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=register --data-urlencode "hostName=$hostName" https://$blueskyServer/cgi-bin/collector.php`
+  uploadResult=$(curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=register --data-urlencode "hostName=$hostName" https://$blueskyServer/cgi-bin/collector.php)
   curlExit=$?
   if [ "$uploadResult" != "Registered" ] || [ $curlExit -ne 0 ]; then
     logMe "ERROR - registration with server failed. Exiting."
   	exit 1
   fi
 
-  /usr/libexec/PlistBuddy -c "Add :keytime integer `date +%s`" "$ourHome/settings.plist" 2> /dev/null
-  /usr/libexec/PlistBuddy -c "Set :keytime `date +%s`" "$ourHome/settings.plist"
+  /usr/libexec/PlistBuddy -c "Add :keytime integer $(date +%s)" "$ourHome/settings.plist" 2> /dev/null
+  /usr/libexec/PlistBuddy -c "Set :keytime $(date +%s)" "$ourHome/settings.plist"
 }
 
 function serialMonster {
 # reads serial number in settings and checks it against hardware - helpful if we are cloned or blank logic board
 # sets serialNum for rest of script
-savedNum=`/usr/libexec/PlistBuddy -c "Print :serial" "$ourHome/settings.plist"  2> /dev/null`
-hwNum=`ioreg -l | grep IOPlatformSerialNumber | awk '{print $4}' |  cut -d \" -f 2`
+savedNum=$(/usr/libexec/PlistBuddy -c "Print :serial" "$ourHome/settings.plist"  2> /dev/null)
+hwNum=$(ioreg -l | grep IOPlatformSerialNumber | awk '{print $4}' |  cut -d \" -f 2)
 if [ "$hwNum" == "" ]; then
-  hwNum=`system_profiler SPHardwareDataType | grep "Serial Number" | head -n 1 | tr -d "'\";()\\" | awk '{print $NF}'`
+  hwNum=$(system_profiler SPHardwareDataType | grep "Serial Number" | head -n 1 | tr -d "'\";()\\" | awk '{print $NF}')
 fi
 # is hardware serial a blank logic board
 if [[ "$hwNum" == *"Available"* ]] || [[ "$hwNum" == *"Serial"* ]] || [[ "$hwNum" == *"Number"* ]] || [ "$hwNum" == "" ]; then
@@ -243,9 +243,9 @@ else
     #must be first run or cloned so reset
     if [ ${blankBoard:-0} -eq 1 ]; then
       #generate a random hash, but check Gruntwork first
-      hwNum=`/usr/libexec/PlistBuddy -c "Print :serial" /Library/Mac-MSP/Gruntwork/settings.plist  2> /dev/null`
+      hwNum=$(/usr/libexec/PlistBuddy -c "Print :serial" /Library/Mac-MSP/Gruntwork/settings.plist  2> /dev/null)
   	  if [ "$hwNum" == "" ] || [[ "$hwNum" != *"MacMSP"* ]]; then
-      	hwNum="MacMSP`uuidgen|tr -d '-'`"
+      	hwNum="MacMSP$(uuidgen|tr -d '-')"
       fi
     fi
     #this may be a first run or first after a clone
@@ -259,21 +259,21 @@ fi
 }
 
 # make me a sandwich? make it yourself
-userName=`whoami`
+userName=$(whoami)
 if [ "$userName" != "bluesky" ]; then
 	logMe "ERROR - script called by wrong user"
 	exit 2
 fi
 
 # are our perms screwed up?
-scriptPerm=`ls -l "$ourHome/bluesky.sh" | awk '{ print $3 }'`
+scriptPerm=$(ls -l "$ourHome/bluesky.sh" | awk '{ print $3 }')
 if [ "$scriptPerm" != "bluesky" ]; then
 	echo "fixPerms"  > "$ourHome/.getHelp"
 	sleep 5
 fi
 
 # get server address
-blueskyServer=`/usr/libexec/PlistBuddy -c "Print :address" "$ourHome/server.plist"  2> /dev/null`
+blueskyServer=$(/usr/libexec/PlistBuddy -c "Print :address" "$ourHome/server.plist"  2> /dev/null)
 # sanity check
 if [ "$blueskyServer" == "" ]; then
   logMe "ERROR: fix the server address"
@@ -281,9 +281,9 @@ if [ "$blueskyServer" == "" ]; then
 fi
 
 # get the version of the OS so we can ensure compatiblity
-osRaw=`sw_vers -productVersion`
-osVersionMajor=`echo "$osRaw" | awk -F . '{ print $1 }'`
-osVersionMinor=`echo "$osRaw" | awk -F . '{ print $2 }'`
+osRaw=$(sw_vers -productVersion)
+osVersionMajor=$(echo "$osRaw" | awk -F . '{ print $1 }')
+osVersionMinor=$(echo "$osRaw" | awk -F . '{ print $2 }')
 
 # select all of our algorithms - treating OS X 10.10 and below as insecure, defaulting to secure
 if [ ${osVersionMajor:-0} -eq 10 ] && [ ${osVersionMinor:-0} -lt 11 ] && [ ${osVersionMinor:-0} -ne 0 ]; then
@@ -301,7 +301,7 @@ else
 fi
 
 # server key will be pre-populated in the installer - put it into known hosts
-serverKey=`/usr/libexec/PlistBuddy -c "Print :$serverKey" "$ourHome/server.plist"  2> /dev/null`
+serverKey=$(/usr/libexec/PlistBuddy -c "Print :$serverKey" "$ourHome/server.plist"  2> /dev/null)
 if [ "$serverKey" == "" ]; then
   logMe "ERROR: cant get server key - please reinstall"
   exit 1
@@ -310,12 +310,12 @@ else
 fi
 
 # are there any live network ports?
-activeNets=`ifconfig | grep 'status\: active'`
+activeNets=$(ifconfig | grep 'status\: active')
 #no network connections means we are most certainly down wait up to 2 min for live network
 while [ "$activeNets" == "" ]; do
   sleep 5
   (( netCounter++ ))
-  activeNets=`ifconfig | grep 'status\: active'`
+  activeNets=$(ifconfig | grep 'status\: active')
   if [ ${netCounter:-0} -gt 25 ]; then
     killShells
     logMe "No active network connections. Exiting"
@@ -324,7 +324,7 @@ while [ "$activeNets" == "" ]; do
 done
 
 # get proxy info from system preferences
-proxyInfo=`"$ourHome/proxy-config" -s`
+proxyInfo=$("$ourHome/proxy-config" -s)
 if [ "$proxyInfo" != "" ]; then
   curlProxy="-x $proxyInfo"
 else
@@ -335,7 +335,7 @@ fi
 serialMonster
 
 # Attempt to get our port
-port=`curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=port https://$blueskyServer/cgi-bin/collector.php`
+port=$(curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=port https://$blueskyServer/cgi-bin/collector.php)
 curlExit=$?
 
 # Is the server up?
@@ -355,12 +355,12 @@ fi
 # Did port check pass?
 if [ "$port" == "" ]; then
 	# try running off cached copy
-	port=`/usr/libexec/PlistBuddy -c "Print :portcache" "$ourHome/settings.plist"  2> /dev/null`
+	port=$(/usr/libexec/PlistBuddy -c "Print :portcache" "$ourHome/settings.plist"  2> /dev/null)
 	if [ "$port" == "" ]; then
 		#no cached copy either, try rekey
 		reKey
 		sleep 5
-    port=`curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=port https://$blueskyServer/cgi-bin/collector.php`
+    port=$(curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=port https://$blueskyServer/cgi-bin/collector.php)
     curlExit=$?
 		if [ "$port" == "" ] || [ $curlExit -ne 0 ]; then
   		logMe "ERROR - cant reach server and have no port. Exiting."
@@ -382,14 +382,14 @@ vncport=$((24000 + port))
 monport=$((26000 + port))
 
 #greysky:
-manualProxy=`/usr/libexec/PlistBuddy -c "Print :proxy" "$ourHome/settings.plist"  2> /dev/null`
+manualProxy=$(/usr/libexec/PlistBuddy -c "Print :proxy" "$ourHome/settings.plist"  2> /dev/null)
 if [ "$manualProxy" != "" ]; then
 	#if there is a manual proxy string in settings.plist, go with it
 	confProxy="$manualProxy"
 else
 	#parse curl proxy output into format for corkscrew
 	if [ "$proxyInfo" != "" ]; then
-	  confProxy=`echo "$proxyInfo" | awk -F ':' '{ print $2,$3 }' | tr -d '/'`
+	  confProxy=$(echo "$proxyInfo" | awk -F ':' '{ print $2,$3 }' | tr -d '/')
 	else
 	  confProxy=""
 	fi
@@ -418,14 +418,14 @@ if [ "$autoPid" == "" ]; then
 fi
 
 # ask server for the default username so we can pass on to Watchman
-defaultUser=`curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=user https://$blueskyServer/cgi-bin/collector.php`
+defaultUser=$(curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=user https://$blueskyServer/cgi-bin/collector.php)
 if [ "$defaultUser" != "" ]; then
 	/usr/libexec/PlistBuddy -c "Add :defaultuser string $defaultUser" "$ourHome/settings.plist" 2> /dev/null
 	/usr/libexec/PlistBuddy -c "Set :defaultuser $defaultUser" "$ourHome/settings.plist"
 fi
 
 #autossh is running - check against server
-connStat=`curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=status https://$blueskyServer/cgi-bin/collector.php`
+connStat=$(curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=status https://$blueskyServer/cgi-bin/collector.php)
 if [ "$connStat" != "OK" ]; then
   if [ "$connStat" == "selfdestruct" ]; then
     killShells
@@ -435,14 +435,14 @@ if [ "$connStat" != "OK" ]; then
   logMe "server says we are down. restarting tunnels. Server said $connStat"
   restartConnection
   sleep 5
-  connStatRetry=`curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=status https://$blueskyServer/cgi-bin/collector.php`
+  connStatRetry=$(curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=status https://$blueskyServer/cgi-bin/collector.php)
   if [ "$connStatRetry" != "OK" ]; then
     logMe "server still says we are down. trying reKey. Server said $connStat"
     reKey
     sleep 5
     restartConnection
     sleep 5
-    connStatLastTry=`curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=status https://$blueskyServer/cgi-bin/collector.php`
+    connStatLastTry=$(curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=status https://$blueskyServer/cgi-bin/collector.php)
     if [ "$connStatLastTry" != "OK" ]; then
       logMe "ERROR - server still says we are down. needs manual intervention. Server said $connStat"
       exit 1

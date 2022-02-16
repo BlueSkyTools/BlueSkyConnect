@@ -18,10 +18,10 @@
 
 function sendAlert {
   myQry="select hostname from computers where serialnum='$serialNum'"
-  hostName=`$myCmd "$myQry"`
-  
-  lastDate=`date -d @"$lastConn" '+%Y-%m-%d %H:%M:%S %Z'`
-  
+  hostName=$($myCmd "$myQry")
+
+  lastDate=$(date -d @"$lastConn" '+%Y-%m-%d %H:%M:%S %Z')
+
   alertStat="$1"
   if [ "$alertStat" == "Down" ]; then
     messBody="You requested to be notified when $hostName with serial number $serialNum has been offline for more than 15 minutes. Last time we saw it was $lastDate"
@@ -30,7 +30,7 @@ function sendAlert {
   else
     return
   fi
-  
+
   if [ -e /usr/local/bin/BlueSky/Server/emailHelper.sh ]; then
     /usr/local/bin/BlueSky/Server/emailHelper.sh "BlueSky $alertStat Alert $serialNum" "$messBody"
   fi
@@ -39,12 +39,12 @@ function sendAlert {
 myCmd="/usr/bin/mysql --defaults-file=/var/local/my.cnf BlueSky -N -B -e"
 
 myQry="select serialnum from computers where alert='1'"
-alertList=`$myCmd "$myQry"`
+alertList=$($myCmd "$myQry")
 
 for serialNum in $alertList; do
 
 	myQry="select downup from computers where serialnum='$serialNum'"
-	firstStat=`$myCmd "$myQry"`
+	firstStat=$($myCmd "$myQry")
 	if [ "$firstStat" == "NULL" ] || [ "$firstStat" == "" ]; then
 	  firstStat=1
 	fi
@@ -52,20 +52,20 @@ for serialNum in $alertList; do
 
 	# timestamp is an epoch populated by processor when it confirms a good connection
 	myQry="select timestamp from computers where serialnum='$serialNum'"
-	lastConn=`$myCmd "$myQry"`
+	lastConn=$($myCmd "$myQry")
 	if [ "$lastConn" == "NULL" ] || [ "$lastConn" == "" ]; then
 	  lastConn=0
 	fi
 
-	checkThresh=`date -d "10 minutes ago" "+%s"`
+	checkThresh=$(date -d "10 minutes ago" "+%s")
 
 	if [ ${lastConn:-0} -lt $checkThresh ]; then
 	  # its been quiet for more than 10 min, might be down
 		#first do our own spot check to see if server is really down
 		myQry="select blueskyid from computers where serialnum='$serialNum'"
-		myPort=`$myCmd "$myQry"`
+		myPort=$($myCmd "$myQry")
 		sshPort=$((22000 + myPort))
-		testSN=`ssh -p $sshPort -o ConnectTimeout=5 -o ConnectionAttempts=5 -o StrictHostKeyChecking=no -l bluesky -i /usr/local/bin/BlueSky/Server/blueskyd localhost "/usr/bin/defaults read /var/bluesky/settings serial"`
+		testSN=$(ssh -p $sshPort -o ConnectTimeout=5 -o ConnectionAttempts=5 -o StrictHostKeyChecking=no -l bluesky -i /usr/local/bin/BlueSky/Server/blueskyd localhost "/usr/bin/defaults read /var/bluesky/settings serial")
 		testExit=$?
 		if [ $testExit -ne 0 ]; then
 		  # we did not connect, mark down the counter
@@ -75,7 +75,7 @@ for serialNum in $alertList; do
 		  if [ ${newStat:-0} -eq -2 ]; then
 			#this is the third time we have seen it as down - up to 10 min on checkin, 3 times with this script every 5 (0,-1,-2), time to alert
 			sendAlert Down
-			timeStamp=`date '+%Y-%m-%d %H:%M:%S %Z'`
+			timeStamp=$(date '+%Y-%m-%d %H:%M:%S %Z')
 			myQry="update computers set status='Alert sent for offline',datetime='$timeStamp' where serialnum='$serialNum'"
 			$myCmd "$myQry"
 		  fi
@@ -87,10 +87,10 @@ for serialNum in $alertList; do
 		#server was down last time, mark up
 		myQry="update computers set downup='1' where serialnum='$serialNum'"
 		$myCmd "$myQry"
-		if [ ${firstStat:-0} -lt -1 ]; then 
+		if [ ${firstStat:-0} -lt -1 ]; then
 		  #down alert has been sent, follow up
 		  sendAlert Up
-		  timeStamp=`date '+%Y-%m-%d %H:%M:%S %Z'`
+		  timeStamp=$(date '+%Y-%m-%d %H:%M:%S %Z')
 		  myQry="update computers set status='Recovered from alert',datetime='$timeStamp' where serialnum='$serialNum'"
 		  $myCmd "$myQry"
 		fi
@@ -101,9 +101,9 @@ done
 
 ## look for disconnected computers and mark offline
 myQry="select id from computers where datetime < (NOW() - INTERVAL 12 MINUTE) and status='Connection is good'"
-offlineList=`$myCmd "$myQry"`
+offlineList=$($myCmd "$myQry")
 for thisId in $offlineList; do
-	timeStamp=`date '+%Y-%m-%d %H:%M:%S %Z'`
+	timeStamp=$(date '+%Y-%m-%d %H:%M:%S %Z')
 	myQry="update computers set status='Offline',datetime='$timeStamp' where id='$thisId'"
 	$myCmd "$myQry"
 done

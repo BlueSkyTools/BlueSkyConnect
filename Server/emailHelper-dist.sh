@@ -44,7 +44,7 @@ fi
 ## get the To address from mySql
 myCmd="/usr/bin/mysql --defaults-file=/var/local/my.cnf BlueSky -N -B -e"
 myQry="select defaultemail from global"
-toAddress=`$myCmd "$myQry"`
+toAddress=$($myCmd "$myQry")
 
 
 ## substitute in your preferred email method
