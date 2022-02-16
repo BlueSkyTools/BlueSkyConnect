@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# BlueSkyConnect macOS SSH tunnel
+# See https://github.com/BlueSkyTools/BlueSkyConnect
+# Licensed under the Apache License, Version 2.0
+
 # script that reloads bluesky upon network event in hopes of faster reconnection
 
 ourHome="/var/bluesky"

@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# BlueSkyConnect macOS SSH tunnel
+# See https://github.com/BlueSkyTools/BlueSkyConnect
+# Licensed under the Apache License, Version 2.0
+
 IDENTIFIER="com.solarwindsmsp.bluesky.pkg"
 APPNAME="BlueSky"
 
