@@ -26,6 +26,10 @@ webAdminPassword=""
 mysqlRootPass=""
 emailAlertAddress=""
 # --------- DO NOT EDIT BELOW ------------------------------------------------------
+if [[ -z ${USE_HTTP} ]]; then
+  USE_HTTP=0
+fi
+
 apacheConf="default-ssl"
 if [[ ${IN_DOCKER} ]]; then
   serverFQDN=$SERVERFQDN
@@ -125,6 +129,9 @@ else
   echo 'PasswordAuthentication no' >> /etc/ssh/sshd_config
   echo 'ChallengeResponseAuthentication no' >> /etc/ssh/sshd_config
 fi
+# set shorter tunnel timeouts
+echo 'ClientAliveInterval 10' >> /etc/ssh/sshd_config
+echo 'ClientAliveCountMax 3' >> /etc/ssh/sshd_config
 
 ## setup local firewall
 if [[ -z ${IN_DOCKER} ]]; then
@@ -139,7 +146,7 @@ if [[ -z ${IN_DOCKER} ]]; then
   apt-get update
   sudo debconf-set-selections <<< "mysql-server mysql-server/root_password password $mysqlRootPass"
   sudo debconf-set-selections <<< "mysql-server mysql-server/root_password_again password $mysqlRootPass"
-  apt-get -y install apache2 fail2ban mysql-server php-mysql php libapache2-mod-php php-mcrypt php-mysql inoticoming swaks curl
+  apt-get -y install apache2 fail2ban mysql-server php-mysql php libapache2-mod-php php-mysql inoticoming swaks curl
 fi
 
 ## setup user accounts/folders
@@ -158,6 +165,8 @@ chown www-data /home/admin/newkeys
 chown www-data /home/bluesky/newkeys
 chown -R admin /home/admin/.ssh
 chown -R bluesky /home/bluesky/.ssh
+chmod -R go-rwx /home/admin/.ssh
+chmod -R go-rwx /home/bluesky/.ssh
 # sets auth.log so admin can read it
 touch /var/log/auth.log
 chgrp admin /var/log/auth.log

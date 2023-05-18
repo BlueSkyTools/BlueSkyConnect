@@ -1,5 +1,5 @@
 # BlueSky
-**NOTE: SolarWinds does not provide technical support for BlueSky.** Visit the #solarwinds-msp channel of MacAdmins Slack for unofficial help.
+**NOTE: SolarWinds has stopped responding to PR's regarding this project and bumped the active developers off the repo. I have moved the active development to sphen13/BlueSky** Visit the #bluesky channel of MacAdmins Slack for unofficial help.
 
 BlueSky establishes and maintains an SSH tunnel initiated by your client’s computer to a BlueSky server. The tunnel allows two connections to come back to the computer from the server: SSH and VNC. The SSH and VNC services on the computer are the ones provided by the Sharing.prefpane.
 

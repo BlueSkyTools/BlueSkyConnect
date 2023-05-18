@@ -6,6 +6,8 @@ This is an attempt at getting BlueSky to run within docker.  This should allow i
 
 We have a full example setup utilizing Caddy for automatic SSL cert generation [at this page](https://github.com/logicnow/BlueSky/blob/master/docker/DOCKER_FULL_EXAMPLE.md).
 
+We also have a Docker [troubleshooting page](https://github.com/logicnow/BlueSky/wiki/Docker-Troubleshooting).
+
 ### Environment variables
 
 These variables can be overridden when you run the BlueSky docker container.
@@ -25,6 +27,7 @@ SMTP_SERVER | | SMTP Server (Required for email alerts) Port optional
 SMTP_AUTH | | SMTP auth user (Required for email alerts)
 SMTP_PASS | | SMTP auth pass (Required for email alerts)
 TIMEZONE | Etc/UTC | Local Timezone [Reference](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
+DEFAULT_USER | | Default username bluesky uses when connecting to a client
 
 ### Docker volumes
 

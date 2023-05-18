@@ -19,7 +19,7 @@
 # helper script performs privileged tasks for BlueSky, does initial client setup
 
 ourHome="/var/bluesky"
-bVer="2.2"
+bVer="2.3.2"
 
 if [ -e "$ourHome/.debug" ]; then
   set -x
@@ -85,7 +85,8 @@ fi
 
 # get the version of the OS so we can ensure compatiblity
 osRaw=`sw_vers -productVersion`
-osVersion=`echo "$osRaw" | awk -F . '{ print $2 }'`
+osVersionMajor=`echo "$osRaw" | awk -F . '{ print $1 }'`
+osVersionMinor=`echo "$osRaw" | awk -F . '{ print $2 }'`
 
 #check if user exists and create if necessary
 userCheck=`dscl . -read /Users/bluesky RealName`
@@ -127,6 +128,11 @@ chown -R bluesky "$ourHome"
 #help me help you.  help me... help you.
 dseditgroup -o edit -a bluesky -t user com.apple.access_ssh 2> /dev/null
 systemsetup -setremotelogin on &> /dev/null
+if [ ${osVersionMajor:-10} -eq 10 ] && [ ${osVersionMinor} -lt 15 ]; then
+  systemsetup -setremotelogin on &> /dev/null
+else
+  launchctl load -w /System/Library/LaunchDaemons/ssh.plist
+fi
 
 # commenting out on 1.12
 # re-intro when we can test a more reliable method of determining a VNC server
@@ -145,7 +151,7 @@ fi
 
 #GSS API config lines mess up client connections in 10.12+
 gssCheck=`grep -e ^'GSSAPIKeyExchange' -e ^'GSSAPITrustDNS' -e ^'GSSAPIDelegateCredentials' /etc/ssh/ssh_config`
-if [ "$gssCheck" != "" ] && [ ${osVersion:-0} -gt 11 ]; then
+if [ "$gssCheck" != "" ] && ( ([ ${osVersionMajor:-10} -eq 10 ] && [ ${osVersionMinor:-0} -gt 11 ]) || [ ${osVersionMajor:-10} -gt 10 ]); then
   grep -v ^'GSSAPIKeyExchange' /etc/ssh/ssh_config | grep -v ^'GSSAPITrustDNS' | grep -v ^'GSSAPIDelegateCredentials' > /tmp/ssh_config && mv /tmp/ssh_config /etc/ssh/ssh_config
 fi
 
@@ -167,6 +173,16 @@ if [ "$setCheck" == "" ]; then
   chown bluesky "$ourHome/settings.plist"
 fi
 
+#ensure proper version in settings file
+setCheck=`/usr/libexec/PlistBuddy -c "Print :version" "$ourHome/settings.plist"`
+if [ "$setCheck" == "" ]; then
+  logMe "Adding version to the settings plist"
+  /usr/libexec/PlistBuddy -c "Add :version string $bVer" "$ourHome/settings.plist"
+elif [ "$setCheck" != "$bVer" ]; then
+  logMe "Setting version in the settings plist"
+  /usr/libexec/PlistBuddy -c "Set :version $bVer" "$ourHome/settings.plist"
+fi
+
 #make sure we stay executable - helps with initial install if someone isn't packaging
 chmod a+x /var/bluesky/helper.sh /var/bluesky/bluesky.sh /var/bluesky/autossh /var/bluesky/corkscrew /var/bluesky/proxy-config /var/bluesky/.ssh/wrapper.sh
 
@@ -186,13 +202,19 @@ fi
 
 # if main launchd is not running, let's check perms and start it
 weLaunched=`launchctl list | grep com.solarwindsmsp.bluesky | wc -l`
-if [ ${weLaunched:-0} -lt 2 ]; then
+if [ ${weLaunched:-0} -lt 4 ]; then
   logMe "LaunchDaemons don't appear to be loaded.  Fixing."
   if [ ! -e /Library/LaunchDaemons/com.solarwindsmsp.bluesky.plist ]; then
     cp /var/bluesky/com.solarwindsmsp.bluesky.plist /Library/LaunchDaemons/com.solarwindsmsp.bluesky.plist
   fi
   if [ ! -e /Library/LaunchDaemons/com.solarwindsmsp.bluesky.helper.plist ]; then
     cp /var/bluesky/com.solarwindsmsp.bluesky.helper.plist /Library/LaunchDaemons/com.solarwindsmsp.bluesky.helper.plist
+  fi
+  if [ ! -e /Library/LaunchDaemons/com.solarwindsmsp.bluesky.reconnect.plist ]; then
+    cp /var/bluesky/com.solarwindsmsp.bluesky.reconnect.plist /Library/LaunchDaemons/com.solarwindsmsp.bluesky.reconnect.plist
+  fi
+  if [ ! -e /Library/LaunchDaemons/com.solarwindsmsp.bluesky.sleepwatcher.plist ]; then
+    cp /var/bluesky/com.solarwindsmsp.bluesky.sleepwatcher.plist /Library/LaunchDaemons/com.solarwindsmsp.bluesky.sleepwatcher.plist
   fi
   chmod 644 /Library/LaunchDaemons/com.solarwindsmsp.bluesky.*
   chown root:wheel /Library/LaunchDaemons/com.solarwindsmsp.bluesky.*
