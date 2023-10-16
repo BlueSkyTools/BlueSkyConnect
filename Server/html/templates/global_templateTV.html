@@ -1,9 +1,9 @@
 <!-- Edit this file to change the layout of each record in the table view -->
-<!-- To disable clicking of a field, remove the <%%select%%> and <%%endselect%%> formatters around it-->
+<!-- To disable clicking of a field, remove the <%%SELECT%%> and <%%ENDSELECT%%> formatters around it-->
 
 <!-- If you wish to hide the table view header that contains the column titles, -->
-<!-- open the generated 'global_view.php' file in your text editor and -->
-<!-- change the value of $x->ShowTableHeader to 0 -->
+<!-- add the following to the global_init() hook (in hooks/global.php file) -->
+<!--     $options->ShowTableHeader = 0;     -->
 
-		<td id="global-clickhere-<%%VALUE(id)%%>" class="global-clickhere "><%%SELECT%%><%%VALUE(clickhere)%%><%%ENDSELECT%%></td>
-		<td id="global-updateNames-<%%VALUE(id)%%>" class="global-updateNames "><%%SELECT%%><%%VALUE(updateNames)%%><%%ENDSELECT%%></td>
+		<td id="global-clickhere-<%%VALUE(id)%%>" class="global-clickhere"><%%SELECT%%><%%VALUE(clickhere)%%><%%ENDSELECT%%></td>
+		<td id="global-updateNames-<%%VALUE(id)%%>" class="global-updateNames"><%%SELECT%%><%%VALUE(updateNames)%%><%%ENDSELECT%%></td>

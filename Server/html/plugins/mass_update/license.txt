@@ -1,0 +1,61 @@
+	Mass Update (mass_update), a plug-in for AppGini
+
+	Commercial - Single license
+	Copyright © 2017 BigProf Software 
+	https://bigprof.com
+
+	All copyrights reserved.
+
+	By receiving Mass Update (mass_update) software, you accept the following User Agreement.
+
+	This agreement is a binding legal agreement between BigProf Software and the purchaser of 
+	Mass Update (mass_update) to allow him/her to install Mass Update (mass_update) on servers controlled
+	by him/her.
+
+	A. USAGE RESTRICTIONS:
+
+	1- You may not use or distribute Mass Update (mass_update) for any unlawful purpose. You may not rent,
+	lease, lend, sub-license, time-share, distribute, sell or assign the license to use this software.
+
+	2- You may make backup copies of the software strictly for your own archival purposes. Except as 
+	explicitly permitted pursuant to this Agreement,
+
+	3- You may not distribute, copy, sub-license, sell or otherwise distribute the licensed software. In
+	no event may you or any other party modify, adapt, translate, reverse engineer, or create derivative
+	works based on this software.
+
+	4 – You may not remove the copy right claims from the product or any of its files
+
+	B. COPYRIGHT RESTRICTION:
+
+	All parts of Mass Update (mass_update) and products are copyright protected. All other brand and 
+	product names are trademarks of their respective holders. No program code, file, image, database, 
+	or text may be copied in any other software.
+
+	C. LIMITATION OF RESPONSIBILITY:
+
+	The buyer/owner of Mass Update (mass_update) will indemnify, hold harmless, and defend 
+	BigProf Software against lawsuits, claims, costs associated with defence or accusations that result
+	from the use of Mass Update (mass_update). 
+
+	BigProf Software is not responsible for any damages whatsoever, including loss of information, 
+	interruption of business, personal injury and/or any damage or consequential damage without 
+	limitation, incurred before, during or after the use of our products. 
+
+	Our entire liability, without exception, is limited to the customers' reimbursement of the purchase
+	price of Mass Update (mass_update) (maximum being the suggested retail price as listed by
+	BigProf Software) In exchange for the return of the product, all copies, registration papers and 
+	manuals, and all materials that constitute a transfer of ownership from the customer back to 
+	BigProf Software.
+
+	D. COMMERCIAL RESTRICTION:
+
+	Distribution of registered copies of this software is strictly Forbidden. It is a violation of this
+	agreement to loan, rent, lease, borrow, or transfer the use of registered copies of 
+	Mass Update (mass_update).
+
+	E. TECHNICAL SUPPORT:
+
+	BigProf Software agrees to provide technical support through its online ticketing system for one
+	year from the Date of this agreement or until a new release of the product is made available to the
+	public, whichever is sooner.

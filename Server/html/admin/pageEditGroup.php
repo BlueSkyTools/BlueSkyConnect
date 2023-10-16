@@ -1,298 +1,455 @@
 <?php
-	$currDir=dirname(__FILE__);
-	require("$currDir/incCommon.php");
+require(__DIR__ . '/incCommon.php');
 
-	// get groupID of anonymous group
-	$anonGroupID=sqlValue("select groupID from membership_groups where name='".$adminConfig['anonymousGroup']."'");
+// get groupID of anonymous group
+$groupID = $name = $description = $allowCSVImport = $visitorSignup = null;
+$anon_safe = makeSafe($adminConfig['anonymousGroup'], false);
+$anonGroupID = sqlValue("SELECT `groupID` FROM `membership_groups` WHERE `name`='{$anon_safe}'");
 
-	// request to save changes?
-	if($_POST['saveChanges']!=''){
-		// validate data
-		$name=makeSafe($_POST['name']);
-		$description=makeSafe($_POST['description']);
-		switch($_POST['visitorSignup']){
-			case 0:
-				$allowSignup=0;
-				$needsApproval=1;
-				break;
-			case 2:
-				$allowSignup=1;
-				$needsApproval=0;
-				break;
-			default:
-				$allowSignup=1;
-				$needsApproval=1;
-		}
-		###############################
-		$computers_insert=checkPermissionVal('computers_insert');
-		$computers_view=checkPermissionVal('computers_view');
-		$computers_edit=checkPermissionVal('computers_edit');
-		$computers_delete=checkPermissionVal('computers_delete');
-		###############################
-		$global_insert=checkPermissionVal('global_insert');
-		$global_view=checkPermissionVal('global_view');
-		$global_edit=checkPermissionVal('global_edit');
-		$global_delete=checkPermissionVal('global_delete');
-		###############################
-		$connections_insert=checkPermissionVal('connections_insert');
-		$connections_view=checkPermissionVal('connections_view');
-		$connections_edit=checkPermissionVal('connections_edit');
-		$connections_delete=checkPermissionVal('connections_delete');
-		###############################
+// get list of tables
+$table_list = getTableList();
+$perm = [];
 
-		// new group or old?
-		if($_POST['groupID']==''){ // new group
-			// make sure group name is unique
-			if(sqlValue("select count(1) from membership_groups where name='$name'")){
-				echo "<div class=\"alert alert-danger\">Error: Group name already exists. You must choose a unique group name.</div>";
-				include("$currDir/incFooter.php");
-			}
+// request to save changes?
+if(Request::val('saveChanges')) {
+	// csrf check
+	if(!csrf_token(true)) die(str_replace('pageSettings.php', 'pageViewGroups.php', $Translation['invalid security token']));
 
-			// add group
-			sql("insert into membership_groups set name='$name', description='$description', allowSignup='$allowSignup', needsApproval='$needsApproval'", $eo);
+	// validate data
+	$name = makeSafe(Request::val('name'));
+	$description = makeSafe(Request::val('description'));
+	$allowCSVImport = (Request::val('allowCSVImport') ? 1 : 0);
 
-			// get new groupID
-			$groupID=db_insert_id(db_link());
+	$allowSignup = (Request::val('visitorSignup') ? 1 : 0);
+	$needsApproval = (Request::val('visitorSignup') == 2 ? 0 : 1);
 
-		}else{ // old group
-			// validate groupID
-			$groupID=intval($_POST['groupID']);
-
-			if($groupID==$anonGroupID){
-				$name=$adminConfig['anonymousGroup'];
-				$allowSignup=0;
-				$needsApproval=0;
-			}
-
-			// make sure group name is unique
-			if(sqlValue("select count(1) from membership_groups where name='$name' and groupID!='$groupID'")){
-				echo "<div class=\"alert alert-danger\">Error: Group name already exists. You must choose a unique group name.</div>";
-				include("$currDir/incFooter.php");
-			}
-
-			// update group
-			sql("update membership_groups set name='$name', description='$description', allowSignup='$allowSignup', needsApproval='$needsApproval' where groupID='$groupID'", $eo);
-
-			// reset then add group permissions
-			sql("delete from membership_grouppermissions where groupID='$groupID' and tableName='computers'", $eo);
-			sql("delete from membership_grouppermissions where groupID='$groupID' and tableName='global'", $eo);
-			sql("delete from membership_grouppermissions where groupID='$groupID' and tableName='connections'", $eo);
-		}
-
-		// add group permissions
-		if($groupID){
-			// table 'computers'
-			sql("insert into membership_grouppermissions set groupID='$groupID', tableName='computers', allowInsert='$computers_insert', allowView='$computers_view', allowEdit='$computers_edit', allowDelete='$computers_delete'", $eo);
-			// table 'global'
-			sql("insert into membership_grouppermissions set groupID='$groupID', tableName='global', allowInsert='$global_insert', allowView='$global_view', allowEdit='$global_edit', allowDelete='$global_delete'", $eo);
-			// table 'connections'
-			sql("insert into membership_grouppermissions set groupID='$groupID', tableName='connections', allowInsert='$connections_insert', allowView='$connections_view', allowEdit='$connections_edit', allowDelete='$connections_delete'", $eo);
-		}
-
-		// redirect to group editing page
-		redirect("admin/pageEditGroup.php?groupID=$groupID");
-
-	}elseif($_GET['groupID']!=''){
-		// we have an edit request for a group
-		$groupID=intval($_GET['groupID']);
+	foreach($table_list as $tn => $tc) {
+		$perm["{$tn}_insert"] = checkPermissionVal("{$tn}_insert");
+		$perm["{$tn}_view"] = checkPermissionVal("{$tn}_view");
+		$perm["{$tn}_edit"] = checkPermissionVal("{$tn}_edit");
+		$perm["{$tn}_delete"] = checkPermissionVal("{$tn}_delete");
 	}
 
-	include("$currDir/incHeader.php");
+	// new group or old?
+	$new_group = false;
+	if(!Request::val('groupID')) { // new group
+		// make sure group name is unique
+		if(sqlValue("SELECT COUNT(1) FROM `membership_groups` WHERE `name`='{$name}'")) {
+			echo "<div class=\"alert alert-danger text-center\">{$Translation['group exists error']}</div>";
+			include(__DIR__ . '/incFooter.php');
+		}
 
-	if($groupID!=''){
-		// fetch group data to fill in the form below
-		$res=sql("select * from membership_groups where groupID='$groupID'", $eo);
-		if($row=db_fetch_assoc($res)){
-			// get group data
-			$name=$row['name'];
-			$description=$row['description'];
-			$visitorSignup=($row['allowSignup']==1 && $row['needsApproval']==1 ? 1 : ($row['allowSignup']==1 ? 2 : 0));
+		// add group
+		insert(
+			'membership_groups',
+			compact('name', 'description', 'allowSignup', 'needsApproval', 'allowCSVImport')
+		);
 
-			// get group permissions for each table
-			$res=sql("select * from membership_grouppermissions where groupID='$groupID'", $eo);
-			while($row=db_fetch_assoc($res)){
-				$tableName=$row['tableName'];
-				$vIns=$tableName."_insert";
-				$vUpd=$tableName."_edit";
-				$vDel=$tableName."_delete";
-				$vVue=$tableName."_view";
-				$$vIns=$row['allowInsert'];
-				$$vUpd=$row['allowEdit'];
-				$$vDel=$row['allowDelete'];
-				$$vVue=$row['allowView'];
-			}
-		}else{
-			// no such group exists
-			echo "<div class=\"alert alert-danger\">Error: Group not found!</div>";
-			$groupID=0;
+		// get new groupID
+		$groupID = db_insert_id(db_link());
+		$new_group = true;
+	} else { // old group
+		// validate groupID
+		$groupID = intval(Request::val('groupID'));
+
+		/* force configured name and no signup for anonymous group */
+		if($groupID == $anonGroupID) {
+			$name = $adminConfig['anonymousGroup'];
+			$allowSignup = 0;
+			$needsApproval = 0;
+			$allowCSVImport = 0;
+		}
+
+		// make sure group name is unique
+		if(sqlValue("SELECT COUNT(1) FROM `membership_groups` WHERE `name`='{$name}' AND `groupID`!='{$groupID}'")) {
+			echo "<div class=\"alert alert-danger text-center\">{$Translation['group exists error']}</div>";
+			include(__DIR__ . '/incFooter.php');
+		}
+
+		// update group
+		update(
+			'membership_groups', 
+			compact('name', 'description', 'allowSignup', 'needsApproval', 'allowCSVImport'),
+			compact('groupID')
+		);
+
+		// reset then add group permissions
+		$tables = "'" . implode("','", array_keys($table_list)) . "'";
+		sql("DELETE FROM `membership_grouppermissions` WHERE `groupID`='{$groupID}' AND `tableName` IN ($tables)", $eo);
+	}
+
+	// add group permissions
+	if($groupID) {
+		foreach($table_list as $tableName => $tc) {
+			$allowInsert = $perm["{$tableName}_insert"];
+			$allowView = $perm["{$tableName}_view"];
+			$allowEdit = $perm["{$tableName}_edit"];
+			$allowDelete = $perm["{$tableName}_delete"];
+			insert(
+				'membership_grouppermissions',
+				compact('groupID', 'tableName', 'allowInsert', 'allowView', 'allowEdit', 'allowDelete')
+			);
 		}
 	}
+
+	// redirect to group editing page
+	redirect("admin/pageEditGroup.php?groupID={$groupID}&msg=" . ($new_group ? 'added' : 'saved'));
+} elseif(Request::val('groupID')) {
+	// we have an edit request for a group
+	$groupID = intval(Request::val('groupID'));
+}
+
+$GLOBALS['page_title'] = $Translation['view groups'];
+include(__DIR__ . '/incHeader.php');
+
+if($groupID != '') {
+	// fetch group data to fill in the form below
+	$res = sql("SELECT * FROM `membership_groups` WHERE `groupID`='{$groupID}'", $eo);
+	if($row = db_fetch_assoc($res)) {
+		// get group data
+		$name = $row['name'];
+		$description = $row['description'];
+		$visitorSignup = ($row['allowSignup'] == 1 && $row['needsApproval'] == 1 ? 1 : ($row['allowSignup'] == 1 ? 2 : 0));
+		$allowCSVImport = ($row['allowCSVImport'] || $name == 'Admins' ? 1 : 0);
+
+		// get group permissions for each table
+		$res = sql("SELECT * FROM `membership_grouppermissions` WHERE `groupID`='{$groupID}'", $eo);
+		while($row = db_fetch_assoc($res)) {
+			$tn = $row['tableName'];
+			$perm["{$tn}_insert"] = $row['allowInsert'];
+			$perm["{$tn}_view"] = $row['allowView'];
+			$perm["{$tn}_edit"] = $row['allowEdit'];
+			$perm["{$tn}_delete"] = $row['allowDelete'];
+		}
+	} else {
+		// no such group exists
+		echo "<div class=\"alert alert-danger text-center\">{$Translation['group not found error']}</div>";
+		$groupID = 0;
+	}
+}
 ?>
-<div class="page-header"><h1><?php echo ($groupID ? "Edit Group '$name'" : "Add New Group"); ?></h1></div>
-<?php if($anonGroupID==$groupID){ ?>
-	<div class="alert alert-warning">Attention! This is the anonymous group.</div>
+
+<?php if(Request::val('msg') == 'added'){ ?>
+	<div id="added-group-confirmation" class="alert alert-success alert-dismissible text-center">
+		<?php echo $Translation['group added successfully']; ?>
+		<button type="button" class="close" data-dismiss="alert">&times;</button>
+	</div>
 <?php } ?>
-<input type="checkbox" id="showToolTips" value="1" checked><label for="showToolTips">Show tool tips as mouse moves over options</label>
-<form method="post" action="pageEditGroup.php">
-	<input type="hidden" name="groupID" value="<?php echo $groupID; ?>">
-	<div class="table-responsive"><table class="table table-striped">
-		<tr>
-			<td align="right" class="tdFormCaption" valign="top">
-				<div class="formFieldCaption">Group name</div>
-				</td>
-			<td align="left" class="tdFormInput">
-				<input type="text" name="name" <?php echo ($anonGroupID==$groupID ? "readonly" : ""); ?> value="<?php echo $name; ?>" size="20" class="formTextBox">
-				<br>
-				<?php if($anonGroupID==$groupID){ ?>
-					The name of the anonymous group is read-only here.
-				<?php }else{ ?>
-					If you name the group '<?php echo $adminConfig['anonymousGroup']; ?>', it will be considered the anonymous group<br>
-					that defines the permissions of guest visitors that do not log into the system.
+
+<?php if(Request::val('msg') == 'saved'){ ?>
+	<div id="saved-group-confirmation" class="alert alert-success alert-dismissible text-center">
+		<?php echo $Translation['group updated successfully']; ?>
+		<button type="button" class="close" data-dismiss="alert">&times;</button>
+	</div>
+<?php } ?>
+
+<div class="page-header">
+	<h1>
+		<?php echo($groupID ? str_replace('<GROUPNAME>', '<span class="text-info">' . html_attr($name) . '</span>', $Translation['edit group']) : $Translation['add new group']); ?>
+		<div class="pull-right">
+			<div class="btn-group">
+				<a href="pageViewGroups.php" class="btn btn-default btn-lg">
+					<i class="glyphicon glyphicon-arrow-left"></i>
+					<span class="hidden-xs hidden-sm"><?php echo $Translation['back to groups']; ?></span>
+				</a>
+				<?php if($groupID) { ?>
+					<a href="pageViewMembers.php?groupID=<?php echo $groupID; ?>" class="btn btn-default btn-lg">
+						<i class="glyphicon glyphicon-user"></i>
+						<span class="hidden-xs hidden-sm"><?php echo $Translation['view group members']; ?></span>
+					</a>
+					<a href="pageEditMember.php?groupID=<?php echo $groupID; ?>" class="btn btn-default btn-lg">
+						<i class="glyphicon glyphicon-plus"></i>
+						<span class="hidden-xs hidden-sm"><?php echo $Translation['add member to group']; ?></span>
+					</a>
+					<a href="pageViewRecords.php?groupID=<?php echo $groupID; ?>" class="btn btn-default btn-lg">
+						<i class="glyphicon glyphicon-th"></i>
+						<span class="hidden-xs hidden-sm"><?php echo $Translation['view group records']; ?></span>
+					</a>
 				<?php } ?>
-				</td>
-			</tr>
-		<tr>
-			<td align="right" valign="top" class="tdFormCaption">
-				<div class="formFieldCaption">Description</div>
-				</td>
-			<td align="left" class="tdFormInput">
-				<textarea name="description" cols="50" rows="5" class="formTextBox"><?php echo $description; ?></textarea>
-				</td>
-			</tr>
-		<?php if($anonGroupID!=$groupID){ ?>
-		<tr>
-			<td align="right" valign="top" class="tdFormCaption">
-				<div class="formFieldCaption">Allow visitors to sign up?</div>
-				</td>
-			<td align="left" class="tdFormInput">
+			</div>
+		</div>
+		<div class="clearfix"></div>
+	</h1>
+</div>
+
+<?php if($anonGroupID == $groupID) { ?>
+	<div class="alert alert-warning text-center"><?php echo $Translation['anonymous group attention']; ?></div>
+<?php } elseif($name == 'Admins') { ?> 
+	<div class="alert alert-warning text-center"><?php echo $Translation['admin group attention']; ?></div>
+<?php } ?> 
+
+
+<div class="form-group">
+	<label class="col-sm-4 col-md-3 col-lg-2 col-lg-offset-2 control-label"></label>
+	<div class="col-sm-8 col-md-9 col-lg-6">
+		<div class="checkbox">
+			<label>
+				<input type="checkbox" id="showToolTips" value="1" checked>
+				<?php echo $Translation['show tool tips']; ?>
+			</label>
+		</div>
+	</div>
+</div>
+
+<form method="post" action="pageEditGroup.php" class="form-horizontal">
+	<?php echo csrf_token(); ?>
+
+	<input type="hidden" name="groupID" value="<?php echo $groupID; ?>">
+
+	<div class="form-group ">
+		<label for="group-name" class="col-sm-4 col-md-3 col-lg-2 col-lg-offset-2 control-label"><?php echo $Translation['group name']; ?></label>
+		<div class="col-sm-8 col-md-9 col-lg-6 ">
+			<?php if($anonGroupID == $groupID || $name == 'Admins'){ ?>
+				<p class="form-control-static"><?php echo $name; ?></p>
+				<input type="hidden" name="name" value="<?php echo html_attr($name); ?>">
+			<?php } else { ?>
+				<input class="form-control" type="text" id="group-name" name="name" value="<?php echo html_attr($name); ?>" autofocus>
+			<?php } ?>
+		</div>
+	</div>
+
+	<div class="form-group ">
+		<label for="description" class="col-sm-4 col-md-3 col-lg-2 col-lg-offset-2 control-label"><?php echo $Translation['description']; ?></label>
+		<div class="col-sm-8 col-md-9 col-lg-6 ">
+			<textarea class="form-control" name="description" rows="5"><?php echo html_attr($description); ?></textarea>
+		</div>
+	</div>
+
+	<?php if($anonGroupID != $groupID) { ?>
+		<div class="form-group">
+			<label class="col-sm-4 col-md-3 col-lg-2 col-lg-offset-2 control-label"></label>
+			<div class="col-sm-8 col-md-9 col-lg-6 ">
+				<div class="checkbox">
+					<label>
+						<?php if($name == 'Admins') { ?>
+							<input type="checkbox" value="1" checked disabled>
+							<input type="hidden" name="allowCSVImport" value="1">
+						<?php } else { ?>
+							<input type="checkbox" value="1" name="allowCSVImport" <?php echo ($allowCSVImport ? 'checked' : ''); ?>>
+						<?php } ?>
+						<?php echo $Translation['allow importing CSV files']; ?>
+					</label>
+				</div>
+				<span class="help-block"><?php echo $Translation['description of import CSV files option']; ?></span>
+			</div>
+		</div>
+
+		<div class="form-group ">
+			<label for="allow visitors sign up" class="col-sm-4 col-md-3 col-lg-2 col-lg-offset-2 control-label"><?php echo $Translation['allow visitors sign up']; ?></label>
+			<div class="col-sm-8 col-md-9 col-lg-6 ">
 				<?php
 					echo htmlRadioGroup(
 						"visitorSignup",
 						array(0, 1, 2),
 						array(
-							"No. Only the admin can add users.",
-							"Yes, and the admin must approve them.",
-							"Yes, and automatically approve them."
-						),
+							$Translation['admin add users'],
+							$Translation['admin approve users'],
+							$Translation['automatically approve users']
+						), 
 						($groupID ? $visitorSignup : $adminConfig['defaultSignUp'])
 					);
 				?>
-				</td>
-			</tr>
-		<?php } ?>
-		<tr>
-			<td colspan="2" align="right" class="tdFormFooter">
-				<input type="submit" name="saveChanges" value="Save changes">
-				</td>
-			</tr>
-		<tr>
-			<td colspan="2" class="tdFormHeader">
-				<table class="table table-striped">
-					<tr>
-						<td class="tdFormHeader" colspan="5"><h2>Table permissions for this group</h2></td>
-						</tr>
-					<?php
-						// permissions arrays common to the radio groups below
-						$arrPermVal=array(0, 1, 2, 3);
-						$arrPermText=array("No", "Owner", "Group", "All");
-					?>
-					<tr>
-						<td class="tdHeader"><div class="ColCaption">Table</div></td>
-						<td class="tdHeader"><div class="ColCaption">Insert</div></td>
-						<td class="tdHeader"><div class="ColCaption">View</div></td>
-						<td class="tdHeader"><div class="ColCaption">Edit</div></td>
-						<td class="tdHeader"><div class="ColCaption">Delete</div></td>
-						</tr>
-				<!-- computers table -->
-					<tr>
-						<td class="tdCaptionCell" valign="top">BlueSky Admin</td>
-						<td class="tdCell" valign="top">
-							<input onMouseOver="stm(computers_addTip, toolTipStyle);" onMouseOut="htm();" type="checkbox" name="computers_insert" value="1" <?php echo ($computers_insert ? "checked class=\"highlight\"" : ""); ?>>
-							</td>
-						<td class="tdCell">
-							<?php
-								echo htmlRadioGroup("computers_view", $arrPermVal, $arrPermText, $computers_view, "highlight");
-							?>
-							</td>
-						<td class="tdCell">
-							<?php
-								echo htmlRadioGroup("computers_edit", $arrPermVal, $arrPermText, $computers_edit, "highlight");
-							?>
-							</td>
-						<td class="tdCell">
-							<?php
-								echo htmlRadioGroup("computers_delete", $arrPermVal, $arrPermText, $computers_delete, "highlight");
-							?>
-							</td>
-						</tr>
-				<!-- global table -->
-					<tr>
-						<td class="tdCaptionCell" valign="top">Global Settings</td>
-						<td class="tdCell" valign="top">
-							<input onMouseOver="stm(global_addTip, toolTipStyle);" onMouseOut="htm();" type="checkbox" name="global_insert" value="1" <?php echo ($global_insert ? "checked class=\"highlight\"" : ""); ?>>
-							</td>
-						<td class="tdCell">
-							<?php
-								echo htmlRadioGroup("global_view", $arrPermVal, $arrPermText, $global_view, "highlight");
-							?>
-							</td>
-						<td class="tdCell">
-							<?php
-								echo htmlRadioGroup("global_edit", $arrPermVal, $arrPermText, $global_edit, "highlight");
-							?>
-							</td>
-						<td class="tdCell">
-							<?php
-								echo htmlRadioGroup("global_delete", $arrPermVal, $arrPermText, $global_delete, "highlight");
-							?>
-							</td>
-						</tr>
-				<!-- connections table -->
-					<tr>
-						<td class="tdCaptionCell" valign="top">Connection Log</td>
-						<td class="tdCell" valign="top">
-							<input onMouseOver="stm(connections_addTip, toolTipStyle);" onMouseOut="htm();" type="checkbox" name="connections_insert" value="1" <?php echo ($connections_insert ? "checked class=\"highlight\"" : ""); ?>>
-							</td>
-						<td class="tdCell">
-							<?php
-								echo htmlRadioGroup("connections_view", $arrPermVal, $arrPermText, $connections_view, "highlight");
-							?>
-							</td>
-						<td class="tdCell">
-							<?php
-								echo htmlRadioGroup("connections_edit", $arrPermVal, $arrPermText, $connections_edit, "highlight");
-							?>
-							</td>
-						<td class="tdCell">
-							<?php
-								echo htmlRadioGroup("connections_delete", $arrPermVal, $arrPermText, $connections_delete, "highlight");
-							?>
-							</td>
-						</tr>
-					</table>
-				</td>
-			</tr>
-		<tr>
-			<td colspan="2" align="right" class="tdFormFooter">
-				<input type="submit" name="saveChanges" value="Save changes">
-				</td>
-			</tr>
-		</table></div>
+			</div>
+		</div>
+
+		<div class="row">
+			<div class=" col-lg-3 col-lg-offset-9 col-sm-4 col-sm-offset-8" >
+				<button type="submit" name="saveChanges" value="1" class="btn btn-primary btn-lg pull-right btn-block"><i class="glyphicon glyphicon-ok"></i> <?php echo $Translation['save changes']; ?></button>
+			</div>
+		</div>
+
+		<div style="height: 3em;"></div>
+	<?php } ?>
+
+	<?php
+		// permissions arrays common to the radio groups below
+		$arrPermText = [$Translation['no'], $Translation['owner'], $Translation['group'], $Translation['all']];
+	?>
+
+	<div class="table-responsive">
+		<table class="table table-striped table-bordered table-hover">
+			<caption><h2><?php echo $Translation['group table permissions']; ?></h2></caption>
+			<thead>
+				<tr>
+					<th><?php echo $Translation['table']; ?></th>
+					<th>
+						<?php echo $Translation['insert']; ?>
+						<div class="btn-group always-shown-inline-block hspacer-sm">
+							<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+								<i class="glyphicon glyphicon-ok"></i> <span class="caret"></span>
+							</button>
+							<ul class="dropdown-menu">
+								<li><a href="#" class="set-permission" data-permission="insert" data-value="no"><?php echo str_replace('<x>', "<b>{$Translation['no']}</b>", $Translation['set all to x']); ?></a></li>
+								<li><a href="#" class="set-permission" data-permission="insert" data-value="yes"><?php echo str_replace('<x>', "<b>{$Translation['yes']}</b>", $Translation['set all to x']); ?></a></li>
+							</ul>
+						</div>
+					</th>
+					<th>
+						<?php echo $Translation['view']; ?>
+						<div class="btn-group always-shown-inline-block hspacer-sm">
+							<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+								<i class="glyphicon glyphicon-ok"></i> <span class="caret"></span>
+							</button>
+							<ul class="dropdown-menu">
+								<li><a href="#" class="set-permission" data-permission="view" data-value="no"><?php echo str_replace('<x>', "<b>{$Translation['no']}</b>", $Translation['set all to x']); ?></a></li>
+								<li><a href="#" class="set-permission" data-permission="view" data-value="owner"><?php echo str_replace('<x>', "<b>{$Translation['owner']}</b>", $Translation['set all to x']); ?></a></li>
+								<li><a href="#" class="set-permission" data-permission="view" data-value="group"><?php echo str_replace('<x>', "<b>{$Translation['group']}</b>", $Translation['set all to x']); ?></a></li>
+								<li><a href="#" class="set-permission" data-permission="view" data-value="all"><?php echo str_replace('<x>', "<b>{$Translation['all']}</b>", $Translation['set all to x']); ?></a></li>
+							</ul>
+						</div>
+					</th>
+					<th>
+						<?php echo $Translation['edit']; ?>
+						<div class="btn-group always-shown-inline-block hspacer-sm">
+							<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+								<i class="glyphicon glyphicon-ok"></i> <span class="caret"></span>
+							</button>
+							<ul class="dropdown-menu">
+								<li><a href="#" class="set-permission" data-permission="edit" data-value="no"><?php echo str_replace('<x>', "<b>{$Translation['no']}</b>", $Translation['set all to x']); ?></a></li>
+								<li><a href="#" class="set-permission" data-permission="edit" data-value="owner"><?php echo str_replace('<x>', "<b>{$Translation['owner']}</b>", $Translation['set all to x']); ?></a></li>
+								<li><a href="#" class="set-permission" data-permission="edit" data-value="group"><?php echo str_replace('<x>', "<b>{$Translation['group']}</b>", $Translation['set all to x']); ?></a></li>
+								<li><a href="#" class="set-permission" data-permission="edit" data-value="all"><?php echo str_replace('<x>', "<b>{$Translation['all']}</b>", $Translation['set all to x']); ?></a></li>
+							</ul>
+						</div>
+					</th>
+					<th>
+						<?php echo $Translation['delete']; ?>
+						<div class="btn-group always-shown-inline-block hspacer-sm">
+							<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+								<i class="glyphicon glyphicon-ok"></i> <span class="caret"></span>
+							</button>
+							<ul class="dropdown-menu" style="margin-left: -8em;">
+								<li><a href="#" class="set-permission" data-permission="delete" data-value="no"><?php echo str_replace('<x>', "<b>{$Translation['no']}</b>", $Translation['set all to x']); ?></a></li>
+								<li><a href="#" class="set-permission" data-permission="delete" data-value="owner"><?php echo str_replace('<x>', "<b>{$Translation['owner']}</b>", $Translation['set all to x']); ?></a></li>
+								<li><a href="#" class="set-permission" data-permission="delete" data-value="group"><?php echo str_replace('<x>', "<b>{$Translation['group']}</b>", $Translation['set all to x']); ?></a></li>
+								<li><a href="#" class="set-permission" data-permission="delete" data-value="all"><?php echo str_replace('<x>', "<b>{$Translation['all']}</b>", $Translation['set all to x']); ?></a></li>
+							</ul>
+						</div>
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach($table_list as $tn => $tc) { ?>
+					<!-- <?php echo $tn; ?> table -->
+					<tr id="<?php echo $tn; ?>-table-permissions" data-table="<?php echo $tn; ?>">
+						<th>
+							<?php echo $tc[0]; ?>
+							<div class="btn-group always-shown-inline-block hspacer-sm">
+								<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+									<i class="glyphicon glyphicon-ok"></i> <span class="caret"></span>
+								</button>
+								<ul class="dropdown-menu">
+									<li><a href="#" class="set-table" data-table="<?php echo $tn; ?>" data-value="no"><?php echo str_replace('<x>', "<b>{$Translation['no']}</b>", $Translation['set all to x']); ?></a></li>
+									<li><a href="#" class="set-table" data-table="<?php echo $tn; ?>" data-value="owner"><?php echo str_replace('<x>', "<b>{$Translation['owner']}</b>", $Translation['set all to x']); ?></a></li>
+									<li><a href="#" class="set-table" data-table="<?php echo $tn; ?>" data-value="group"><?php echo str_replace('<x>', "<b>{$Translation['group']}</b>", $Translation['set all to x']); ?></a></li>
+									<li><a href="#" class="set-table" data-table="<?php echo $tn; ?>" data-value="all"><?php echo str_replace('<x>', "<b>{$Translation['all']}</b>", $Translation['set all to x']); ?></a></li>
+								</ul>
+							</div>
+						</th>
+						<td class="insert-permission">
+							<input onMouseOver="stm(<?php echo $tn; ?>_addTip, toolTipStyle);" onMouseOut="htm();" type="checkbox" name="<?php echo $tn; ?>_insert" value="1" <?php echo ($perm["{$tn}_insert"] ? "checked class=\"text-primary\"" : ""); ?>>
+						</td>
+						<td class="view-permission">
+							<?php echo htmlRadioGroup("{$tn}_view", array_keys($arrPermText), $arrPermText, $perm["{$tn}_view"], 'text-primary'); ?>
+						</td>
+						<td class="edit-permission">
+							<?php echo htmlRadioGroup("{$tn}_edit", array_keys($arrPermText), $arrPermText, $perm["{$tn}_edit"], 'text-primary'); ?>
+						</td>
+						<td class="delete-permission">
+							<?php echo htmlRadioGroup("{$tn}_delete", array_keys($arrPermText), $arrPermText, $perm["{$tn}_delete"], 'text-primary'); ?>
+						</td>
+					</tr>
+				<?php } ?>
+				<tr><td colspan="5" style="height: 7em;"></td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="row">
+		<div class=" col-lg-3 col-lg-offset-9 col-sm-4 col-sm-offset-8 " >
+			<button type="submit" name="saveChanges" value="1" class="btn btn-primary btn-lg btn-block "><i class="glyphicon glyphicon-ok"></i> <?php echo $Translation['save changes']; ?></button>
+		</div>
+	</div>
 </form>
 
-	<script>
-		$j(function(){
-			var highlight_selections = function(){
-				$j('input[type=radio]:checked').next().addClass('text-primary');
-				$j('input[type=radio]:not(:checked)').next().removeClass('text-primary');
+<div style="height: 10em;"></div>
+
+<script>
+	$j(function() {
+		var highlight_selections = function() {
+			$j('input[type=radio]:checked').parent().parent().addClass('bg-warning text-primary text-bold');
+			$j('input[type=radio]:not(:checked)').parent().parent().removeClass('bg-warning text-primary text-bold');
+		}
+
+		var setPermissionTo = function(permission, toWhat) {
+			if(permission == 'insert') {
+				$j('.insert-permission input[type="checkbox"]').prop('checked', toWhat == 'yes');
+			} else {
+				var num = (
+					toWhat == 'owner' ? 1 : (
+					toWhat == 'group' ? 2 : (
+					toWhat == 'all'    ? 3 : 
+					0 // no, default
+				)));
+				$j('.' + permission + '-permission input[type="radio"][value="' + num + '"]')
+					.prop('checked', true);
 			}
 
-			$j('input[type=radio]').change(function(){ highlight_selections(); });
+			highlight_selections();
+		}
+
+		var setTableTo = function(tableName, toWhat) {
+			var num = (
+				toWhat == 'owner' ? 1 : (
+				toWhat == 'group' ? 2 : (
+				toWhat == 'all'    ? 3 : 
+				0 // no, default
+			)));
+
+			$j('#' + tableName + '-table-permissions .insert-permission input[type="checkbox"]')
+				.prop('checked', num > 0);
+			$j('#' + tableName + '-table-permissions .view-permission input[type="radio"]')
+				.eq(num).prop('checked', true);
+			$j('#' + tableName + '-table-permissions .edit-permission input[type="radio"]')
+				.eq(num).prop('checked', true);
+			$j('#' + tableName + '-table-permissions .delete-permission input[type="radio"]')
+				.eq(num).prop('checked', true);
+			highlight_selections();
+		}
+
+		$j('input[type=radio]').change(function() {
 			highlight_selections();
 		});
-	</script>
 
+		/* per-permission mass actions */
+		$j('.set-permission').on('click', function(e) {
+			setPermissionTo($j(this).data('permission'), $j(this).data('value'));
+			e.preventDefault();
+		})
 
-<?php
-	include("$currDir/incFooter.php");
-?>
+		/* per-table mass actions */
+		$j('.set-table').on('click', function(e) {
+			setTableTo($j(this).data('table'), $j(this).data('value'));
+			e.preventDefault();
+		})
+
+		highlight_selections();
+
+		/* tool tips for radios */
+		$j('input[type=radio]').parent().mouseover(function() {
+			var radio = $j(this).children('input[type=radio]');
+			stm(window[radio.attr('name') + radio.attr('value') + 'Tip'], toolTipStyle);
+		});
+		$j('input[type=radio]').parent().mouseout(function() {
+			htm();
+		});
+	});
+</script>
+
+<style>
+	thead th { width: 19%; }
+	thead th:first-child { width: 24%; }
+	th, td.insert-permission { vertical-align: middle !important; text-align: center !important; }
+</style>
+
+<?php include(__DIR__ . '/incFooter.php');

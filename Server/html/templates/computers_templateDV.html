@@ -1,12 +1,14 @@
-<!-- Edit this file to change the layout of the detail view form -->
+<!-- To change the layout of the detail view form, we recommend using JS code in hooks/computers-dv.js rather than editing this file -->
 
-<a name="detail-view"></a>
+<div id="detail-view"></div>
 <div class="panel-heading"><h3 class="panel-title"><strong><%%DETAIL_VIEW_TITLE%%></strong></h3></div>
 
-<div class="panel-body" id="computers_dv_container">
+<div id="computers_dv_container-loading" class="text-center text-info text-bold vspacer-lg"><i class="glyphicon glyphicon-refresh loop-rotate"></i> <%%TRANSLATION(Loading ...)%%></div>
+
+<div class="panel-body hidden" id="computers_dv_container">
 	<!-- child links -->
-	<div class="row">
-		<div class="col-xs-12">
+	<div class="row vspacer-md">
+		<div class="col-xs-12 children-links">
 			<div class="clearfix"></div>
 		</div>
 	</div>
@@ -16,159 +18,164 @@
 		<div class="col-md-8 col-lg-10" id="computers_dv_form">
 			<fieldset class="form-horizontal">
 
-				<div class="form-group">
-					<label for="blueskyid" class="control-label col-lg-3">BlueSky ID<span class="text-danger"><%%TRANSLATION(*)%%></span> <button class="btn btn-info btn-xs vspacer-sm" type="button" data-toggle="collapse" tabindex="-1" data-target="#blueskyid-description"><i class="glyphicon glyphicon-info-sign"></i></button></label>
+				<!-- Field: BlueSky ID -->
+				<div class="form-group computers-blueskyid">
+					<hr class="hidden-md hidden-lg">
+					<label class="control-label col-lg-3" for="blueskyid">BlueSky ID<span class="text-danger"><%%TRANSLATION(*)%%></span> <i class="glyphicon glyphicon-info-sign text-info" data-toggle="collapse" data-target="#blueskyid-description"></i></label>
 					<div class="col-lg-9">
-						<span class="help-block collapse" id="blueskyid-description"><div class="alert alert-info">This is the ID number that you will use to reach this computer over BlueSky.  This number is required, must be unique, and must be less than 2000.  Computer will not use new port number until its connection is restarted.</div></span>
-
-						<input maxlength="" type="text" class="form-control" name="blueskyid" id="blueskyid" value="<%%VALUE(blueskyid)%%>" required>
+						<span class="help-block bspacer-xs collapse" id="blueskyid-description"><div class="alert alert-info bspacer-xs">This is the ID number that you will use to reach this computer over BlueSky.  This number is required, must be unique, and must be less than 2000.  Computer will not use new port number until its connection is restarted.</div></span>
+						<input type="text" class="form-control" name="blueskyid" id="blueskyid" value="<%%VALUE(blueskyid)%%>" required><div class="text-danger vspacer-md" id="blueskyid-uniqueness-note" style="display: none;"><%%TRANSLATION(unique field error)%%></div>
 					</div>
 				</div>
 
-				<div class="form-group">
-					<label for="serialnum" class="control-label col-lg-3">Serial Number <button class="btn btn-info btn-xs vspacer-sm" type="button" data-toggle="collapse" tabindex="-1" data-target="#serialnum-description"><i class="glyphicon glyphicon-info-sign"></i></button></label>
+				<!-- Field: Serial Number -->
+				<div class="form-group computers-serialnum">
+					<hr class="hidden-md hidden-lg">
+					<label class="control-label col-lg-3">Serial Number <i class="glyphicon glyphicon-info-sign text-info" data-toggle="collapse" data-target="#serialnum-description"></i></label>
 					<div class="col-lg-9">
-						<span class="help-block collapse" id="serialnum-description"><div class="alert alert-info">This computer's hardware serial number.  We use this for identification.  If the logic board was not given a serial number on replacement, we will generate a code to use.</div></span>
-
+						<span class="help-block bspacer-xs collapse" id="serialnum-description"><div class="alert alert-info bspacer-xs">This computer's hardware serial number.  We use this for identification.  If the logic board was not given a serial number on replacement, we will generate a code to use.</div></span>
 						<div class="form-control-static" id="serialnum"><%%VALUE(serialnum)%%></div>
 					</div>
 				</div>
 
-				<div class="form-group">
-					<label for="hostname" class="control-label col-lg-3">Name <button class="btn btn-info btn-xs vspacer-sm" type="button" data-toggle="collapse" tabindex="-1" data-target="#hostname-description"><i class="glyphicon glyphicon-info-sign"></i></button></label>
+				<!-- Field: Name -->
+				<div class="form-group computers-hostname">
+					<hr class="hidden-md hidden-lg">
+					<label class="control-label col-lg-3" for="hostname">Name <i class="glyphicon glyphicon-info-sign text-info" data-toggle="collapse" data-target="#hostname-description"></i></label>
 					<div class="col-lg-9">
-						<span class="help-block collapse" id="hostname-description"><div class="alert alert-info">This is an idenitifer that you can modify.  We will prepopulate with the same info from the Sharing Name below.</div></span>
-
+						<span class="help-block bspacer-xs collapse" id="hostname-description"><div class="alert alert-info bspacer-xs">This is an idenitifer that you can modify.  We will prepopulate with the same info from the Sharing Name below.</div></span>
 						<input maxlength="250" type="text" class="form-control" name="hostname" id="hostname" value="<%%VALUE(hostname)%%>">
 					</div>
 				</div>
 
-				<div class="form-group">
-					<label for="sshlink" class="control-label col-lg-3">SSH <button class="btn btn-info btn-xs vspacer-sm" type="button" data-toggle="collapse" tabindex="-1" data-target="#sshlink-description"><i class="glyphicon glyphicon-info-sign"></i></button></label>
+				<!-- Field: SSH -->
+				<div class="form-group computers-sshlink">
+					<hr class="hidden-md hidden-lg">
+					<label class="control-label col-lg-3">SSH <i class="glyphicon glyphicon-info-sign text-info" data-toggle="collapse" data-target="#sshlink-description"></i></label>
 					<div class="col-lg-9">
-						<span class="help-block collapse" id="sshlink-description"><div class="alert alert-info">Click here to open BlueSky Admin Connect and initiate a remote shell to this computer.</div></span>
-
-						
-						<div>
-							<div>
-								<a id="sshlink-link" href="link.php?t=computers&f=sshlink&i=<%%VALUE(id)%%>"><i class="glyphicon glyphicon-globe" title="<%%VALUE(sshlink)%%>" style="font-size: x-large; top: .35em;"></i></a>
-							</div>					</div>
-
+						<span class="help-block bspacer-xs collapse" id="sshlink-description"><div class="alert alert-info bspacer-xs">Click here to open BlueSky Admin Connect and initiate a remote shell to this computer.</div></span>
+						<div class="form-control-static" id="sshlink"><a id="sshlink-link" href="link.php?t=computers&f=sshlink&i=<%%VALUE(id)%%>" target="_blank" class="rspacer-lg"><i class="glyphicon glyphicon-lg glyphicon-globe" title="<%%VALUE(sshlink)%%>"></i></a></div>
 					</div>
 				</div>
 
-				<div class="form-group">
-					<label for="vnclink" class="control-label col-lg-3">VNC <button class="btn btn-info btn-xs vspacer-sm" type="button" data-toggle="collapse" tabindex="-1" data-target="#vnclink-description"><i class="glyphicon glyphicon-info-sign"></i></button></label>
+				<!-- Field: VNC -->
+				<div class="form-group computers-vnclink">
+					<hr class="hidden-md hidden-lg">
+					<label class="control-label col-lg-3">VNC <i class="glyphicon glyphicon-info-sign text-info" data-toggle="collapse" data-target="#vnclink-description"></i></label>
 					<div class="col-lg-9">
-						<span class="help-block collapse" id="vnclink-description"><div class="alert alert-info">Click here to open BlueSky Admin Connect and initiate a remote shell and ScreenSharing to this computer.</div></span>
-
-						
-						<div>
-							<div>
-								<a id="vnclink-link" href="link.php?t=computers&f=vnclink&i=<%%VALUE(id)%%>"><i class="glyphicon glyphicon-globe" title="<%%VALUE(vnclink)%%>" style="font-size: x-large; top: .35em;"></i></a>
-							</div>					</div>
-
+						<span class="help-block bspacer-xs collapse" id="vnclink-description"><div class="alert alert-info bspacer-xs">Click here to open BlueSky Admin Connect and initiate a remote shell and ScreenSharing to this computer.</div></span>
+						<div class="form-control-static" id="vnclink"><a id="vnclink-link" href="link.php?t=computers&f=vnclink&i=<%%VALUE(id)%%>" target="_blank" class="rspacer-lg"><i class="glyphicon glyphicon-lg glyphicon-globe" title="<%%VALUE(vnclink)%%>"></i></a></div>
 					</div>
 				</div>
 
-				<div class="form-group">
-					<label for="scplink" class="control-label col-lg-3">SCP <button class="btn btn-info btn-xs vspacer-sm" type="button" data-toggle="collapse" tabindex="-1" data-target="#scplink-description"><i class="glyphicon glyphicon-info-sign"></i></button></label>
+				<!-- Field: SCP -->
+				<div class="form-group computers-scplink">
+					<hr class="hidden-md hidden-lg">
+					<label class="control-label col-lg-3">SCP <i class="glyphicon glyphicon-info-sign text-info" data-toggle="collapse" data-target="#scplink-description"></i></label>
 					<div class="col-lg-9">
-						<span class="help-block collapse" id="scplink-description"><div class="alert alert-info">Click here to open BlueSky Admin Connect and initiate a file or folder upload to /tmp on this computer.</div></span>
-
-						
-						<div>
-							<div>
-								<a id="scplink-link" href="link.php?t=computers&f=scplink&i=<%%VALUE(id)%%>"><i class="glyphicon glyphicon-globe" title="<%%VALUE(scplink)%%>" style="font-size: x-large; top: .35em;"></i></a>
-							</div>					</div>
-
+						<span class="help-block bspacer-xs collapse" id="scplink-description"><div class="alert alert-info bspacer-xs">Click here to open BlueSky Admin Connect and initiate a file or folder upload to /tmp on this computer.</div></span>
+						<div class="form-control-static" id="scplink"><a id="scplink-link" href="link.php?t=computers&f=scplink&i=<%%VALUE(id)%%>" target="_blank" class="rspacer-lg"><i class="glyphicon glyphicon-lg glyphicon-globe" title="<%%VALUE(scplink)%%>"></i></a></div>
 					</div>
 				</div>
 
-				<div class="form-group">
-					<label for="username" class="control-label col-lg-3">UserName <button class="btn btn-info btn-xs vspacer-sm" type="button" data-toggle="collapse" tabindex="-1" data-target="#username-description"><i class="glyphicon glyphicon-info-sign"></i></button></label>
+				<!-- Field: UserName -->
+				<div class="form-group computers-username">
+					<hr class="hidden-md hidden-lg">
+					<label class="control-label col-lg-3" for="username">UserName <i class="glyphicon glyphicon-info-sign text-info" data-toggle="collapse" data-target="#username-description"></i></label>
 					<div class="col-lg-9">
-						<span class="help-block collapse" id="username-description"><div class="alert alert-info">This is the user name that will be used when clicking connect links.  If left blank, you will be asked on connection.  If you would like this to always be the same name across all of your BlueSky computers, contact Mac-MSP support.</div></span>
-
+						<span class="help-block bspacer-xs collapse" id="username-description"><div class="alert alert-info bspacer-xs">This is the user name that will be used when clicking connect links.  If left blank, you will be asked on connection.  If you would like this to always be the same name across all of your BlueSky computers, contact Mac-MSP support.</div></span>
 						<input maxlength="40" type="text" class="form-control" name="username" id="username" value="<%%VALUE(username)%%>">
 					</div>
 				</div>
 
-				<div class="form-group">
-					<label for="sharingname" class="control-label col-lg-3">Sharing Name <button class="btn btn-info btn-xs vspacer-sm" type="button" data-toggle="collapse" tabindex="-1" data-target="#sharingname-description"><i class="glyphicon glyphicon-info-sign"></i></button></label>
+				<!-- Field: Sharing Name -->
+				<div class="form-group computers-sharingname">
+					<hr class="hidden-md hidden-lg">
+					<label class="control-label col-lg-3">Sharing Name <i class="glyphicon glyphicon-info-sign text-info" data-toggle="collapse" data-target="#sharingname-description"></i></label>
 					<div class="col-lg-9">
-						<span class="help-block collapse" id="sharingname-description"><div class="alert alert-info">The name from Sharing.prefpane that will update occasionally (during re-key sequences). If Watchman Monitoring is installed, we will also prepend the client group.</div></span>
-
+						<span class="help-block bspacer-xs collapse" id="sharingname-description"><div class="alert alert-info bspacer-xs">The name from Sharing.prefpane that will update occasionally (during re-key sequences). If Watchman Monitoring is installed, we will also prepend the client group.</div></span>
 						<div class="form-control-static" id="sharingname"><%%VALUE(sharingname)%%></div>
 					</div>
 				</div>
 
-				<div class="form-group">
-					<label for="datetime" class="control-label col-lg-3">Last Check In</label>
+				<!-- Field: Last Check In -->
+				<div class="form-group computers-datetime">
+					<hr class="hidden-md hidden-lg">
+					<label class="control-label col-lg-3">Last Check In</label>
 					<div class="col-lg-9">
 						<div class="form-control-static" id="datetime"><%%VALUE(datetime)%%></div>
 					</div>
 				</div>
 
-				<div class="form-group">
-					<label for="status" class="control-label col-lg-3">Status <button class="btn btn-info btn-xs vspacer-sm" type="button" data-toggle="collapse" tabindex="-1" data-target="#status-description"><i class="glyphicon glyphicon-info-sign"></i></button></label>
+				<!-- Field: Status -->
+				<div class="form-group computers-status">
+					<hr class="hidden-md hidden-lg">
+					<label class="control-label col-lg-3">Status <i class="glyphicon glyphicon-info-sign text-info" data-toggle="collapse" data-target="#status-description"></i></label>
 					<div class="col-lg-9">
-						<span class="help-block collapse" id="status-description"><div class="alert alert-info">This shows the last time the computer contacted the BlueSky server</div></span>
-
+						<span class="help-block bspacer-xs collapse" id="status-description"><div class="alert alert-info bspacer-xs">This shows the last time the computer contacted the BlueSky server</div></span>
 						<div class="form-control-static" id="status"><%%VALUE(status)%%></div>
 					</div>
 				</div>
 
-				<div class="form-group">
-					<label for="registered" class="control-label col-lg-3">Registration Time <button class="btn btn-info btn-xs vspacer-sm" type="button" data-toggle="collapse" tabindex="-1" data-target="#registered-description"><i class="glyphicon glyphicon-info-sign"></i></button></label>
+				<!-- Field: Registration Time -->
+				<div class="form-group computers-registered">
+					<hr class="hidden-md hidden-lg">
+					<label class="control-label col-lg-3">Registration Time <i class="glyphicon glyphicon-info-sign text-info" data-toggle="collapse" data-target="#registered-description"></i></label>
 					<div class="col-lg-9">
-						<span class="help-block collapse" id="registered-description"><div class="alert alert-info">This is the date and time when this computer most recently registered with the BlueSky server.</div></span>
-
+						<span class="help-block bspacer-xs collapse" id="registered-description"><div class="alert alert-info bspacer-xs">This is the date and time when this computer most recently registered with the BlueSky server.</div></span>
 						<div class="form-control-static" id="registered"><%%VALUE(registered)%%></div>
 					</div>
 				</div>
 
-				<div class="form-group">
+				<!-- Field: Notify -->
+				<div class="form-group computers-notify">
+					<hr class="hidden-md hidden-lg">
 					<div class="col-lg-offset-3 col-lg-9">
-						<div class="checkbox"><label for="notify"><input type="checkbox" name="notify" id="notify" value="1" <%%CHECKED(notify)%%>> Notify</label>
-							<button class="btn btn-info btn-xs" type="button" data-toggle="collapse" tabindex="-1" data-target="#notify-description"><i class="glyphicon glyphicon-info-sign"></i></button>
-							<span class="help-block collapse" id="notify-description"><div class="alert alert-info">Next time this computer checks in with the server, you will receive an email and this box will uncheck.</div></span>
+						<span class="help-block bspacer-xs collapse" id="notify-description"><div class="alert alert-info bspacer-xs">Next time this computer checks in with the server, you will receive an email and this box will uncheck.</div></span>
+						<div class="checkbox">
+							<label for="notify"><input type="checkbox" name="notify" id="notify" value="1" <%%CHECKED(notify)%%>> Notify</label> <i class="glyphicon glyphicon-info-sign text-info" data-toggle="collapse" data-target="#notify-description"></i>
 						</div>
 					</div>
 				</div>
 
-				<div class="form-group">
+				<!-- Field: Alert -->
+				<div class="form-group computers-alert">
+					<hr class="hidden-md hidden-lg">
 					<div class="col-lg-offset-3 col-lg-9">
-						<div class="checkbox"><label for="alert"><input type="checkbox" name="alert" id="alert" value="1" <%%CHECKED(alert)%%>> Alert</label>
-							<button class="btn btn-info btn-xs" type="button" data-toggle="collapse" tabindex="-1" data-target="#alert-description"><i class="glyphicon glyphicon-info-sign"></i></button>
-							<span class="help-block collapse" id="alert-description"><div class="alert alert-info">If this computer does not check-in over a 15 minute span, we will mark it down and send you an email.  You'll also recieve an email when it comes back up.</div></span>
+						<span class="help-block bspacer-xs collapse" id="alert-description"><div class="alert alert-info bspacer-xs">If this computer does not check-in over a 15 minute span, we will mark it down and send you an email.  You'll also recieve an email when it comes back up.</div></span>
+						<div class="checkbox">
+							<label for="alert"><input type="checkbox" name="alert" id="alert" value="1" <%%CHECKED(alert)%%>> Alert</label> <i class="glyphicon glyphicon-info-sign text-info" data-toggle="collapse" data-target="#alert-description"></i>
 						</div>
 					</div>
 				</div>
 
-				<div class="form-group">
-					<label for="email" class="control-label col-lg-3">Email Address to Notify <button class="btn btn-info btn-xs vspacer-sm" type="button" data-toggle="collapse" tabindex="-1" data-target="#email-description"><i class="glyphicon glyphicon-info-sign"></i></button></label>
+				<!-- Field: Email Address to Notify -->
+				<div class="form-group computers-email">
+					<hr class="hidden-md hidden-lg">
+					<label class="control-label col-lg-3" for="email">Email Address to Notify <i class="glyphicon glyphicon-info-sign text-info" data-toggle="collapse" data-target="#email-description"></i></label>
 					<div class="col-lg-9">
-						<span class="help-block collapse" id="email-description"><div class="alert alert-info">Send to this email address when either the "notify" or "alert" boxes are checked.  If left blank we will default to the email address you registered with.  Contact support if you'd like that changed.</div></span>
-
+						<span class="help-block bspacer-xs collapse" id="email-description"><div class="alert alert-info bspacer-xs">Send to this email address when either the "notify" or "alert" boxes are checked.  If left blank we will default to the email address you registered with.  Contact support if you'd like that changed.</div></span>
 						<input maxlength="253" type="text" class="form-control" name="email" id="email" value="<%%VALUE(email)%%>">
 					</div>
 				</div>
 
-				<div class="form-group">
-					<label for="notes" class="control-label col-lg-3">Notes <button class="btn btn-info btn-xs vspacer-sm" type="button" data-toggle="collapse" tabindex="-1" data-target="#notes-description"><i class="glyphicon glyphicon-info-sign"></i></button></label>
+				<!-- Field: Notes -->
+				<div class="form-group computers-notes">
+					<hr class="hidden-md hidden-lg">
+					<label class="control-label col-lg-3" for="notes">Notes <i class="glyphicon glyphicon-info-sign text-info" data-toggle="collapse" data-target="#notes-description"></i></label>
 					<div class="col-lg-9">
-						<span class="help-block collapse" id="notes-description"><div class="alert alert-info">A place for any random notes you might like to keep.</div></span>
-
-						<textarea class="form-control" name="notes" id="notes" rows="5"><%%VALUE(notes)%%></textarea>
+						<span class="help-block bspacer-xs collapse" id="notes-description"><div class="alert alert-info bspacer-xs">A place for any random notes you might like to keep.</div></span>
+						<textarea class="form-control" name="notes" id="notes" rows=" 5"><%%VALUE(notes)%%></textarea>
 					</div>
 				</div>
 
-				<div class="form-group">
+				<!-- Field: Remove BlueSky (Cannot Undo From Here) -->
+				<div class="form-group computers-selfdestruct">
+					<hr class="hidden-md hidden-lg">
 					<div class="col-lg-offset-3 col-lg-9">
-						<div class="checkbox"><label for="selfdestruct"><input type="checkbox" name="selfdestruct" id="selfdestruct" value="1" <%%CHECKED(selfdestruct)%%>> Remove BlueSky (Cannot Undo From Here)</label>
-							<button class="btn btn-info btn-xs" type="button" data-toggle="collapse" tabindex="-1" data-target="#selfdestruct-description"><i class="glyphicon glyphicon-info-sign"></i></button>
-							<span class="help-block collapse" id="selfdestruct-description"><div class="alert alert-info">Checking this box will remotely remove BleuSky on its next check-in.  Once that is done, it will no longer check-in.</div></span>
+						<span class="help-block bspacer-xs collapse" id="selfdestruct-description"><div class="alert alert-info bspacer-xs">Checking this box will remotely remove BleuSky on its next check-in.  Once that is done, it will no longer check-in.</div></span>
+						<div class="checkbox">
+							<label for="selfdestruct"><input type="checkbox" name="selfdestruct" id="selfdestruct" value="1" <%%CHECKED(selfdestruct)%%>> Remove BlueSky (Cannot Undo From Here)</label> <i class="glyphicon glyphicon-info-sign text-info" data-toggle="collapse" data-target="#selfdestruct-description"></i>
 						</div>
 					</div>
 				</div>
@@ -177,6 +184,7 @@
 		</div>
 
 		<!-- DV action buttons -->
+		<hr class="hidden-md hidden-lg">
 		<div class="col-md-4 col-lg-2" id="computers_dv_action_buttons">
 			<div class="btn-toolbar">
 				<div class="btn-group-vertical btn-group-lg" style="width: 100%;">
@@ -201,27 +209,50 @@
 			var add_new_mode = (!$j('input[name=SelectedID]').val());
 			var embedded_mode = ($j('input[name=Embedded]').val() == 1);
 
-			$j('select, input[type=text], textarea').not(':disabled').eq(0).focus();
-			$j('form').eq(0).change(function(){
+			/* auto-close embedded page? */
+			var autoclose_mode = ($j('input[name=AutoClose]').val() == 1);
+			var record_added_ok = (location.search.split('record-added-ok=').length == 2);
+			var record_updated_ok = (location.search.split('record-updated-ok=').length == 2);
+			if((record_added_ok || record_updated_ok) && embedded_mode && autoclose_mode) {
+				setTimeout(AppGini.closeParentModal, 2000);
+			}
+
+
+			$j('#computers_dv_container-loading').addClass('hidden');
+			$j('#computers_dv_container').removeClass('hidden');
+			if(!$j('.table_view').length || $j('[name=SelectedID]').val().length) AppGini.focusFormElement('computers', 'blueskyid');
+
+			$j('form').eq(0).change(function() {
 				if($j(this).data('already_changed')) return;
 				if($j('#deselect').length) $j('#deselect').removeClass('btn-default').addClass('btn-warning').get(0).lastChild.data = " <%%TRANSLATION(Cancel)%%>";
 				$j(this).data('already_changed', true);
 			});
 
-			$j('a[href="<%%TRANSLATION(ImageFolder)%%>"]').click(function(){ return false; });
+			$j('a[href="<%%BASE_UPLOAD_PATH%%>"]').click(function() { return false; });
 
 
-			if(!embedded_mode){
-				/* add a horizontal spacer to [add new parent] buttons that don't have a spacered element before them */
-				$j('.add_new_parent').prev(':not(.hspacer-lg)').next().addClass('hspacer-lg');
-
-				$j('.add_new_parent').click(function(){
+			if(true /* !embedded_mode */) {
+				$j('.add_new_parent').click(function() {
 					var pt = $j(this).attr('id').replace(/_add_new$/, '');
 					modal_window({
 						url: pt + '_view.php?addNew_x=1&Embedded=1',
-						close: function(){
+						close: function() {
 							var field_id = $j('#' + pt + '_add_new').prevAll('input:hidden').eq(0).attr('id');
 							$j('#' + field_id + '-container').select2('focus').select2('focus');
+
+							/* if a new parent was added, select it */
+							var new_id = localStorage.getItem(pt + '_last_added_id');
+							if(new_id === null) return;
+
+							localStorage.removeItem(pt + '_last_added_id');
+							AppGini.lookupText({
+								id: new_id,
+								table: 'computers',
+								field: field_id,
+								callback: function(data) {
+									$j('#' + field_id + '-container').select2('data', data, true);
+								}
+							});
 						},
 						size: 'full',
 						title: $j(this).attr('title')
@@ -229,26 +260,73 @@
 				});
 			}
 
-			$j('form').on('click', '.view_parent', function(){
+			AppGini.hideViewParentLinks();
+
+			$j('form').on('click', '.view_parent', function() {
 				var pt = $j(this).attr('id').replace(/_view_parent$/, '');
-				var parent_id = $j(this).prevAll('input:hidden').eq(0).val();
+				if($j(this).prevAll('input:hidden').length) {
+					var parent_id = $j(this).prevAll('input:hidden').eq(0).val();
+				} else {
+					var parent_id = $j(this).prevAll().children('input:hidden').eq(0).val();
+				}
 
 				/* handle radio lookups */
-				if($j(this).prevAll('[type=radio]').length){
+				if($j(this).prevAll('[type=radio]').length) {
 					parent_id = $j(this).prevAll('[type=radio]').eq(0).val();
 				}
 
-				if(parent_id != '{empty_value}'){
-					modal_window({
-						url: pt + '_view.php?Embedded=1&SelectedID=' + encodeURIComponent(parent_id),
-						close: function(){
-							var field_id = $j('#' + pt + '_view_parent').prevAll('input:hidden').eq(0).attr('id');
-							$j('#' + field_id + '-container').select2('focus').select2('focus');
-						},
-						size: 'full',
-						title: $j(this).attr('title')
-					});
+				if(parent_id != '{empty_value}' && parent_id != undefined && parent_id != '') {
+					var parent_link = $j(this).parents('.form-group').children('label').data('parent_link');
+					switch(parent_link) {
+						case 'view_parent_hidden':
+							break;
+						case 'view_parent_modal':
+							modal_window({
+								url: pt + '_view.php?Embedded=1&SelectedID=' + encodeURIComponent(parent_id),
+								close: function() {
+									var field_id = $j('#' + pt + '_view_parent').prevAll('input:hidden').eq(0).attr('id');
+									$j('#' + field_id + '-container').select2('focus').select2('focus');
+
+									// in case the parent record was updated, we should update auto-fills
+									var updaterName = field_id + '_update_autofills';
+									if(typeof(window[updaterName]) == 'function')
+										window[updaterName]();
+								},
+								size: 'full',
+								title: $j(this).attr('title')
+							});
+							break;
+						case 'view_parent_same_window':
+							window.location = pt + '_view.php?Embedded=' + (embedded_mode ? '1' : '') + '&SelectedID=' + encodeURIComponent(parent_id);
+							break;
+						case 'view_parent_new_window':
+							window.open(pt + '_view.php?SelectedID=' + encodeURIComponent(parent_id));
+							break;
+					}
+
 				}
 			});
+
+			enforce_uniqueness('computers', 'blueskyid');
+
+			/* load admin tools for admin user */
+			if(!add_new_mode) {
+				$j('body').append('<div id="admin-tools-appendix"></div>');
+				$j('#admin-tools-appendix').load(
+					'ajax_admin_tools.php?table=computers&id=<%%URLVALUE(id)%%>',
+					function(resp) {
+						if(!resp.length) return;
+						$j.ajax('ajax_admin_tools.php?action=get_admin_tools_js&table=computers&id=<%%URLVALUE(id)%%>');
+					}
+				);
+			}
+
+			/* warn user if 'add new' clicked while unsaved changes exist */
+			$j('#addNew').click(function() {
+				if($j('#deselect.btn-warning').length) {
+					return confirm('<%%TRANSLATION(discard changes confirm)%%>');
+				}
+			});
+
 		});
 	</script>

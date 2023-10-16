@@ -1,115 +1,90 @@
 <?php
 	/* initial preps and includes */
-	error_reporting(E_ERROR | E_WARNING | E_PARSE);
-	if(function_exists('set_magic_quotes_runtime')) @set_magic_quotes_runtime(0);
-	$curr_dir = dirname(__FILE__);
-	include("$curr_dir/settings-manager.php");
-	include("$curr_dir/defaultLang.php");
-	include("$curr_dir/language.php");
-	include("$curr_dir/db.php");
+	define('APPGINI_SETUP', true); /* needed in included files to tell that this is the setup script */
+
+	include_once(__DIR__ . '/settings-manager.php');
+	if(MULTI_TENANTS) denyAccess('Access denied');
 
 	/*
 		Determine execution scenario ...
 		this script is called in 1 of 5 scenarios:
-			1. to display the setup instructions no $_GET['show-form']
-			2. to display the setup form $_GET['show-form'], no $_POST['test'], no $_POST['submit']
-			3. to test the db info, $_POST['test'] no $_POST['submit']
-			4. to save setup data, $_POST['submit']
-			5. to show final success message, $_GET['finish']
+			1. to display the setup instructions no Request::val('show-form')
+			2. to display the setup form Request::val('show-form'), no Request::val('test'), no Request::val('submit')
+			3. to test the db info, Request::val('test') no Request::val('submit')
+			4. to save setup data, Request::val('submit')
+			5. to show final success message, Request::val('finish')
 		below here, we determine which scenario is being called
 	*/
-	$submit = $test = $form = $finish = false;
-	(isset($_POST['submit'])   ? $submit = true :
-	(isset($_POST['test'])     ?   $test = true :
-	(isset($_GET['show-form']) ?   $form = true :
-	(isset($_GET['finish'])    ? $finish = true :
+	$submit = $test = $form = $finish = false; 
+	(Request::has('submit')    ? $submit = true :
+	(Request::has('test')      ?   $test = true :
+	(Request::has('show-form') ?   $form = true :
+	(Request::has('finish')    ? $finish = true :
 		false))));
 
-
-	/* some function definitions */
-	function undo_magic_quotes($str){
-		return (get_magic_quotes_gpc() ? stripslashes($str) : $str);
-	}
-
-	function isEmail($email){
-		if(filter_var($email, FILTER_VALIDATE_EMAIL)) {
-			return $email;
-		}else{
-			return FALSE;
-		}
-	}
-
-	function setup_allowed_username($username){
-		$username = trim(strtolower($username));
-		if(!preg_match('/^[a-z0-9][a-z0-9 _.@]{3,19}$/', $username) || preg_match('/(@@|  |\.\.|___)/', $username)) return false;
-		return $username;
-	}
-
-
 	/* if config file already exists, no need to continue */
-	if(!$finish && detect_config(false)){
+	if(!$finish && detect_config(false)) {
 		@header('Location: index.php');
 		exit;
 	}
 
 
+	Authentication::initSession();
 
 	/* include page header, unless we're testing db connection (ajax) */
-	if(session_id()){ @session_write_close(); }
-	@session_name('Bluesky');
-	@session_start();
 	$_REQUEST['Embedded'] = 1; /* to prevent displaying the navigation bar */
 	$x = new StdClass;
 	$x->TableTitle = $Translation['Setup Data']; /* page title */
-	if(!$test) include_once("$curr_dir/header.php");
+	if(!$test) include_once(__DIR__ . '/header.php');
 
-	if($submit || $test){
+	if($submit || $test) {
 
 		/* receive posted data */
-		if($submit){
-			$username = setup_allowed_username($_POST['username']);
-			$email = isEmail($_POST['email']);
-			$password = $_POST['password'];
-			$confirmPassword = $_POST['confirmPassword'];
+		if($submit) {
+			$username = Request::val('username');
+			if(!Authentication::validUsername($username)) $username = false;
+			$email = isEmail(Request::val('email'));
+			$password = Request::val('password');
+			$confirmPassword = Request::val('confirmPassword');
 		}
-		$db_name = str_replace('`', '', $_POST['db_name']);
-		$db_password = $_POST['db_password'];
-		$db_server = $_POST['db_server'];
-		$db_username = $_POST['db_username'];
+		$db_name = str_replace('`', '', Request::val('db_name'));
+		$db_password = Request::val('db_password');
+		$db_server = Request::val('db_server');
+		$db_username = Request::val('db_username');
 
 		/* validate data */
-		$errors = array();
-		if($submit){
-			if(!$username){
+		$errors = [];
+		if($submit) {
+			if(!$username) {
 				$errors[] = $Translation['username invalid'];
 			}
-			if(strlen($password) < 4 || trim($password) != $password){
+			if(strlen($password) < 4 || trim($password) != $password) {
 				$errors[] = $Translation['password invalid'];
 			}
-			if($password != $confirmPassword){
+			if($password != $confirmPassword) {
 				$errors[] = $Translation['password no match'];
 			}
-			if(!$email){
+			if(!$email) {
 				$errors[] = $Translation['email invalid'];
 			}
 		}
 
 		/* test database connection */
-		if(!($connection = @db_connect($db_server, $db_username, $db_password))){
+		if(!($connection = @db_connect($db_server, $db_username, $db_password))) {
 			$errors[] = $Translation['Database connection error'];
 		}
-		if($connection !== false && !@db_select_db($db_name, $connection)){
+		if($connection !== false && !@db_select_db($db_name, $connection)) {
 			// attempt to create the database
-			if(!@db_query("CREATE DATABASE IF NOT EXISTS `$db_name`")){
+			if(!@db_query("CREATE DATABASE IF NOT EXISTS `$db_name`")) {
 				$errors[] = @db_error($connection);
-			}elseif(!@db_select_db($db_name, $connection)){
+			} elseif(!@db_select_db($db_name, $connection)) {
 				$errors[] = @db_error($connection);
 			}
 		}
 
 		/* in case of validation errors, output them and exit */
-		if(count($errors)){
-			if($test){
+		if(count($errors)) {
+			if($test) {
 				echo 'ERROR!';
 				exit;
 			}
@@ -117,63 +92,47 @@
 			?>
 				<div class="row">
 					<div class="col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3">
-						<h2 class="text-danger"><?php echo $Translation['The following errors occured']; ?></h2>
+						<h2 class="text-danger"><?php echo $Translation['The following errors occurred']; ?></h2>
 						<div class="alert alert-danger"><ul><li><?php echo implode('</li><li>', $errors); ?></li></ul></div>
 						<a class="btn btn-default btn-lg vspacer-lg" href="#" onclick="history.go(-1); return false;"><i class="glyphicon glyphicon-chevron-left"></i> <?php echo $Translation['< back']; ?></a>
 					</div>
 				</div>
 			<?php
-			include_once("$curr_dir/footer.php");
+			include_once(__DIR__ . '/footer.php');
 			exit;
 		}
 
 		/* if db test is successful, output success message and exit */
-		if($test){
+		if($test) {
 			echo 'SUCCESS!';
 			exit;
 		}
 
 		/* create database tables */
-		$silent = false;
-		include("$curr_dir/updateDB.php");
+		include_once(__DIR__ . '/updateDB.php');
 
+		$defCfg = default_config();
 
 		/* attempt to save db config file */
-		$new_config = array(
-			'dbServer' => undo_magic_quotes($db_server),
-			'dbUsername' => undo_magic_quotes($db_username),
-			'dbPassword' => undo_magic_quotes($db_password),
-			'dbDatabase' => undo_magic_quotes($db_name),
+		$new_config = [
+			'dbServer' => $db_server,
+			'dbUsername' => $db_username,
+			'dbPassword' => $db_password,
+			'dbDatabase' => $db_name,
+			'appURI' => trim(dirname($_SERVER['SCRIPT_NAME']), '/'),
+			'host' => (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : $_SERVER['SERVER_NAME'] . ($_SERVER['SERVER_PORT'] == '80' || $_SERVER['SERVER_PORT'] == '443' ? '' : ":{$_SERVER['SERVER_PORT']}")),
 
-			'adminConfig' => array(
+			'adminConfig' => [
 				'adminUsername' => $username,
-				'adminPassword' => md5($password),
-				'notifyAdminNewMembers' => false,
-				'defaultSignUp' => 1,
-				'anonymousGroup' => 'anonymous',
-				'anonymousMember' => 'guest',
-				'groupsPerPage' => 10,
-				'membersPerPage' => 10,
-				'recordsPerPage' => 10,
-				'custom1' => 'Full Name',
-				'custom2' => 'Address',
-				'custom3' => 'City',
-				'custom4' => 'State',
-				'MySQLDateFormat' => '%m/%d/%Y',
-				'PHPDateFormat' => 'n/j/Y',
-				'PHPDateTimeFormat' => 'm/d/Y, h:i a',
-				'senderName' => 'Membership management',
+				'adminPassword' => password_hash($password, PASSWORD_DEFAULT),
 				'senderEmail' => $email,
-				'approvalSubject' => 'Your membership is now approved',
-				'approvalMessage' => "Dear member,\n\nYour membership is now approved by the admin. You can log in to your account here:\nhttp://{$_SERVER['HTTP_HOST']}" . rtrim(dirname($_SERVER['PHP_SELF']), '/\\') . "\n\nRegards,\nAdmin",
-				'hide_twitter_feed' => false
-			)
-		);
+			] + $defCfg['adminConfig'],
+		];
 
 		$save_result = save_config($new_config);
-		if($save_result !== true){
+		if($save_result !== true) {
 			// display instructions for manually creating them if saving not successful
-			$folder_path_formatted = '<strong>' . dirname(__FILE__) . '</strong>';
+			$folder_path_formatted = '<strong>' . __DIR__ . '</strong>';
 			?>
 				<div class="row">
 					<div class="col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3">
@@ -189,21 +148,18 @@
 
 
 		/* sign in as admin if everything went ok */
-		$_SESSION['adminUsername'] = $username;
-		$_SESSION['memberID'] = $username;
-		$_SESSION['memberGroupID'] = 2; // this should work fine in most cases
-
+		Authentication::signInAsAdmin();
 
 
 		/* redirect to finish page using javascript */
 		?>
 		<script>
-			jQuery(function(){
+			jQuery(function() {
 				var a = window.location.href + '?finish=1';
 
-				if(jQuery('div[class="text-danger"]').length){
+				if(jQuery('div[class="text-danger"]').length) {
 					jQuery('body').append('<p class="text-center"><a href="' + a + '" class="btn btn-default vspacer-lg"><?php echo addslashes($Translation['Continue']); ?> <i class="glyphicon glyphicon-chevron-right"></i></a></p>');
-				}else{
+				} else {
 					jQuery('body').append('<div id="manual-redir" style="width: 400px; margin: 10px auto;">If not redirected automatically, <a href="<?php echo basename(__FILE__); ?>?finish=1">click here</a>!</div>');
 					window.location = a;
 				}
@@ -212,70 +168,70 @@
 		<?php
 
 		// exit
-		include_once("$curr_dir/footer.php");
+		include_once(__DIR__ . '/footer.php');
 		exit;
-	}elseif($finish){
+	} elseif($finish) {
 		detect_config();
-		@include("$curr_dir/config.php");
 	}
 ?>
 
 	<div class="row"><div class="col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3">
-	<?php
-		if(!$form && !$finish){ /* show checks and instructions */
+	<?php if(!$form && !$finish) { /* show checks and instructions */
 
 			/* initial checks */
-			$checks = array(); /* populate with array('class' => 'warning|danger', 'message' => 'error message') */
+			$checks = []; /* populate with ['class' => 'warning|danger', 'message' => 'error message'] */
 
-			if(!extension_loaded('mysql') && !extension_loaded('mysqli')){
-				$checks[] = array(
+			if(!extension_loaded('mysql') && !extension_loaded('mysqli'))
+				$checks[] = [
 					'class' => 'danger',
-					'message' => 'ERROR: PHP is not configured to connect to MySQL on this machine. Please see <a href=http://www.php.net/manual/en/ref.mysql.php>this page</a> for help on how to configure MySQL.'
-				);
-			}
+					'message' => 'ERROR: PHP is not configured to connect to MySQL on this machine. Please see <a href=https://www.php.net/manual/en/ref.mysql.php>this page</a> for help on how to configure MySQL.'
+				];
 
-			if(!extension_loaded('iconv')){
-				$checks[] = array(
+			if(!extension_loaded('iconv'))
+				$checks[] = [
+					'class' => 'danger',
+					'message' => 'PHP is not configured to use iconv on this machine. Some features of this application might not function correctly. Please see <a href=https://php.net/manual/en/book.iconv.php>this page</a> for help on how to configure iconv.'
+				];
+
+			if(!extension_loaded('gd'))
+				$checks[] = [
 					'class' => 'warning',
-					'message' => 'WARNING: PHP is not configured to use iconv on this machine. Some features of this application might not function correctly. Please see <a href=http://php.net/manual/en/book.iconv.php>this page</a> for help on how to configure iconv.'
-				);
-				?>
-					<div class="alert alert-warning alert-dismissable">
-						<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+					'message' => 'PHP is not configured to use GD on this machine. This will prevent creating thumbnails of uploaded images. Please see <a href=https://php.net/manual/en/book.image.php>this page</a> for help on how to configure GD.'
+				];
 
-					</div>
-				<?php
-			}
-
-			if(!extension_loaded('gd')){
-				$checks[] = array(
+			if(!extension_loaded('xml'))
+				$checks[] = [
 					'class' => 'warning',
-					'message' => 'WARNING: PHP is not configured to use GD on this machine. This will prevent creating thumbnails of uploaded images. Please see <a href=http://php.net/manual/en/book.image.php>this page</a> for help on how to configure GD.'
-				);
-			}
+					'message' => 'PHP is not configured to use XML extension on this machine. This will prevent some app functions. If you\'re using a Windows server, make sure to enable XML extension in <code>php.ini</code>. If you\'re using a Linux server, you should install the appropriate <code>php-xml</code> package for your Linux flavor and PHP version.'
+				];
 
-			if(!@is_writable("{$curr_dir}/images")){
-				$checks[] = array(
+			if(!extension_loaded('mbstring'))
+				$checks[] = [
 					'class' => 'warning',
-					'message' => 'WARNING: <dfn><abbr title="' . dirname(__FILE__) . '/images">images</abbr></dfn> folder is not writeable. This will prevent file uploads from working correctly. Please set that folder as writeable (for example, <code>chmod 777</code> in linux.)'
-				);
-			}
+					'message' => 'PHP is not configured to use mbstring extension on this machine. This will prevent some app functions. If you\'re using a Windows server, make sure to enable mbstring extension in <code>php.ini</code>. If you\'re using a Linux server, you should install the appropriate <code>php-mbstring</code> package for your Linux flavor and PHP version.'
+				];
 
-			if(count($checks) && !isset($_POST['test'])){
+			if(!@is_writable(__DIR__ . '/images'))
+				$checks[] = [
+					'class' => 'warning',
+					'message' => '<dfn><abbr title="' . __DIR__ . '/images">images</abbr></dfn> folder is not writeable (or doesn\'t exist). This will prevent file uploads from working correctly. Please create or set that folder as writeable.<br><br>For example, you might need to <code>chmod 777</code> using FTP, or if this is a linux system and you have shell access, better try using <code>chown -R www-data:www-data ' . __DIR__ . '</code>, replacing <i>www-data</i> with the actual username running the server process if necessary.'
+				];
+
+			if(count($checks) && !Request::has('test')) {
 				$stop_setup = false;
 				?>
 				<div class="panel panel-warning vspacer-lg">
 					<div class="panel-heading"><h3 class="panel-title">Warnings</h3></div>
 					<div class="panel-body">
-						<?php foreach($checks as $chk){ if($chk['class'] == 'danger'){ $stop_setup = true; } ?>
-							<div class="text-<?php echo $chk['class']; ?> vspacer-lg">
+						<?php foreach($checks as $chk) { if($chk['class'] == 'danger') { $stop_setup = true; } ?>
+							<div class="text-<?php echo $chk['class']; ?> vspacer-lg" style="text-direction: ltr; text-align: left;">
 								<i class="glyphicon glyphicon-<?php echo ($chk['class'] == 'danger' ? 'remove' : 'exclamation-sign'); ?>"></i>
 								<?php echo $chk['message']; ?>
 							</div>
 						<?php } ?>
 						<a href="setup.php" class="btn btn-success pull-right vspacer-lg hspacer-lg"><i class="glyphicon glyphicon-refresh"></i> Recheck</a>
 					</div>
-					<?php if($stop_setup){ ?>
+					<?php if($stop_setup) { ?>
 						<div class="panel-footer">You must fix at least the issues marked with <i class="glyphicon glyphicon-remove text-danger"></i> before continuing ...</div>
 					<?php } ?>
 				</div>
@@ -298,7 +254,7 @@
 			<p class="text-center"><button class="btn btn-success btn-lg" id="show-login-form" type="button"><i class="glyphicon glyphicon-ok"></i> <?php echo $Translation['Lets go']; ?></button></p>
 		</div>
 
-	<?php }elseif($form){ /* show setup form */ ?>
+	<?php } elseif($form) { /* show setup form */ ?>
 
 		<div class="page-header"><h1><?php echo $Translation['Setup Data']; ?></h1></div>
 
@@ -396,7 +352,7 @@
 					<div class="form-group">
 						<label for="password" class="control-label"><?php echo $Translation['password']; ?></label>
 						<div class="input-group">
-							<input type="password" required class="form-control" id="password" name="password" placeholder="<?php echo htmlspecialchars($Translation['password']); ?>">
+							<input type="password" autocomplete="new-password" required class="form-control" id="password" name="password" placeholder="<?php echo htmlspecialchars($Translation['password']); ?>">
 							<span class="input-group-btn">
 								<button data-toggle="collapse" tabindex="-1" data-target="#password-help" class="btn btn-info" type="button"><i class="glyphicon glyphicon-info-sign"></i></button>
 							</span>
@@ -407,7 +363,7 @@
 				<div class="col-sm-6">
 					<div class="form-group">
 						<label for="confirmPassword" class="control-label"><?php echo $Translation['confirm password']; ?></label>
-						<input type="password" required class="form-control" id="confirmPassword" name="confirmPassword" placeholder="<?php echo htmlspecialchars($Translation['confirm password']); ?>">
+						<input type="password" autocomplete="new-password" required class="form-control" id="confirmPassword" name="confirmPassword" placeholder="<?php echo htmlspecialchars($Translation['confirm password']); ?>">
 					</div>
 				</div>
 			</div>
@@ -419,11 +375,11 @@
 			</div>
 		</form>
 
-	<?php }elseif($finish){ ?>
+	<?php } elseif($finish) { ?>
 
 		<?php
 			// make sure this is an admin
-			if(!$_SESSION['adminUsername']){
+			if(Authentication::getAdmin() === false) {
 				?>
 				<div id="manual-redir" style="width: 400px; margin: 10px auto;">If not redirected automatically, <a href="index.php">click here</a>!</div>
 				<script>
@@ -443,7 +399,7 @@
 				<div class="panel-content">
 					<ul id="next-actions" class="nav nav-pills nav-stacked">
 						<li class="acive"><a href="index.php"><i class="glyphicon glyphicon-play"></i> <b><?php echo $Translation['setup next 1']; ?></b></a></li>
-						<li><a href="admin/pageUploadCSV.php"><i class="glyphicon glyphicon-upload"></i> <?php echo $Translation['setup next 2']; ?></a></li>
+						<li><a href="import-csv.php"><i class="glyphicon glyphicon-upload"></i> <?php echo $Translation['setup next 2']; ?></a></li>
 						<li><a href="admin/pageHome.php"><i class="glyphicon glyphicon-cog"></i> <?php echo $Translation['setup next 3']; ?></a></li>
 					</ul>
 				</div>
@@ -454,78 +410,74 @@
 	</div></div>
 
 	<script>
-	<?php if(!$form && !$finish){ ?>
+	<?php if(!$form && !$finish) { ?>
 		$j(function() {
-			$('show-intro2').observe('click', function(){
-				$('intro1').hide();
-				$('intro2').appear({ duration: 2 });
+			$j('#show-intro2').on('click', function() {
+				$j('#intro1').addClass('hidden');
+				$j('#intro2')[0].appear({ duration: 2 });
 			});
-			$('show-login-form').observe('click', function(){
+			$j('#show-login-form').on('click', function() {
 				var a = window.location.href;
 				window.location = a + '?show-form=1';
 			});
 		});
-	<?php }elseif($form){ ?>
+	<?php } elseif($form) { ?>
 		$j(function() {
 			/* password strength feedback */
-			$('password').observe('keyup', function(){
-				ps = passwordStrength($F('password'), $F('username'));
+			$j('#password').on('keyup', function() {
+				var ps = passwordStrength($j('#password').val(), $j('#username').val());
 
-				if(ps == 'strong'){
+				if(ps == 'strong') {
 					$j('#password').parents('.form-group').removeClass('has-error has-warning').addClass('has-success');
-					$('password').title = '<?php echo htmlspecialchars($Translation['Password strength: strong']); ?>';
-				}else if(ps == 'good'){
+					$j('#password').attr('title', '<?php echo htmlspecialchars($Translation['Password strength: strong']); ?>');
+				} else if(ps == 'good') {
 					$j('#password').parents('.form-group').removeClass('has-error has-success').addClass('has-warning');
-					$('password').title = '<?php echo htmlspecialchars($Translation['Password strength: good']); ?>';
-				}else{
+					$j('#password').attr('title', '<?php echo htmlspecialchars($Translation['Password strength: good']); ?>');
+				} else {
 					$j('#password').parents('.form-group').removeClass('has-success has-warning').addClass('has-error');
-					$('password').title = '<?php echo htmlspecialchars($Translation['Password strength: weak']); ?>';
+					$j('#password').attr('title', '<?php echo htmlspecialchars($Translation['Password strength: weak']); ?>');
 				}
 			});
 
 			/* inline feedback of confirm password */
-			$('confirmPassword').observe('keyup', function(){
-				if($F('confirmPassword') != $F('password') || !$F('confirmPassword').length){
+			$j('#confirmPassword').on('keyup', function() {
+				if($j('#confirmPassword').val() != $j('#password').val() || !$j('#confirmPassword').val().length) {
 					$j('#confirmPassword').parents('.form-group').removeClass('has-success').addClass('has-error');
-				}else{
+				} else {
 					$j('#confirmPassword').parents('.form-group').removeClass('has-error').addClass('has-success');
 				}
 			});
 
 			/* inline feedback of email */
-			$('email').observe('change', function(){
-				if(validateEmail($F('email'))){
+			$j('#email').on('change', function() {
+				if(validateEmail($j('#email').val())) {
 					$j('#email').parents('.form-group').removeClass('has-error').addClass('has-success');
-				}else{
+				} else {
 					$j('#email').parents('.form-group').removeClass('has-success').addClass('has-error');
 				}
 			});
 
-			$('login-form').appear({ duration: 2 });
-			setTimeout("$('db_name').focus();", 2006);
+			$j('#login-form').fadeIn(1000, function() { $j('#db_name').focus(); });
 
-			$('db_name').observe('change', function(){ db_test(); });
-			$('db_password').observe('change', function(){ db_test(); });
-			$('db_server').observe('change', function(){ db_test(); });
-			$('db_username').observe('change', function(){ db_test(); });
+			$j('#db_name, #db_password, #db_server, #db_username').on('change', db_test);
 		});
 
 		/* validate data before submitting */
-		function jsValidateSetup(){
-			var p1 = $F('password');
-			var p2 = $F('confirmPassword');
-			var user = $F('username');
-			var email = $F('email');
+		function jsValidateSetup() {
+			var p1 = $j('#password').val();
+			var p2 = $j('#confirmPassword').val();
+			var user = $j('#username').val();
+			var email = $j('#email').val();
 
 			/* passwords not matching? */
-			if(p1 != p2){
-				modal_window({ message: '<div class="alert alert-danger"><?php echo addslashes($Translation['password no match']); ?></div>', title: "<?php echo addslashes($Translation['error:']); ?>", close: function(){ jQuery('#confirmPassword').focus(); } });
+			if(p1 != p2) {
+				modal_window({ message: '<div class="alert alert-danger"><?php echo addslashes($Translation['password no match']); ?></div>', title: "<?php echo addslashes($Translation['error:']); ?>", close: function() { jQuery('#confirmPassword').focus(); } });
 				return false;
 			}
 
-			/* user exists? */
-			if($('usernameNotAvailable').visible()){
-				modal_window({ message: '<div class="alert alert-danger"><?php echo addslashes($Translation['username invalid']); ?></div>', title: "<?php echo addslashes($Translation['error:']); ?>", close: function(){ jQuery('#username').focus(); } });
+			/* user invalid? */
+			if(!/^\w[\w\. @]{3,100}$/.test(user) || /(@@|  |\.\.|___)/.test(user) || user.toLowerCase() == 'guest') {
+				modal_window({ message: '<div class="alert alert-danger"><?php echo addslashes($Translation['username invalid']); ?></div>', title: "<?php echo addslashes($Translation['error:']); ?>", close: function() { jQuery('#username').focus(); } });
 				return false;
 			}
 
@@ -534,31 +486,31 @@
 
 		/* test db info */
 		var db_test_in_progress = false;
-		function db_test(){
+		function db_test() {
 			if(db_test_in_progress) return;
 
-			if($F('db_name').length && $F('db_username').length && $F('db_server').length && $$('#db_password:focus') == ''){
-				setTimeout(function(){
+			if($j('#db_name').val().length && $j('#db_username').val().length && $j('#db_server').val().length && !$j('#db_password:focus').length) {
+				setTimeout(function() {
 					if(db_test_in_progress) return;
 
 					new Ajax.Request(
 						'<?php echo basename(__FILE__); ?>', {
 							method: 'post',
 							parameters: {
-								db_name: $F('db_name'),
-								db_server: $F('db_server'),
-								db_password: $F('db_password'),
-								db_username: $F('db_username'),
+								db_name: $j('#db_name').val(),
+								db_server: $j('#db_server').val(),
+								db_password: $j('#db_password').val(),
+								db_username: $j('#db_username').val(),
 								test: 1
 							},
 							onCreate: function() {
 								db_test_in_progress = true;
 							},
 							onSuccess: function(resp) {
-								if(resp.responseText == 'SUCCESS!'){
-									$('db_test').removeClassName('alert-danger').addClassName('alert-success').update('<?php echo addslashes($Translation['Database info is correct']); ?>').appear();
-								}else if(resp.responseText.match(/^ERROR!/)){
-									$('db_test').removeClassName('alert-success').addClassName('alert-danger').update('<?php echo addslashes($Translation['Database connection error']); ?>').show();
+								if(resp.responseText == 'SUCCESS!') {
+									$j('#db_test').removeClass('alert-danger').addClass('alert-success').html('<?php echo addslashes($Translation['Database info is correct']); ?>').fadeIn();
+								} else if(resp.responseText.match(/^ERROR!/)) {
+									$j('#db_test').removeClass('alert-success').addClass('alert-danger').html('<?php echo addslashes($Translation['Database connection error']); ?>').fadeIn();
 									Effect.Shake('db_test');
 								}
 							},
@@ -575,7 +527,6 @@
 
 	<style>
 		legend{ font-weight: bold; }
-		#usernameAvailable,#usernameNotAvailable{ cursor: pointer; }
 
 		.instructions{
 			padding: 30px;
@@ -593,4 +544,4 @@
 		ul#next-actions { padding: 2em;     }
 	</style>
 
-<?php include_once("$curr_dir/footer.php"); ?>
+<?php include_once(__DIR__ . '/footer.php');

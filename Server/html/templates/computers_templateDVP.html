@@ -4,105 +4,123 @@
 <div class="panel-heading"><h3 class="panel-title">
 	<strong><%%DETAIL_VIEW_TITLE%%></strong>
 	<div class="hidden-print pull-right">
-		<button type="button" id="print" onclick="window.print();" title="<%%TRANSLATION(Print)%%>" class="btn btn-success"><i class="glyphicon glyphicon-print"></i></button>
-		<button type="submit" id="back" title="<%%TRANSLATION(Back)%%>" class="btn btn-warning"><i class="glyphicon glyphicon-remove"></i></button>
+		<div class="btn-group">
+			<button type="button" id="print" onclick="window.print();" title="<%%TRANSLATION(Print)%%>" class="btn btn-primary"><i class="glyphicon glyphicon-print"></i> <%%TRANSLATION(Print)%%></button>
+			<button type="submit" id="back" title="<%%TRANSLATION(Cancel Printing)%%>" class="btn btn-default"><i class="glyphicon glyphicon-remove-circle"></i> <%%TRANSLATION(Cancel Printing)%%></button>
+		</div>
 	</div>
 	<div class="clearfix"></div>
 </h3></div>
 
 <div class="panel-body">
 	<fieldset class="form-horizontal">
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: BlueSky ID -->
+		<div class="form-group computers-blueskyid" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">BlueSky ID</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><%%VALUE(blueskyid)%%></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: Serial Number -->
+		<div class="form-group computers-serialnum" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">Serial Number</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><%%VALUE(serialnum)%%></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: Name -->
+		<div class="form-group computers-hostname" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">Name</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><%%VALUE(hostname)%%></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: SSH -->
+		<div class="form-group computers-sshlink" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">SSH</label>
 			<div class="col-xs-9">
-				<div class="form-control-static"><a id="sshlink-link" href="link.php?t=computers&f=sshlink&i=<%%VALUE(id)%%>" target="_blank"><i class="glyphicon glyphicon-globe" title="<%%VALUE(sshlink)%%>" style="font-size: x-large;"></i></a><script>jQuery(function(){ var e_sshlink = '<%%VALUE(sshlink)%%>'; if(e_sshlink == '' || e_sshlink == '&nbsp;' || e_sshlink == 'blank.gif') jQuery('#sshlink-link').hide(); });</script></div>
+				<div class="form-control-static"><a id="sshlink-link" href="link.php?t=computers&f=sshlink&i=<%%VALUE(id)%%>" target="_blank"><i class="glyphicon glyphicon-lg glyphicon-globe" title="<%%VALUE(sshlink)%%>"></i></a><script>jQuery(function() { var e_sshlink = '<%%VALUE(sshlink)%%>'; if(e_sshlink == '' || e_sshlink == '&nbsp;' || e_sshlink == 'blank.gif') jQuery('#sshlink-link').hide(); });</script></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: VNC -->
+		<div class="form-group computers-vnclink" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">VNC</label>
 			<div class="col-xs-9">
-				<div class="form-control-static"><a id="vnclink-link" href="link.php?t=computers&f=vnclink&i=<%%VALUE(id)%%>" target="_blank"><i class="glyphicon glyphicon-globe" title="<%%VALUE(vnclink)%%>" style="font-size: x-large;"></i></a><script>jQuery(function(){ var e_vnclink = '<%%VALUE(vnclink)%%>'; if(e_vnclink == '' || e_vnclink == '&nbsp;' || e_vnclink == 'blank.gif') jQuery('#vnclink-link').hide(); });</script></div>
+				<div class="form-control-static"><a id="vnclink-link" href="link.php?t=computers&f=vnclink&i=<%%VALUE(id)%%>" target="_blank"><i class="glyphicon glyphicon-lg glyphicon-globe" title="<%%VALUE(vnclink)%%>"></i></a><script>jQuery(function() { var e_vnclink = '<%%VALUE(vnclink)%%>'; if(e_vnclink == '' || e_vnclink == '&nbsp;' || e_vnclink == 'blank.gif') jQuery('#vnclink-link').hide(); });</script></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: SCP -->
+		<div class="form-group computers-scplink" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">SCP</label>
 			<div class="col-xs-9">
-				<div class="form-control-static"><a id="scplink-link" href="link.php?t=computers&f=scplink&i=<%%VALUE(id)%%>" target="_blank"><i class="glyphicon glyphicon-globe" title="<%%VALUE(scplink)%%>" style="font-size: x-large;"></i></a><script>jQuery(function(){ var e_scplink = '<%%VALUE(scplink)%%>'; if(e_scplink == '' || e_scplink == '&nbsp;' || e_scplink == 'blank.gif') jQuery('#scplink-link').hide(); });</script></div>
+				<div class="form-control-static"><a id="scplink-link" href="link.php?t=computers&f=scplink&i=<%%VALUE(id)%%>" target="_blank"><i class="glyphicon glyphicon-lg glyphicon-globe" title="<%%VALUE(scplink)%%>"></i></a><script>jQuery(function() { var e_scplink = '<%%VALUE(scplink)%%>'; if(e_scplink == '' || e_scplink == '&nbsp;' || e_scplink == 'blank.gif') jQuery('#scplink-link').hide(); });</script></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: UserName -->
+		<div class="form-group computers-username" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">UserName</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><%%VALUE(username)%%></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: Sharing Name -->
+		<div class="form-group computers-sharingname" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">Sharing Name</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><%%VALUE(sharingname)%%></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: Last Check In -->
+		<div class="form-group computers-datetime" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">Last Check In</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><%%VALUE(datetime)%%></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: Status -->
+		<div class="form-group computers-status" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">Status</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><%%VALUE(status)%%></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: Registration Time -->
+		<div class="form-group computers-registered" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">Registration Time</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><%%VALUE(registered)%%></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: Notify -->
+		<div class="form-group computers-notify" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">Notify</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><input type="checkbox" name="notify" id="notify" value="1" <%%CHECKED(notify)%%> readonly></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: Alert -->
+		<div class="form-group computers-alert" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">Alert</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><input type="checkbox" name="alert" id="alert" value="1" <%%CHECKED(alert)%%> readonly></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: Email Address to Notify -->
+		<div class="form-group computers-email" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">Email Address to Notify</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><%%VALUE(email)%%></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: Notes -->
+		<div class="form-group computers-notes" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">Notes</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><%%VALUE(notes)%%></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: Remove BlueSky (Cannot Undo From Here) -->
+		<div class="form-group computers-selfdestruct" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">Remove BlueSky (Cannot Undo From Here)</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><input type="checkbox" name="selfdestruct" id="selfdestruct" value="1" <%%CHECKED(selfdestruct)%%> readonly></div>
@@ -110,3 +128,14 @@
 		</div>
 	</fieldset>
 </div>
+<script>
+	$j(function() {
+		// render read-only checkboxes in DVP
+		$j('form input[type=checkbox]:not(.hidden):checked')
+			.addClass('hidden')
+			.after('<i class="glyphicon glyphicon-check"></i>');
+		$j('form input[type=checkbox]:not(.hidden):not(:checked)')
+			.addClass('hidden')
+			.after('<i class="glyphicon glyphicon-unchecked"></i>')
+	})
+</script>

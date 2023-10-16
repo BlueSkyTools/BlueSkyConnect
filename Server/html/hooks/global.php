@@ -1,15 +1,15 @@
 <?php
-	// For help on using hooks, please refer to http://bigprof.com/appgini/help/working-with-generated-web-database-application/hooks
+	// For help on using hooks, please refer to https://bigprof.com/appgini/help/working-with-generated-web-database-application/hooks
 
-	function global_init(&$options, $memberInfo, &$args){
+	function global_init(&$options, $memberInfo, &$args) {
 
 		return TRUE;
 	}
 
-	function global_header($contentType, $memberInfo, &$args){
+	function global_header($contentType, $memberInfo, &$args) {
 		$header='';
 
-		switch($contentType){
+		switch($contentType) {
 			case 'tableview':
 				$header='';
 				break;
@@ -38,10 +38,10 @@
 		return $header;
 	}
 
-	function global_footer($contentType, $memberInfo, &$args){
+	function global_footer($contentType, $memberInfo, &$args) {
 		$footer='';
 
-		switch($contentType){
+		switch($contentType) {
 			case 'tableview':
 				$footer='';
 				break;
@@ -70,44 +70,44 @@
 		return $footer;
 	}
 
-	function global_before_insert(&$data, $memberInfo, &$args){
+	function global_before_insert(&$data, $memberInfo, &$args) {
 
 		return TRUE;
 	}
 
-	function global_after_insert($data, $memberInfo, &$args){
+	function global_after_insert($data, $memberInfo, &$args) {
 
 		return TRUE;
 	}
 
-	function global_before_update(&$data, $memberInfo, &$args){
+	function global_before_update(&$data, $memberInfo, &$args) {
 
 		return TRUE;
 	}
 
-	function global_after_update($data, $memberInfo, &$args){
+	function global_after_update($data, $memberInfo, &$args) {
 
 		return TRUE;
 	}
 
-	function global_before_delete($selectedID, &$skipChecks, $memberInfo, &$args){
+	function global_before_delete($selectedID, &$skipChecks, $memberInfo, &$args) {
 
 		return TRUE;
 	}
 
-	function global_after_delete($selectedID, $memberInfo, &$args){
+	function global_after_delete($selectedID, $memberInfo, &$args) {
 
 	}
 
-	function global_dv($selectedID, $memberInfo, &$html, &$args){
+	function global_dv($selectedID, $memberInfo, &$html, &$args) {
 
 	}
 
-	function global_csv($query, $memberInfo, &$args){
+	function global_csv($query, $memberInfo, &$args) {
 
 		return $query;
 	}
-	function global_batch_actions(&$args){
+	function global_batch_actions(&$args) {
 
-		return array();
+		return [];
 	}

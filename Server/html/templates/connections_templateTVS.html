@@ -1,9 +1,15 @@
-<!-- Edit this file to change the layout of the highlighted record in the table view -->
-		<td id="connections-timestamp-<%%VALUE(id)%%>" class=""><%%VALUE(timestamp)%%></td>
-		<td id="connections-sourceIP-<%%VALUE(id)%%>" class=""><%%VALUE(sourceIP)%%></td>
-		<td id="connections-adminkey-<%%VALUE(id)%%>" class=""><%%VALUE(adminkey)%%></td>
-		<td id="connections-targetPort-<%%VALUE(id)%%>" class=""><%%VALUE(targetPort)%%></td>
-		<td id="connections-exitStatus-<%%VALUE(id)%%>" class=""><%%VALUE(exitStatus)%%></td>
-		<td id="connections-startTime-<%%VALUE(id)%%>" class=""><%%VALUE(startTime)%%></td>
-		<td id="connections-endTime-<%%VALUE(id)%%>" class=""><%%VALUE(endTime)%%></td>
-		<td id="connections-notes-<%%VALUE(id)%%>" class=""><%%VALUE(notes)%%></td>
+<!-- Edit this file to change the layout of each record in the table view -->
+<!-- To disable clicking of a field, remove the  and  formatters around it-->
+
+<!-- If you wish to hide the table view header that contains the column titles, -->
+<!-- add the following to the connections_init() hook (in hooks/connections.php file) -->
+<!--     $options->ShowTableHeader = 0;     -->
+
+		<td id="connections-timestamp-<%%VALUE(id)%%>" class="connections-timestamp"><%%VALUE(timestamp)%%></td>
+		<td id="connections-sourceIP-<%%VALUE(id)%%>" class="connections-sourceIP"><%%VALUE(sourceIP)%%></td>
+		<td id="connections-adminkey-<%%VALUE(id)%%>" class="connections-adminkey"><%%VALUE(adminkey)%%></td>
+		<td id="connections-targetPort-<%%VALUE(id)%%>" class="connections-targetPort"><%%VALUE(targetPort)%%></td>
+		<td id="connections-exitStatus-<%%VALUE(id)%%>" class="connections-exitStatus"><%%VALUE(exitStatus)%%></td>
+		<td id="connections-startTime-<%%VALUE(id)%%>" class="connections-startTime"><%%VALUE(startTime)%%></td>
+		<td id="connections-endTime-<%%VALUE(id)%%>" class="connections-endTime"><%%VALUE(endTime)%%></td>
+		<td id="connections-notes-<%%VALUE(id)%%>" class="connections-notes"><%%VALUE(notes)%%></td>

@@ -4,63 +4,74 @@
 <div class="panel-heading"><h3 class="panel-title">
 	<strong><%%DETAIL_VIEW_TITLE%%></strong>
 	<div class="hidden-print pull-right">
-		<button type="button" id="print" onclick="window.print();" title="<%%TRANSLATION(Print)%%>" class="btn btn-success"><i class="glyphicon glyphicon-print"></i></button>
-		<button type="submit" id="back" title="<%%TRANSLATION(Back)%%>" class="btn btn-warning"><i class="glyphicon glyphicon-remove"></i></button>
+		<div class="btn-group">
+			<button type="button" id="print" onclick="window.print();" title="<%%TRANSLATION(Print)%%>" class="btn btn-primary"><i class="glyphicon glyphicon-print"></i> <%%TRANSLATION(Print)%%></button>
+			<button type="submit" id="back" title="<%%TRANSLATION(Cancel Printing)%%>" class="btn btn-default"><i class="glyphicon glyphicon-remove-circle"></i> <%%TRANSLATION(Cancel Printing)%%></button>
+		</div>
 	</div>
 	<div class="clearfix"></div>
 </h3></div>
 
 <div class="panel-body">
 	<fieldset class="form-horizontal">
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: ID -->
+		<div class="form-group connections-id" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">ID</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><%%VALUE(id)%%></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: TimeStamp -->
+		<div class="form-group connections-timestamp" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">TimeStamp</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><%%VALUE(timestamp)%%></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: Source IP -->
+		<div class="form-group connections-sourceIP" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">Source IP</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><%%VALUE(sourceIP)%%></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: Admin Key -->
+		<div class="form-group connections-adminkey" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">Admin Key</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><%%VALUE(adminkey)%%></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: Target Port -->
+		<div class="form-group connections-targetPort" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">Target Port</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><%%VALUE(targetPort)%%></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: Exit Status -->
+		<div class="form-group connections-exitStatus" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">Exit Status</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><%%VALUE(exitStatus)%%></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: Start Time -->
+		<div class="form-group connections-startTime" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">Start Time</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><%%VALUE(startTime)%%></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: End Time -->
+		<div class="form-group connections-endTime" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">End Time</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><%%VALUE(endTime)%%></div>
 			</div>
 		</div>
-		<div class="form-group" style="border-bottom: dotted 1px #DDD;">
+		<!-- Field: Notes -->
+		<div class="form-group connections-notes" style="border-bottom: dotted 1px #DDD;">
 			<label class="col-xs-3 control-label">Notes</label>
 			<div class="col-xs-9">
 				<div class="form-control-static"><%%VALUE(notes)%%></div>
@@ -68,3 +79,14 @@
 		</div>
 	</fieldset>
 </div>
+<script>
+	$j(function() {
+		// render read-only checkboxes in DVP
+		$j('form input[type=checkbox]:not(.hidden):checked')
+			.addClass('hidden')
+			.after('<i class="glyphicon glyphicon-check"></i>');
+		$j('form input[type=checkbox]:not(.hidden):not(:checked)')
+			.addClass('hidden')
+			.after('<i class="glyphicon glyphicon-unchecked"></i>')
+	})
+</script>

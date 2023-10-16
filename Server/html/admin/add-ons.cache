@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xml:base="http://bigprof.com/appgini"  xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel>
+ <title>BigProf AppGini - Add Ons</title>
+ <link>http://bigprof.com/appgini/taxonomy/term/6/0</link>
+ <description>AppGini add-ons allow you to extend the functionality of your generated application by adding specialized reports, charts, views ... We&#039;re developing an expanding list of add-ons to help you greatly enhance your web database applications.</description>
+ <language>en</language>
+<item>
+ <title>Summary Reports plugin for AppGini</title>
+ <link>http://bigprof.com/appgini/applications/summary-reports-plugin</link>
+ <description>					
+				&lt;h1 id=&quot;application-title&quot;&gt;Summary Reports plugin for AppGini&lt;/h1&gt;
+				
+				&lt;div id=&quot;app-header&quot;&gt;
+					&lt;div id=&quot;app-icon&quot;&gt;
+													&lt;img style=&quot;max-width: 250px; max-height: 125px;&quot; alt=&quot;Summary Reports plugin for AppGini&quot; src=&quot;https://cdn.bigprof.com/images/summary-reports/logo-md.png&quot;&gt;
+											&lt;/div&gt;
+					&lt;div id=&quot;app-license-price-compatibility&quot;&gt;
+													&lt;div id=&quot;app-license&quot;&gt;License: Commercial, &lt;abbr title=&quot;That is, for a team of 3 developers, you should buy 3 licenses.&quot;&gt;per-user&lt;/abbr&gt;&lt;/div&gt;
+																			&lt;div id=&quot;app-compatibility&quot;&gt;Compatible with any PC/server that can run &lt;abbr title=&quot;PHP 5.3 or higher required.&quot;&gt;PHP&lt;/abbr&gt;&lt;br&gt;&lt;!-- b style=&quot;background-color: #ffff50;&quot;&gt;Special new-release discount: $10 off until January 15, 2019.&lt;/b --&gt;&lt;/div&gt;
+											&lt;/div&gt;
+					&lt;div id=&quot;app-stats-download-buy&quot;&gt;
+																			&lt;div id=&quot;app-buy&quot;&gt;&lt;a class=&quot;btn btn-success&quot; href=&quot;https://sites.fastspring.com/bigprof/product/summary-reports&quot; title=&quot;Buy online&quot;&gt;$&lt;!-- s&gt;49.90&lt;/s&gt; $39.90 --&gt;49.90 Buy&lt;/a&gt;&lt;/div&gt;
+							&lt;div class=&quot;clear-both&quot;&gt;&lt;/div&gt;
+											&lt;/div&gt;
+				&lt;/div&gt;
+				
+				&lt;div class=&quot;clear-both&quot;&gt;&lt;/div&gt;
+				
+								
+				
+				&lt;div id=&quot;app-description&quot;&gt;
+					&lt;p&gt; &lt;iframe width=&quot;950&quot; height=&quot;534&quot; src=&quot;https://www.youtube.com/embed/aC_H7QvOexM?rel=0&amp;amp;showinfo=0&quot; frameborder=&quot;0&quot; allowfullscreen style=&quot;border: 1px solid #83BB45; margin: 15px auto;&quot;&gt;&lt;/iframe&gt; &lt;/p&gt; &lt;p style=&quot;font-size: x-large;&quot;&gt; Summary Reports plugin enables you to build powerful reports and charts inside your AppGini application through a few simple steps. See the big picture and discover trends in your data that empower you to take the right decisions confidently. &lt;/p&gt; &lt;p class=&quot;product-feature&quot;&gt; &lt;a href=&quot;https://cdn.bigprof.com/images/summary-reports/summary-reports-plugin-total-dividends-report.png&quot; rel=&quot;lightbox[sr]&quot; class=&quot;crop-left&quot; title=&quot;Intuitive reports that show the big picture and the trends.&quot;&gt; &lt;img src=&quot;https://cdn.bigprof.com/images/summary-reports/summary-reports-plugin-total-dividends-report.png&quot; id=&quot;sr-img-10&quot;&gt; &lt;/a&gt; &lt;b&gt;Intuitive reports that tell an intriguing story&lt;/b&gt;. Summary Reports plugin creates beautiful, easy-to-understand reports that don&#039;t just  summarize data. With a glance at the report, you can see  the big picture behind the tons of daily details. And you can see the trends and  changes in your data over time. Make decisions with confidence in the shortest time. &lt;/p&gt; &lt;p class=&quot;product-feature&quot;&gt; &lt;a href=&quot;https://cdn.bigprof.com/images/summary-reports/summary-reports-plugin-sales-by-customer-barchart.png&quot; rel=&quot;lightbox[sr]&quot; class=&quot;crop-right&quot; title=&quot;Visualize your data to instantly see patterns and realize trends.&quot;&gt; &lt;img src=&quot;https://cdn.bigprof.com/images/summary-reports/summary-reports-plugin-sales-by-customer-barchart.png&quot; id=&quot;sr-img-20&quot;&gt; &lt;/a&gt; &lt;b&gt;Visualize your data and instantly see patterns and trends&lt;/b&gt;. With the Summary Reports plugin, you can create beautiful bar and pie charts that allow you  to visually compare summarized data across not only categories, but also date periods.  You can instantly spot trends and patterns in a natural way and communicate your ideas  flawlessly. Charts are themeable and very easy to configure. &lt;/p&gt; &lt;p class=&quot;product-feature&quot; style=&quot;margin-bottom: 4em;&quot;&gt; &lt;a href=&quot;https://cdn.bigprof.com/images/summary-reports/export-report-data-to-csv-excel.png&quot; rel=&quot;lightbox[sr]&quot; class=&quot;crop-left&quot; title=&quot;Users can export report data to CSV to open in Excel and perform advanced analysis.&quot;&gt;     &lt;img src=&quot;https://cdn.bigprof.com/images/summary-reports/export-report-data-to-csv-excel.png&quot; id=&quot;sr-img-25&quot;&gt; &lt;/a&gt; &lt;b&gt;Export report data to CSV&lt;/b&gt;. Users can export report data to CSV and open in Excel or other spreadsheet software and  perform advanced analysis and processing.  So, even if Summary Reports is missing some feature you&#039;d like to have, you can easily  continue your workflow in Excel. &lt;/p&gt; &lt;p class=&quot;product-feature&quot; style=&quot;margin-bottom: 4em;&quot;&gt; &lt;a href=&quot;https://cdn.bigprof.com/images/summary-reports/summary-reports-plugin-2.0-report-config-dialog.png&quot; rel=&quot;lightbox[sr]&quot; class=&quot;crop-right&quot; title=&quot;Users can easily configure the report period(s) and sorting&quot;&gt;     &lt;img src=&quot;https://cdn.bigprof.com/images/summary-reports/summary-reports-plugin-2.0-report-config-dialog.png&quot; id=&quot;sr-img-30&quot;&gt; &lt;/a&gt; &lt;b&gt;Explore data insights interactively&lt;/b&gt;. Generated summary reports come with a report configuration dialog that empowers users to  interactively set the report date range, comparison period, sorting, and other options.  This makes exploring data and discovering trends a piece of cake. &lt;/p&gt; &lt;p class=&quot;product-feature&quot;&gt; &lt;a href=&quot;https://cdn.bigprof.com/images/summary-reports/summary-reports-plugin-2.0-create-edit-report.png&quot; rel=&quot;lightbox[sr]&quot; class=&quot;crop-left&quot; title=&quot;Friendly interface makes creating reports a breeze!&quot;&gt;     &lt;img src=&quot;https://cdn.bigprof.com/images/summary-reports/summary-reports-plugin-2.0-create-edit-report.png&quot; id=&quot;sr-img-40&quot;&gt; &lt;/a&gt; &lt;b&gt;A friendly interface that makes creating reports a breeze!&lt;/b&gt; You don&#039;t need to  learn or experiment with complex SQL or programming code to create summary reports. The  Summary Reports plugin has a very intuitive interface that makes it trivially easy to  create any number of reports in no time. And you can control who has access to each  report. Create, edit and delete reports on the fly from any where. Feel free to  explore! &lt;/p&gt; &lt;div class=&quot;product-feature&quot;&gt; &lt;h3&gt;Features in brief&lt;/h3&gt; &lt;ul&gt; &lt;li&gt; &lt;b&gt;Five ways to summarize your data:&lt;/b&gt; Count, sum, average, maximum and minimum.&lt;/li&gt; &lt;li&gt; &lt;b&gt;Easily create great-looking bar and pie charts.&lt;/b&gt; Charts can be configured by users (colors themes, orientation, dimensions, .. etc).&lt;/li&gt; &lt;li&gt; &lt;b&gt;Users can export report data to CSV&lt;/b&gt; to open it in Excel for advanced analysis.&lt;/li&gt; &lt;li&gt; &lt;b&gt;Filter reports by up to 3 date ranges.&lt;/b&gt; Users can optionally limit reports to a specific date range. They can also define up to 3 date ranges per report to compare and discover trends in their data.&lt;/li&gt; &lt;li&gt; &lt;b&gt;Drill down to details.&lt;/b&gt; Summary reports show summarized data (totals, averages, counts, .. etc) and allow you to click on the figures to open a filtered table view to explore the details from which the summaries were calculated.&lt;/li&gt; &lt;li&gt; &lt;b&gt;Control who can access each report.&lt;/b&gt; For each report, you can allow access to all user groups, or specify which groups have access.&lt;/li&gt; &lt;li&gt; &lt;b&gt;Create reports from any web browser.&lt;/b&gt; You don&#039;t need access to your PC to create and edit reports. Just sign in as admin from any browser on any device and control your summary reports.&lt;/li&gt; &lt;li&gt; &lt;b&gt;Reports configuration is saved in your AXP project file.&lt;/b&gt; Thus, you can safely work with your project in AppGini and re-open it in the plugin without losing any of your reports.&lt;/li&gt; &lt;li&gt; &lt;b&gt;One time installation.&lt;/b&gt; You don&#039;t need to install Summary Reports plugin into each AppGini app you have. You can install it into one single app and create reports for all other apps you have on the same server.&lt;/li&gt; &lt;/ul&gt; &lt;/div&gt; &lt;div class=&quot;product-feature&quot;&gt; &lt;h3&gt;Installation and usage tutorial&lt;/h3&gt; &lt;iframe width=&quot;950&quot; height=&quot;534&quot; src=&quot;https://www.youtube.com/embed/QGkROivwuzw?rel=0&amp;amp;showinfo=0&quot; frameborder=&quot;0&quot; allowfullscreen style=&quot;border: 1px solid #83BB45; margin: 15px auto;&quot;&gt;&lt;/iframe&gt; &lt;/div&gt; &lt;div class=&quot;product-feature&quot;&gt; &lt;h3 id=&quot;faq&quot;&gt;Frequently asked questions&lt;/h3&gt; &lt;div class=&quot;faq-question&quot;&gt;Which version of AppGini is required for running Summary Reports plugin?&lt;/div&gt; &lt;div class=&quot;faq-answer&quot;&gt;AppGini 5.60 or above is required.&lt;/div&gt; &lt;div class=&quot;faq-question&quot;&gt;If a new version of AppGini is released, do I need to update Summary Reports plugin as well?&lt;/div&gt; &lt;div class=&quot;faq-answer&quot;&gt;Usually not. However, if an update is needed we&#039;ll issue it free-of-charge.&lt;/div&gt; &lt;div class=&quot;faq-question&quot;&gt;I already have another plugin installed. Is it safe to install this plugin to the same app into the same plugins folder?&lt;/div&gt; &lt;div class=&quot;faq-answer&quot;&gt;Yes. AppGini plugins share a common set of files that ship with all plugins and are safe to overwrite. Plugin-specific files are installed into a separate subfolder under the plugins folder. So, it&#039;s safe to extract this plugin to the plugins folder, overwriting existing files. Both plugins will continue to work fine.&lt;/div&gt; &lt;div class=&quot;faq-question&quot;&gt;If you make a new version of Summary Reports, do I have to pay to upgrade?&lt;/div&gt; &lt;div class=&quot;faq-answer&quot;&gt;No. If you buy Summary Reports plugin, you get free life-time updates to it.&lt;/div&gt; &lt;div class=&quot;faq-question&quot;&gt;I have several AppGini applications. Do I have to buy a separate license of Summary Reports plugin for each?&lt;/div&gt; &lt;div class=&quot;faq-answer&quot;&gt;No. When you buy Summary Reports plugin, you can install it to all of your AppGini applications. However, just like AppGini, if you are a team of users who use AppGini as part of your development toolset, each user should have a separate license.&lt;/div&gt; &lt;div class=&quot;faq-question&quot;&gt;I noticed that Summary Reports plugin can automatically configure the hooks.  If I have custom hooks in a project, will Summary Reports plugin overwrite them?&lt;/div&gt; &lt;div class=&quot;faq-answer&quot;&gt;No, it will just insert its code into the links-home.php and links-navmenu.php files without replacing any existing code.&lt;/div&gt; &lt;div class=&quot;faq-question&quot;&gt;I created some summary reports for an app but now I want to remove them all. How do I &quot;uninstall&quot; summary reports from my app?&lt;/div&gt; &lt;div class=&quot;faq-answer&quot;&gt;If you want to delete all summary reports from an app, open the hooks folder of that app and delete &lt;code&gt;SummaryReports.php&lt;/code&gt; and all the files starting with &lt;code&gt;summary-reports&lt;/code&gt;. Next, open the files &lt;code&gt;links-home.php&lt;/code&gt; and &lt;code&gt;links-navmenu.php&lt;/code&gt; and delete the summary reports entry from both.&lt;/div&gt; &lt;div class=&quot;faq-question&quot;&gt;Charts in my report don&#039;t display all the records that appear in the report table. How can I fix that?&lt;/div&gt; &lt;div class=&quot;faq-answer&quot;&gt;By default, charts display only the first 20 records to make it easier to read, without cluttering the chart with lots of points. You can change this by editing the report file (which you can find in the hooks folder .. the file name is displayed in your browser address bar when you view the report). Find this line in the file and change the value as desired: &lt;pre&gt;&#039;chart_data_points&#039; =&gt; 20,&lt;/pre&gt;&lt;/div&gt; &lt;div class=&quot;faq-question&quot;&gt;I have a question not addressed here ... how can I contact you?&lt;/div&gt; &lt;div class=&quot;faq-answer&quot;&gt;Please use &lt;a href=&quot;https://bigprof.com/appgini/support-request&quot;&gt;our online support form&lt;/a&gt;.&lt;/div&gt; &lt;/div&gt; &lt;p class=&quot;product-feature&quot;&gt;&lt;/p&gt;									&lt;/div&gt;
+				&lt;a href=&quot;#&quot; id=&quot;expand-description&quot;&gt;Read more&lt;/a&gt;
+				&lt;script&gt;
+					$(function(){
+						var expand_description = function(){
+							$(&#039;#expand-description&#039;).hide();
+							$(&#039;#app-description&#039;).css({ height: &#039;auto&#039;, &#039;overflow-y&#039;: &#039;auto&#039; });
+							return false;
+						}
+
+						$(&#039;#expand-description&#039;).click(expand_description);
+						
+						expand_description();					})
+				&lt;/script&gt;
+				
+				
+				&lt;h3 id=&quot;app-whatsnew-title&quot;&gt;What&#039;s new?&lt;/h3&gt;
+				&lt;div id=&quot;app-whatsnew&quot;&gt;
+					&lt;div id=&quot;latest-release&quot;&gt;Latest version: 2.0, released on January 14, 2019&lt;/div&gt;
+					&lt;ul&gt;&lt;li&gt; &lt;b&gt;Summary Reports 2.0, January 14, 2019&lt;/b&gt; &lt;ul&gt; &lt;li&gt; Added customizable bar and pie charts to reports.&lt;/li&gt; &lt;li&gt; Added ability to export report data to CSV file.&lt;/li&gt; &lt;li&gt; Added option to include a report header and footer.&lt;/li&gt; &lt;li&gt; Optimizing reports performance when summarizing huge data sets.&lt;/li&gt; &lt;li&gt; Easily toggle highlighting of rows in the report by clicking on them.&lt;/li&gt; &lt;li&gt; Added inline help to report editor.&lt;/li&gt; &lt;li&gt; Added a language file to easily translate reports.&lt;/li&gt; &lt;li&gt; Many improvements and bug fixes.&lt;/li&gt; &lt;/ul&gt; &lt;/li&gt;&lt;/ul&gt; &lt;ul&gt;&lt;li&gt; &lt;b&gt;Summary Reports 1.01, May 16, 2018&lt;/b&gt; &lt;ul&gt; &lt;li&gt; Bug fix for date range where condition + code refactoring&lt;/li&gt; &lt;/ul&gt; &lt;/li&gt;&lt;/ul&gt; &lt;ul&gt;&lt;li&gt; &lt;b&gt;Summary Reports 1.00, May 15, 2018&lt;/b&gt; &lt;ul&gt; &lt;li&gt; First release!&lt;/li&gt; &lt;/ul&gt; &lt;/li&gt;&lt;/ul&gt;									&lt;/div&gt;
+				&lt;a href=&quot;#&quot; id=&quot;expand-whatsnew&quot;&gt;Read more&lt;/a&gt;
+				&lt;script&gt;
+					$(function(){
+						$(&#039;#expand-whatsnew&#039;).click(function(){
+							$(&#039;#expand-whatsnew&#039;).hide();
+							$(&#039;#app-whatsnew&#039;).css({ height: &#039;auto&#039;, &#039;overflow-y&#039;: &#039;auto&#039; });
+							return false;
+						});
+					})
+				&lt;/script&gt;
+				
+				&lt;div class=&quot;clear-both&quot;&gt;&lt;/div&gt;
+
+				&lt;div id=&quot;app-footer-download-buy&quot;&gt;
+					
+											&lt;div id=&quot;app-footer-buy&quot;&gt;&lt;a class=&quot;btn btn-success&quot; href=&quot;https://sites.fastspring.com/bigprof/product/summary-reports&quot; title=&quot;Buy online&quot;&gt;$&lt;!-- s&gt;49.90&lt;/s&gt; $39.90 --&gt;49.90 Buy&lt;/a&gt;&lt;/div&gt;
+						&lt;div class=&quot;clear-both&quot;&gt;&lt;/div&gt;
+									&lt;/div&gt;
+									&lt;div id=&quot;image-cache&quot; style=&quot;display: none;&quot;&gt;
+						&lt;img src=&quot;https://www.youtube.com/embed/aC_H7QvOexM?rel=0&amp;amp;showinfo=0&quot; frameborder=&quot;0&quot; allowfullscreen style=&quot;border: 1px solid #83BB45; margin: 15px auto;&quot;&gt;&lt;/iframe&gt; &lt;/p&gt; &lt;p style=&quot;font-size: x-large;&quot;&gt; Summary Reports plugin enables you to build powerful reports and charts inside your AppGini application through a few simple steps. See the big picture and discover trends in your data that empower you to take the right decisions confidently. &lt;/p&gt; &lt;p class=&quot;product-feature&quot;&gt; &lt;a href=&quot;https://cdn.bigprof.com/images/summary-reports/summary-reports-plugin-total-dividends-report.png&quot;&gt;&lt;img src=&quot;https://cdn.bigprof.com/images/summary-reports/summary-reports-plugin-total-dividends-report.png&quot;&gt;&lt;img src=&quot;https://cdn.bigprof.com/images/summary-reports/summary-reports-plugin-sales-by-customer-barchart.png&quot;&gt;&lt;img src=&quot;https://cdn.bigprof.com/images/summary-reports/export-report-data-to-csv-excel.png&quot;&gt;&lt;img src=&quot;https://cdn.bigprof.com/images/summary-reports/summary-reports-plugin-2.0-report-config-dialog.png&quot;&gt;&lt;img src=&quot;https://cdn.bigprof.com/images/summary-reports/summary-reports-plugin-2.0-create-edit-report.png&quot;&gt;
+					&lt;/div&gt;
+									&lt;script&gt;
+					$(function(){
+						$(&#039;h1.title&#039;).replaceWith($(&#039;#application-title&#039;));
+						$(&#039;#application-title&#039;).addClass(&#039;title&#039;);
+					});
+				&lt;/script&gt;
+
+				&lt;style&gt;
+					@import url(https://fonts.googleapis.com/css?family=Fira+Sans:500);
+					@import url(https://fonts.googleapis.com/css?family=Ubuntu:300);
+
+					@media screen and (min-width: 960px){
+						#app-icon, #app-stats-download-buy{
+							width: 270px;
+						}
+						#app-license-price-compatibility{
+							width: 360px;
+						}
+						#app-stats-download-buy{
+							text-align: right;
+						}
+					}
+					#app-icon, #app-license-price-compatibility, #app-stats-download-buy{
+						float: left;
+						padding: 10px;
+					}
+					.clear-both{ clear: both; }
+					#app-whatsnew, #app-description{
+						height: 5em;
+						overflow-y: hidden;
+					}
+					h1#application-title{
+						font-family: &#039;Fira Sans&#039;, sans-serif;
+						font-size: 2.6em;
+						border-bottom: none !important;
+						margin-bottom: 1em;
+					}
+					#app-whatsnew-title{ font-family: &#039;Fira Sans&#039;, sans-serif; margin-top: 2em; }
+					#latest-release{ font-style: italic; margin: 1em 0; }
+					#app-description, #app-whatsnew, #expand-whatsnew, #app-license-price-compatibility{
+						font-family: &#039;Ubuntu&#039;, sans-serif;
+					}
+					#header-wrapper, #primary-menu-wrapper, #postscript-wrapper{ display: none; }
+					div.content{ border-bottom: none !important; padding-bottom: 1.5em; }
+					#app-footer-download-buy{ width: 50%; margin: 2em auto; }
+					
+					/* buttons */
+					button.btn, a.btn {
+						border-radius: 5px;
+						display: block;
+						margin: 5px;
+						padding: 10px 30px;
+						text-align: center;
+						text-decoration: none;
+						font-size: 1.2em;
+						font-family: &#039;Fira Sans&#039;, sans-serif;
+					}
+					button.btn:hover, a.btn:hover{
+						text-decoration: none;
+					}
+					
+					button.btn-success, a.btn-success{
+						border: 1px solid #73a839;
+						background-color: #83bb45;
+						color: White !important;
+					}
+					button.btn-success:hover, a.btn-success:hover{
+						background-color: #9bce64;
+					}
+					
+					button.btn-default, a.btn-default{
+						border: 1px solid silver;
+						background-color: #f8f8f8;
+						color: #555 !important;
+					}
+					button.btn-default:hover, a.btn-default:hover{
+						background-color: #FFF;
+					}
+					#slider-showcase li{ text-align: center; }
+					#slider-showcase li img{ max-height: 297px; max-width: 680px; }
+					
+					#app-icon{ width: 135px; } #app-license-price-compatibility{ width: 492px; } #app-icon &gt; img { max-height: 60px !important; } a.crop-left{  border: 1px solid #83bb45; display: block; width: 300px; height: 125px; overflow: hidden; float: left; margin-right: 1em; } a.crop-right{ border: 1px solid #83bb45; display: block; width: 300px; height: 125px; overflow: hidden; float: right; margin-left: 1em; } a.crop-left img, a.crop-right img{ border: none; } #app-description &gt; p{ clear: both; } .product-feature{ border-top: 1px dotted #83bb45; margin: 3em 0 6em; padding-top: 3em; } #app-whatsnew-title{ margin-top: -5em !important; } #imageData #imageDetails{ font-size: small; margin-left: 1em; } #sr-img-10{ width: 560px; margin: -139px 0 0 -67px; } #sr-img-20{ width: 692px; margin: -330px 0 0 -24px; } #sr-img-25{ width: 817px; margin: -2px 0 0 -2px; } #sr-img-30{ width: 1116px; margin: -46px 0 0 -11px; } #sr-img-40{ width: 894px; margin: -2px 0 0 -212px; } .faq-question{ font-weight: bold; margin-top: 2em; } .faq-answer{ margin-left: 1em; }				&lt;/style&gt;
+				&lt;!-- App info retrieved from CDN --&gt;
+								</description>
+ <category domain="http://bigprof.com/appgini/taxonomy/term/6">Add Ons</category>
+ <pubDate>Thu, 15 Feb 2018 13:01:05 +0000</pubDate>
+ <dc:creator>bigprof</dc:creator>
+ <guid isPermaLink="false">218 at http://bigprof.com/appgini</guid>
+</item>
+<item>
+ <title>Search Page Maker Plugin for AppGini</title>
+ <link>http://bigprof.com/appgini/applications/search-page-maker-plugin</link>
+ <description>					
+				&lt;h1 id=&quot;application-title&quot;&gt;Search Page Maker plugin for AppGini&lt;/h1&gt;
+				
+				&lt;div id=&quot;app-header&quot;&gt;
+					&lt;div id=&quot;app-icon&quot;&gt;
+													&lt;img style=&quot;max-width: 250px; max-height: 125px;&quot; alt=&quot;Search Page Maker plugin for AppGini&quot; src=&quot;https://cdn.bigprof.com/images/spm/logo-md.png&quot;&gt;
+											&lt;/div&gt;
+					&lt;div id=&quot;app-license-price-compatibility&quot;&gt;
+													&lt;div id=&quot;app-license&quot;&gt;License: Commercial, &lt;abbr title=&quot;That is, for a team of 4 developers, you should buy 4 licenses.&quot;&gt;per-user&lt;/abbr&gt;&lt;/div&gt;
+																			&lt;div id=&quot;app-compatibility&quot;&gt;Compatible with any PC/server that can run &lt;abbr title=&quot;PHP 5.2 or higher required.&quot;&gt;PHP&lt;/abbr&gt;&lt;/div&gt;
+											&lt;/div&gt;
+					&lt;div id=&quot;app-stats-download-buy&quot;&gt;
+																			&lt;div id=&quot;app-buy&quot;&gt;&lt;a class=&quot;btn btn-success&quot; href=&quot;https://sites.fastspring.com/bigprof/product/search-page-maker&quot; title=&quot;Buy online&quot;&gt;$49.90 Buy&lt;/a&gt;&lt;/div&gt;
+							&lt;div class=&quot;clear-both&quot;&gt;&lt;/div&gt;
+											&lt;/div&gt;
+				&lt;/div&gt;
+				
+				&lt;div class=&quot;clear-both&quot;&gt;&lt;/div&gt;
+				
+								
+				
+				&lt;div id=&quot;app-description&quot;&gt;
+					&lt;iframe width=&quot;950&quot; height=&quot;534&quot; src=&quot;https://www.youtube.com/embed/NLmGMxf7ly8?rel=0&amp;amp;showinfo=0&quot; frameborder=&quot;0&quot; allowfullscreen style=&quot;border: 1px solid #83BB45; margin: 15px auto;&quot;&gt;&lt;/iframe&gt; &lt;p style=&quot;font-size: large;&quot;&gt;Search Page Maker (SPM) enables you to build user-friendly yet powerful search pages for your AppGini application by simply dragging and dropping the fields you want to include in search.&lt;/p&gt; &lt;p class=&quot;product-feature&quot;&gt; &lt;a href=&quot;https://cdn.bigprof.com/images/spm/user-friendly-search-pages.png&quot; rel=&quot;lightbox&quot; class=&quot;crop-left&quot; title=&quot;User-friendly and powerful search.&quot;&gt; &lt;img src=&quot;https://cdn.bigprof.com/images/spm/user-friendly-search-pages.png&quot; id=&quot;spm-img-1&quot;&gt; &lt;/a&gt; &lt;b&gt;User-friendly and powerful search&lt;/b&gt;. SPM plugin allows you to create beautiful and user-friendly search pages, with support for date pickups, date and number ranges, auto-complete drop-downs, radio button options, and other easy-to-use search controls. &lt;/p&gt; &lt;p class=&quot;product-feature&quot; style=&quot;margin-bottom: 4em;&quot;&gt;   &lt;a href=&quot;https://cdn.bigprof.com/images/spm/switch-to-advanced-search-mode.png&quot; rel=&quot;lightbox&quot; class=&quot;crop-left&quot; title=&quot;Simple and advanced search modes.&quot;&gt;     &lt;img src=&quot;https://cdn.bigprof.com/images/spm/switch-to-advanced-search-mode.png&quot; id=&quot;spm-img-3&quot;&gt;   &lt;/a&gt; &lt;b&gt;Simple and advanced search modes&lt;/b&gt;. Most of your application users would just &lt;em&gt;love&lt;/em&gt; the new search pages created by SPM due to being simple yet powerful. However, the more advanced users might still want more control over search criteria. So we added a &#039;Switch to advanced search mode&#039; button that switches between the SPM search page and the standard one generated by AppGini. &lt;/p&gt; &lt;p class=&quot;product-feature&quot;&gt;   &lt;a href=&quot;https://cdn.bigprof.com/images/spm/easy-drag-n-drop-interface.png&quot; rel=&quot;lightbox&quot; class=&quot;crop-left&quot; title=&quot;Fun to use!&quot;&gt;     &lt;img src=&quot;https://cdn.bigprof.com/images/spm/easy-drag-n-drop-interface.png&quot; id=&quot;spm-img-2&quot;&gt;   &lt;/a&gt; &lt;b&gt;Fun to use!&lt;/b&gt; SPM plugin makes it very easy to design the search page for each of your application tables. It&#039;s as easy as dragging and dropping fields to include and order them. And you can also specify whether to show the &#039;Sort by&#039; options or hide them. &lt;/p&gt; &lt;p class=&quot;product-feature&quot;&gt;   &lt;a href=&quot;https://cdn.bigprof.com/images/spm/plugins-menu-spm.png&quot; rel=&quot;lightbox&quot; class=&quot;crop-left&quot; title=&quot;Easy installation.&quot;&gt;     &lt;img src=&quot;https://cdn.bigprof.com/images/spm/plugins-menu-spm.png&quot; id=&quot;spm-img-4&quot;&gt;   &lt;/a&gt; &lt;b&gt;Easy installation&lt;/b&gt;. To install SPM into any of your AppGini-generated applications, just unzip it into the application folder. Once you do this, you can access SPM from a &#039;Plugins&#039; drop-down menu that will automatically show up to the admin user. &lt;/p&gt; &lt;div class=&quot;product-feature&quot;&gt; &lt;h3 id=&quot;faq&quot;&gt;Frequently asked questions&lt;/h3&gt; &lt;div class=&quot;faq-question&quot;&gt;Which version of AppGini is required for SPM?&lt;/div&gt; &lt;div class=&quot;faq-answer&quot;&gt;AppGini 5.50 or above is required.&lt;/div&gt; &lt;div class=&quot;faq-question&quot;&gt;If a new version of AppGini is released, do I need to update SPM as well?&lt;/div&gt; &lt;div class=&quot;faq-answer&quot;&gt;Usually not. However, if an update is needed we&#039;ll issue it free-of-charge.&lt;/div&gt; &lt;div class=&quot;faq-question&quot;&gt;I already have another plugin installed. Is it safe to install this plugin to the same app into the same plugins folder?&lt;/div&gt; &lt;div class=&quot;faq-answer&quot;&gt;Yes. AppGini plugins share a common set of files that ship with all plugins and are safe to overwrite. Plugin-specific files are installed into a separate subfolder under the plugins folder. So, it&#039;s safe to extract this plugin to the plugins folder, overwriting existing files. Both plugins will continue to work fine.&lt;/div&gt; &lt;div class=&quot;faq-question&quot;&gt;If you make a new version of SPM, do I have to pay to upgrade?&lt;/div&gt; &lt;div class=&quot;faq-answer&quot;&gt;No. If you buy SPM, you get free life-time updates to it.&lt;/div&gt; &lt;div class=&quot;faq-question&quot;&gt;I have several AppGini applications. Do I have to buy a separate license of SPM for each?&lt;/div&gt; &lt;div class=&quot;faq-answer&quot;&gt;No. If you buy SPM, you can install it to all of your AppGini applications. However, just like AppGini, if you are a team of developers who use AppGini as part of your development toolset, each developer should have a separate license.&lt;/div&gt; &lt;div class=&quot;faq-question&quot;&gt;I noticed that SPM can automatically configure the hooks.  If I have custom hooks in a project, will SPM overwrite them?&lt;/div&gt; &lt;div class=&quot;faq-answer&quot;&gt;No, it will just insert a single line of code into the tablename_init hook, directly after the function definition line ... It won&#039;t affect any of your hooks code.&lt;/div&gt; &lt;div class=&quot;faq-question&quot;&gt;I have a question not addressed here ... how can I contact you?&lt;/div&gt; &lt;div class=&quot;faq-answer&quot;&gt;Please use &lt;a href=&quot;https://bigprof.com/appgini/support-request&quot;&gt;our online support form&lt;/a&gt;.&lt;/div&gt; &lt;/div&gt; &lt;p class=&quot;product-feature&quot;&gt;&lt;/p&gt;									&lt;/div&gt;
+				&lt;a href=&quot;#&quot; id=&quot;expand-description&quot;&gt;Read more&lt;/a&gt;
+				&lt;script&gt;
+					$(function(){
+						var expand_description = function(){
+							$(&#039;#expand-description&#039;).hide();
+							$(&#039;#app-description&#039;).css({ height: &#039;auto&#039;, &#039;overflow-y&#039;: &#039;auto&#039; });
+							return false;
+						}
+
+						$(&#039;#expand-description&#039;).click(expand_description);
+						
+						expand_description();					})
+				&lt;/script&gt;
+				
+				
+				&lt;h3 id=&quot;app-whatsnew-title&quot;&gt;What&#039;s new?&lt;/h3&gt;
+				&lt;div id=&quot;app-whatsnew&quot;&gt;
+					&lt;div id=&quot;latest-release&quot;&gt;Latest version: 1.08, released on Dec 9, 2018&lt;/div&gt;
+					&lt;h4&gt;SPM 1.08, Dec 9, 2018&lt;/h4&gt; &lt;ul&gt; &lt;li&gt;Fixed a bug with displaying filtered values for required lookup fields in filters page.&lt;/li&gt; &lt;li&gt;Added a refresh button to the &#039;Select output folder&#039; page.&lt;/li&gt; &lt;/ul&gt; &lt;h4&gt;SPM 1.07, May 6, 2018&lt;/h4&gt; &lt;ul&gt; &lt;li&gt;Fixed bug with detecting jquery file version that caused SPM to stop working on apps created newly by AppGini 5.70.&lt;/li&gt; &lt;li&gt;Some UI enhancements.&lt;/li&gt; &lt;/ul&gt; &lt;h4&gt;SPM 1.06, Apr 15, 2018&lt;/h4&gt; &lt;ul&gt; &lt;li&gt;Fixed bug with searching multiple-choice drop-downs where no results were returned.&lt;/li&gt; &lt;/ul&gt; &lt;h4&gt;SPM 1.05, Mar 9, 2018&lt;/h4&gt; &lt;ul&gt; &lt;li&gt;Updated header.php to load jQuery version supplied with AppGini 5.70.&lt;/li&gt; &lt;li&gt;Code refactoring for &#039;Select output folder&#039; page.&lt;/li&gt; &lt;li&gt;Included new table icons shipped with AppGini 5.70.&lt;/li&gt; &lt;/ul&gt; &lt;h4&gt;SPM 1.04, Oct 10, 2016&lt;/h4&gt; &lt;ul&gt; &lt;li&gt;Fixed a bug with date format when searching a date range.&lt;/li&gt; &lt;/ul&gt; &lt;h4&gt;SPM 1.02, Apr 25, 2016&lt;/h4&gt; &lt;ul&gt; &lt;li&gt;Fixed a bug that took place when running SPM on PHP 7.&lt;/li&gt; &lt;/ul&gt; &lt;h4&gt;SPM 1.01, Mar 11, 2016&lt;/h4&gt; &lt;ul&gt; &lt;li&gt;More descriptive path errors in &#039;select output folder&#039; page.&lt;/li&gt; &lt;/ul&gt; &lt;h4&gt;SPM 1.0, Mar 9, 2016&lt;/h4&gt; &lt;ul&gt; &lt;li&gt;First public release.&lt;/li&gt; &lt;/ul&gt;									&lt;/div&gt;
+				&lt;a href=&quot;#&quot; id=&quot;expand-whatsnew&quot;&gt;Read more&lt;/a&gt;
+				&lt;script&gt;
+					$(function(){
+						$(&#039;#expand-whatsnew&#039;).click(function(){
+							$(&#039;#expand-whatsnew&#039;).hide();
+							$(&#039;#app-whatsnew&#039;).css({ height: &#039;auto&#039;, &#039;overflow-y&#039;: &#039;auto&#039; });
+							return false;
+						});
+					})
+				&lt;/script&gt;
+				
+				&lt;div class=&quot;clear-both&quot;&gt;&lt;/div&gt;
+
+				&lt;div id=&quot;app-footer-download-buy&quot;&gt;
+					
+											&lt;div id=&quot;app-footer-buy&quot;&gt;&lt;a class=&quot;btn btn-success&quot; href=&quot;https://sites.fastspring.com/bigprof/product/search-page-maker&quot; title=&quot;Buy online&quot;&gt;$49.90 Buy&lt;/a&gt;&lt;/div&gt;
+						&lt;div class=&quot;clear-both&quot;&gt;&lt;/div&gt;
+									&lt;/div&gt;
+									&lt;div id=&quot;image-cache&quot; style=&quot;display: none;&quot;&gt;
+						&lt;img src=&quot;https://www.youtube.com/embed/NLmGMxf7ly8?rel=0&amp;amp;showinfo=0&quot; frameborder=&quot;0&quot; allowfullscreen style=&quot;border: 1px solid #83BB45; margin: 15px auto;&quot;&gt;&lt;/iframe&gt; &lt;p style=&quot;font-size: large;&quot;&gt;Search Page Maker (SPM) enables you to build user-friendly yet powerful search pages for your AppGini application by simply dragging and dropping the fields you want to include in search.&lt;/p&gt; &lt;p class=&quot;product-feature&quot;&gt; &lt;a href=&quot;https://cdn.bigprof.com/images/spm/user-friendly-search-pages.png&quot;&gt;&lt;img src=&quot;https://cdn.bigprof.com/images/spm/user-friendly-search-pages.png&quot;&gt;&lt;img src=&quot;https://cdn.bigprof.com/images/spm/switch-to-advanced-search-mode.png&quot;&gt;&lt;img src=&quot;https://cdn.bigprof.com/images/spm/easy-drag-n-drop-interface.png&quot;&gt;&lt;img src=&quot;https://cdn.bigprof.com/images/spm/plugins-menu-spm.png&quot;&gt;
+					&lt;/div&gt;
+									&lt;script&gt;
+					$(function(){
+						$(&#039;h1.title&#039;).replaceWith($(&#039;#application-title&#039;));
+						$(&#039;#application-title&#039;).addClass(&#039;title&#039;);
+					});
+				&lt;/script&gt;
+
+				&lt;style&gt;
+					@import url(https://fonts.googleapis.com/css?family=Fira+Sans:500);
+					@import url(https://fonts.googleapis.com/css?family=Ubuntu:300);
+
+					@media screen and (min-width: 960px){
+						#app-icon, #app-stats-download-buy{
+							width: 270px;
+						}
+						#app-license-price-compatibility{
+							width: 360px;
+						}
+						#app-stats-download-buy{
+							text-align: right;
+						}
+					}
+					#app-icon, #app-license-price-compatibility, #app-stats-download-buy{
+						float: left;
+						padding: 10px;
+					}
+					.clear-both{ clear: both; }
+					#app-whatsnew, #app-description{
+						height: 5em;
+						overflow-y: hidden;
+					}
+					h1#application-title{
+						font-family: &#039;Fira Sans&#039;, sans-serif;
+						font-size: 2.6em;
+						border-bottom: none !important;
+						margin-bottom: 1em;
+					}
+					#app-whatsnew-title{ font-family: &#039;Fira Sans&#039;, sans-serif; margin-top: 2em; }
+					#latest-release{ font-style: italic; margin: 1em 0; }
+					#app-description, #app-whatsnew, #expand-whatsnew, #app-license-price-compatibility{
+						font-family: &#039;Ubuntu&#039;, sans-serif;
+					}
+					#header-wrapper, #primary-menu-wrapper, #postscript-wrapper{ display: none; }
+					div.content{ border-bottom: none !important; padding-bottom: 1.5em; }
+					#app-footer-download-buy{ width: 50%; margin: 2em auto; }
+					
+					/* buttons */
+					button.btn, a.btn {
+						border-radius: 5px;
+						display: block;
+						margin: 5px;
+						padding: 10px 30px;
+						text-align: center;
+						text-decoration: none;
+						font-size: 1.2em;
+						font-family: &#039;Fira Sans&#039;, sans-serif;
+					}
+					button.btn:hover, a.btn:hover{
+						text-decoration: none;
+					}
+					
+					button.btn-success, a.btn-success{
+						border: 1px solid #73a839;
+						background-color: #83bb45;
+						color: White !important;
+					}
+					button.btn-success:hover, a.btn-success:hover{
+						background-color: #9bce64;
+					}
+					
+					button.btn-default, a.btn-default{
+						border: 1px solid silver;
+						background-color: #f8f8f8;
+						color: #555 !important;
+					}
+					button.btn-default:hover, a.btn-default:hover{
+						background-color: #FFF;
+					}
+					#slider-showcase li{ text-align: center; }
+					#slider-showcase li img{ max-height: 297px; max-width: 680px; }
+					
+					#app-icon{ width: 135px; } #app-license-price-compatibility{ width: 492px; } #app-icon &gt; img { max-height: 60px !important; } a.crop-left{  border: 1px solid #83bb45; display: block; width: 300px; height: 125px; overflow: hidden; float: left; margin-right: 1em; } a.crop-right{ border: 1px solid #83bb45; display: block; width: 300px; height: 125px; overflow: hidden; float: right; margin-left: 1em; } a.crop-left img, a.crop-right img{ border: none; } #app-description &gt; p{ clear: both; } .product-feature{ border-top: 1px dotted #83bb45; margin: 3em 0 6em; padding-top: 3em; } #app-whatsnew-title{ margin-top: -5em !important; } #imageData #imageDetails{ font-size: small; margin-left: 1em; } #spm-img-1{ width: 595px; margin: -83px  0 0 -123px; } #spm-img-2{ width: 854px; margin: -180px 0 0 -225px; } #spm-img-3{ width: 424px; margin:      0 0 0 -124px; } #spm-img-4{ width: 594px; margin:      0 0 0 -266px; } .faq-question{ font-weight: bold; margin-top: 2em; } .faq-answer{ margin-left: 1em; } #app-whatsnew ul { margin-left: 1em; } #app-whatsnew li { margin-left: 1.25em !important; }				&lt;/style&gt;
+				&lt;!-- App info retrieved from CDN --&gt;
+								</description>
+ <category domain="http://bigprof.com/appgini/taxonomy/term/6">Add Ons</category>
+ <pubDate>Tue, 21 Feb 2017 13:38:20 +0000</pubDate>
+ <dc:creator>bigprof</dc:creator>
+ <guid isPermaLink="false">194 at http://bigprof.com/appgini</guid>
+</item>
+</channel>
+</rss>

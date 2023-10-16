@@ -1,17 +1,19 @@
 <?php
-	$currDir=dirname(__FILE__);
-	require("$currDir/incCommon.php");
+	require(__DIR__ . '/incCommon.php');
 
 	// validate input
-	$memberID=makeSafe(strtolower($_GET['memberID']));
+	$memberID = makeSafe(strtolower(Request::val('memberID')));
 
-	sql("delete from membership_users where lcase(memberID)='$memberID'", $eo);
-	sql("update membership_userrecords set memberID='' where lcase(memberID)='$memberID'", $eo);
+	if(!csrf_token(true)) die($Translation['csrf token expired or invalid']);
 
-	if($_SERVER['HTTP_REFERER']){
+	$eo = ['silentErrors' => true];
+	sql("DELETE FROM `membership_users` WHERE LCASE(`memberID`)='$memberID'", $eo);
+	sql("DELETE FROM `membership_userpermissions` WHERE LCASE(`memberID`)='$memberID'", $eo);
+	sql("DELETE FROM `membership_usersessions` WHERE LCASE(`memberID`)='$memberID'", $eo);
+	sql("UPDATE `membership_userrecords` SET `memberID`='' WHERE LCASE(`memberID`)='$memberID'", $eo);
+
+	if($_SERVER['HTTP_REFERER']) {
 		redirect($_SERVER['HTTP_REFERER'], TRUE);
-	}else{
-		redirect("admin/pageViewMembers.php");
+	} else {
+		redirect('admin/pageViewMembers.php');
 	}
-
-?>

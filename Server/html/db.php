@@ -1,36 +1,21 @@
 <?php
 
 	/*
-		You can implement a new db driver in this file by uncommenting the line below
-		and replacing 'mssql' with the desired driver name, then adding cases for the
-		that driver in each function below ...
+		To implement a new db driver you should change the value of
+		the DATABASE cnonstant in definitions.php to the desired driver name, for example 'mssql'.
+		then adding cases for the that driver in each function below ...
 	*/
-	// define('DATABASE', 'mssql'); 
 
 
-
-
-	if(!defined('DATABASE')){
-		if(function_exists('mysqli_connect')){
-			define('DATABASE', 'mysqli');
-		}else{
-			define('DATABASE', 'mysql');
-		}
-	}
-
-
-
-	define('mysql_charset', 'utf8');
-
-	function db_link($link = NULL){
+	function db_link($link = NULL) {
 		static $db_link;
 		if($link) $db_link = $link;
 		return $db_link;
 	}
 
-	function db_close($link = NULL){
+	function db_close($link = NULL) {
 		db_link(false); /* close db link */
-		switch(DATABASE){
+		switch(DATABASE) {
 			case 'mysql':
 				return mysql_close($link);
 			case 'mysqli':
@@ -38,9 +23,9 @@
 		}
 	}
 
-	function db_select_db($dbname, $link = NULL){
+	function db_select_db($dbname, $link = NULL) {
 		if(!$link) $link = db_link();
-		switch(DATABASE){
+		switch(DATABASE) {
 			case 'mysql':
 				return mysql_select_db($dbname, $link);
 			case 'mysqli':
@@ -48,54 +33,55 @@
 		}
 	}
 
-	function db_fetch_array($res){
-		switch(DATABASE){
+	function db_fetch_array($res) {
+		switch(DATABASE) {
 			case 'mysql':
-				return mysql_fetch_array($res);
+				return @mysql_fetch_array($res);
 			case 'mysqli':
-				return mysqli_fetch_array($res, MYSQLI_BOTH);
+				return @mysqli_fetch_array($res, MYSQLI_BOTH);
 		}
 	}
 
-	function db_fetch_assoc($res){
-		switch(DATABASE){
+	function db_fetch_assoc($res) {
+		switch(DATABASE) {
 			case 'mysql':
-				return mysql_fetch_assoc($res);
+				return @mysql_fetch_assoc($res);
 			case 'mysqli':
-				return mysqli_fetch_assoc($res);
+				return @mysqli_fetch_assoc($res);
 		}
 	}
 
-	function db_fetch_row($res){
-		switch(DATABASE){
+	function db_fetch_row($res) {
+		switch(DATABASE) {
 			case 'mysql':
-				return mysql_fetch_row($res);
+				return @mysql_fetch_row($res);
 			case 'mysqli':
-				return mysqli_fetch_row($res);
+				return @mysqli_fetch_row($res);
 		}
 	}
 
-	function db_num_fields($res){
-		switch(DATABASE){
+	function db_num_fields($res) {
+		switch(DATABASE) {
 			case 'mysql':
-				return mysql_num_fields($res);
+				return @mysql_num_fields($res);
 			case 'mysqli':
-				return mysqli_num_fields($res);
+				return @mysqli_num_fields($res);
 		}
 	}
 
-	function db_num_rows($res){
-		switch(DATABASE){
+	function db_num_rows($res) {
+		switch(DATABASE) {
 			case 'mysql':
-				return mysql_num_rows($res);
+				return @mysql_num_rows($res);
 			case 'mysqli':
-				return mysqli_num_rows($res);
+				return @mysqli_num_rows($res);
 		}
 	}
 
-	function db_affected_rows($link = NULL){
-		if(!$link) $link = db_link();
-		switch(DATABASE){
+	function db_affected_rows($link = NULL) {
+		if(!$link && !$link = db_link()) return false;
+
+		switch(DATABASE) {
 			case 'mysql':
 				return mysql_affected_rows($link);
 			case 'mysqli':
@@ -103,19 +89,21 @@
 		}
 	}
 
-	function db_query($query, $link = NULL){
-		if(!$link) $link = db_link();
-		switch(DATABASE){
+	function db_query($query, $link = NULL) {
+		if(!$link && !$link = db_link()) return false;
+
+		switch(DATABASE) {
 			case 'mysql':
-				return mysql_query($query, $link);
+				return @mysql_query($query, $link);
 			case 'mysqli':
-				return mysqli_query($link, $query);
+				return @mysqli_query($link, $query);
 		}
 	}
 
-	function db_insert_id($link = NULL){
-		if(!$link) $link = db_link();
-		switch(DATABASE){
+	function db_insert_id($link = NULL) {
+		if(!$link && !$link = db_link()) return false;
+
+		switch(DATABASE) {
 			case 'mysql':
 				return mysql_insert_id($link);
 			case 'mysqli':
@@ -123,31 +111,31 @@
 		}
 	}
 
-	function db_field_name($res, $field_offset){
-		switch(DATABASE){
+	function db_field_name($res, $field_offset) {
+		switch(DATABASE) {
 			case 'mysql':
-				return mysql_field_name($res, $field_offset);
+				return @mysql_field_name($res, $field_offset);
 			case 'mysqli':
-				$fo = mysqli_fetch_field_direct($res, $field_offset);
+				$fo = @mysqli_fetch_field_direct($res, $field_offset);
 				if($fo === false) return false;
 				return $fo->name;
 		}
 	}
 
-	function db_field_type($res, $field_offset){
-		switch(DATABASE){
+	function db_field_type($res, $field_offset) {
+		switch(DATABASE) {
 			case 'mysql':
-				return mysql_field_type($res, $field_offset);
+				return @mysql_field_type($res, $field_offset);
 			case 'mysqli':
-				$fo = mysqli_fetch_field_direct($res, $field_offset);
+				$fo = @mysqli_fetch_field_direct($res, $field_offset);
 				if($fo === false) return false;
 				return $fo->type;
 		}
 	}
 
-	function db_escape($str = NULL, $link = NULL){
+	function db_escape($str = NULL, $link = NULL) {
 		if(!$link) $link = db_link();
-		switch(DATABASE){
+		switch(DATABASE) {
 			case 'mysql':
 				if(function_exists('mysql_real_escape_string'))    return mysql_real_escape_string($str, $link);
 				return mysql_escape_string($str);
@@ -156,8 +144,8 @@
 		}
 	}
 
-	function db_connect($host = NULL, $username = NULL, $passwd = NULL, $dbname = NULL, $port = NULL, $socket = NULL){
-		switch(DATABASE){
+	function db_connect($host = NULL, $username = NULL, $passwd = NULL, $dbname = NULL, $port = NULL, $socket = NULL) {
+		switch(DATABASE) {
 			case 'mysql':
 				if($host === NULL) $host = ini_get("mysql.default_host");
 				if($username === NULL) $username = ini_get("mysql.default_user");
@@ -166,7 +154,7 @@
 				if(!$link) return false;
 				db_link($link); /* db_link() can now be used to retrieve the db link from anywhere */
 				@mysql_query("SET NAMES '" . mysql_charset . "'");
-				if($dbname){ if(!mysql_select_db($dbname, $link)) return false; }
+				if($dbname) { if(!mysql_select_db($dbname, $link)) return false; }
 				return $link;
 			case 'mysqli':
 				if($host === NULL) $host = ini_get("mysqli.default_host");
@@ -175,6 +163,11 @@
 				if($dbname === NULL) $dbname = "";
 				if($port === NULL) $port = ini_get("mysqli.default_port");
 				if($socket === NULL) $socket = ini_get("mysqli.default_socket");
+
+				// revert PHP 8.1 mysql error reporting behavior
+				// @see https://php.watch/versions/8.1/mysqli-error-mode
+				@mysqli_report(MYSQLI_REPORT_OFF);
+
 				$link = mysqli_connect($host, $username, $passwd, $dbname, $port, $socket);
 				if(!$link) return false;
 				db_link($link); /* db_link() can now be used to retrieve the db link from anywhere */
@@ -183,9 +176,10 @@
 		}
 	}
 
-	function db_errno($link = NULL, $mysqli_connect = false){
-		if(!$link) $link = db_link();
-		switch(DATABASE){
+	function db_errno($link = NULL, $mysqli_connect = false) {
+		if(!$link && !$link = db_link()) return false;
+
+		switch(DATABASE) {
 			case 'mysql':
 				return mysql_errno($link);
 			case 'mysqli':
@@ -194,9 +188,10 @@
 		}
 	}
 
-	function db_error($link = NULL, $mysqli_connect = false){
-		if(!$link) $link = db_link();
-		switch(DATABASE){
+	function db_error($link = NULL, $mysqli_connect = false) {
+		if(!$link && !$link = db_link()) return false;
+
+		switch(DATABASE) {
 			case 'mysql':
 				return mysql_error($link);
 			case 'mysqli':

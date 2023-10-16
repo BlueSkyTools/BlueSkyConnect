@@ -1,0 +1,9 @@
+<a id="get-started-btn" class="btn btn-danger pull-right btn-lg vspacer-lg" href="" title="Watch a screencast on using Mass Update"><i class="glyphicon glyphicon-facetime-video"></i> Show me how to get started!</a>
+<script>
+	$j(function(){
+		$j('#get-started-btn').click(function(){
+			var mwyt = modal_window({ message: '<div class="embed-responsive embed-responsive-16by9"><iframe class="embed-responsive-item" src="https://www.youtube.com/embed/5cgsfKNvOTk?rel=0&amp;showinfo=0" allowfullscreen></iframe></div>', title: "How to use Mass Update", close: function(){ $j('[id=' + mwyt + ']').remove(); } });
+			return false;
+		});
+	})
+</script>

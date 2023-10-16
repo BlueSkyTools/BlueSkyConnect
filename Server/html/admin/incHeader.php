@@ -1,123 +1,129 @@
-<!DOCTYPE html>
+<?php
+	if(function_exists('set_headers')) { set_headers(); }
+	if(!defined('PREPEND_PATH')) define('PREPEND_PATH', '../');
+	$adminConfig = config('adminConfig');
+	?><!DOCTYPE html>
 <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
 <!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
 <!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
 	<head>
-		<meta charset="UTF-8">
+		<meta charset="<?php echo datalist_db_encoding; ?>">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 		<meta name="description" content="">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>Membership Management</title>
+		<title><?php echo APP_TITLE . ' | ' . $Translation['admin area'] . (isset($GLOBALS['page_title']) ? html_attr(" | {$GLOBALS['page_title']}") : ''); ?></title>
 
-		<link id="browser_favicon" rel="shortcut icon" href="../resources/table_icons/administrator.png">
+		<link id="browser_favicon" rel="shortcut icon" href="<?php echo PREPEND_PATH; ?>resources/table_icons/administrator.png">
 
-		<link rel="stylesheet" href="../resources/initializr/css/bootstrap.css">
+		<link rel="stylesheet" href="<?php echo PREPEND_PATH; ?>resources/initializr/css/bootstrap.css">
 		<!--[if gt IE 8]><!-->
-			<link rel="stylesheet" href="../resources/initializr/css/bootstrap-theme.css">
+			<link rel="stylesheet" href="<?php echo PREPEND_PATH; ?>resources/initializr/css/bootstrap-theme.css">
 		<!--<![endif]-->
-		<link rel="stylesheet" href="../dynamic.css.php">
+		<link rel="stylesheet" href="<?php echo PREPEND_PATH; ?>dynamic.css?<?php echo defined('APP_VERSION') ? APP_VERSION : rand(); ?>">
 
 		<!--[if lt IE 9]>
-			<script src="../resources/initializr/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js"></script>
+			<script src="<?php echo PREPEND_PATH; ?>resources/initializr/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js"></script>
 		<![endif]-->
-		<script src="../resources/jquery/js/jquery-1.11.2.min.js"></script>
-		<script>var $j = jQuery.noConflict();</script>
+		<script src="<?php echo PREPEND_PATH; ?>resources/jquery/js/<?php echo latest_jquery(); ?>"></script>
+		<script>var $j = jQuery.noConflict(); var AppGini = AppGini || {};</script>
 		<script src="toolTips.js"></script>
-		<script src="../resources/initializr/js/vendor/bootstrap.min.js"></script>
-		<script src="../resources/lightbox/js/prototype.js"></script>
-		<script src="../resources/lightbox/js/scriptaculous.js?load=effects,builder,dragdrop,controls"></script>
+		<script src="<?php echo PREPEND_PATH; ?>resources/initializr/js/vendor/bootstrap.min.js"></script>
+		<script src="<?php echo PREPEND_PATH; ?>resources/lightbox/js/prototype.js"></script>
+		<script src="<?php echo PREPEND_PATH; ?>resources/lightbox/js/scriptaculous.js?load=effects"></script>
 		<script>
 
 			// VALIDATION FUNCTIONS FOR VARIOUS PAGES
 
-			function jsValidateMember(){
-				var p1=document.getElementById('password').value;
-				var p2=document.getElementById('confirmPassword').value;
-				if(p1=='' || p1==p2){
-					return true;
-				}else{
-					modal_window({message: '<div class="alert alert-danger">Password doesn\'t match.</div>', title: "Error" });
-					return false;
-				}
-			}
-
-			function jsValidateEmail(address){
+			function jsValidateEmail(address) {
 				var reg = /^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$/;
-				if(reg.test(address) == false){
-					modal_window({ message: '<div class="alert alert-danger">Invalid Email Address</div>', title: "Error" });
+				if(reg.test(address) == false) {
+					modal_window({ message: '<div class="alert alert-danger">'+"<?php echo $Translation['invalid email'];?>"+'</div>', title: "<?php echo $Translation['error'] ; ?>"  });
 					return false;
-				}else{
+				} else {
 					return true;
 				}
 			}
 
-			function jsShowWait(){
-				return window.confirm("Sending mails might take some time. Please don't close this page until you see the 'Done' message.");
+			function jsShowWait() {
+				return window.confirm('<?php echo addslashes($Translation['sending mails']); ?>');
 			}
 
-			function jsValidateAdminSettings(){
+			function jsValidateAdminSettings() {
 				var p1=document.getElementById('adminPassword').value;
 				var p2=document.getElementById('confirmPassword').value;
-				if(p1=='' || p1==p2){
+				if(p1=='' || p1==p2) {
 					return jsValidateEmail(document.getElementById('senderEmail').value);
-				}else{
-					modal_window({ message: '<div class="alert alert-error">Password doesn\'t match.</div>', title: "Error" });
+				} else {
+					modal_window({ message: '<div class="alert alert-error">'+"<?php echo $Translation['password mismatch']; ?>"+'</div>', title: "<?php echo $Translation['error'] ; ?>" });
 					return false;
 				}
 			}
 
-			function jsConfirmTransfer(){
+			function jsConfirmTransfer() {
+				var confirmMessage;
 				var sg=document.getElementById('sourceGroupID').options[document.getElementById('sourceGroupID').selectedIndex].text;
 				var sm=document.getElementById('sourceMemberID').value;
 				var dg=document.getElementById('destinationGroupID').options[document.getElementById('destinationGroupID').selectedIndex].text;
-				if(document.getElementById('destinationMemberID')){
+				if(document.getElementById('destinationMemberID')) {
 					var dm=document.getElementById('destinationMemberID').value;
 				}
-				if(document.getElementById('dontMoveMembers')){
+				if(document.getElementById('dontMoveMembers')) {
 					var dmm=document.getElementById('dontMoveMembers').checked;
 				}
-				if(document.getElementById('moveMembers')){
+				if(document.getElementById('moveMembers')) {
 					var mm=document.getElementById('moveMembers').checked;
 				}
 
-				//confirm('sg='+sg+'\n'+'sm='+sm+'\n'+'dg='+dg+'\n'+'dm='+dm+'\n'+'mm='+mm+'\n'+'dmm='+dmm+'\n');
-
-				if(dmm && !dm){
-					modal_window({ message: '<div>Please complete step 4 by selecting the member you want to transfer records to.</div>', title: "Info", close: function(){ jQuery('#destinationMemberID').focus(); } });
+				if(dmm && !dm) {
+					modal_window({ message: '<div>'+"<?php echo $Translation['complete step 4']; ?>"+'</div>', title: "<?php echo $Translation['info']; ?>", close: function() { jQuery('#destinationMemberID').focus(); } });
 					return false;
 				}
 
-				if(mm && sm!='-1'){
-					return window.confirm('Are you sure you want to move member \''+sm+'\' and his data from group \''+sg+'\' to group \''+dg+'\'?');
+				if(mm && sm!='-1') {
+
+					confirmMessage = '<?php echo addslashes($Translation['sure move member']); ?>';
+					confirmMessage = confirmMessage.replace(/<MEMBER>/, sm).replace(/<OLDGROUP>/, sg).replace(/<NEWGROUP>/, dg);
+					return window.confirm(confirmMessage);
+
 				}
-				if((dmm || dm) && sm!='-1'){
-					return window.confirm('Are you sure you want to move data of member \''+sm+'\' from group \''+sg+'\' to member \''+dm+'\' from group \''+dg+'\'?');
+				if((dmm || dm) && sm!='-1') {
+
+					confirmMessage = '<?php echo addslashes($Translation['sure move data of member']); ?>';
+					confirmMessage = confirmMessage.replace(/<OLDMEMBER>/, sm).replace(/<OLDGROUP>/, sg).replace(/<NEWMEMBER>/, dm).replace(/<NEWGROUP>/, dg);                 
+					return window.confirm(confirmMessage);
 				}
 
-				if(mm){
-					return window.confirm('Are you sure you want to move all members and data from group \''+sg+'\' to group \''+dg+'\'?');
+				if(mm) {
+
+					confirmMessage = '<?php echo addslashes($Translation['sure move all members']); ?>';
+					confirmMessage = confirmMessage.replace(/<OLDGROUP>/, sg).replace(/<NEWGROUP>/, dg);
+					return window.confirm(confirmMessage);
 				}
 
-				if(dmm){
-					return window.confirm('Are you sure you want to move data of all members of group \''+sg+'\' to member \''+dm+'\' from group \''+dg+'\'?');
+				if(dmm) {
+
+
+					confirmMessage = '<?php echo addslashes($Translation['sure move data of all members']); ?>';
+					confirmMessage = confirmMessage.replace(/<OLDGROUP>/, sg).replace(/<MEMBER>/, dm).replace(/<NEWGROUP>/, dg);
+					return window.confirm(confirmMessage);
 				}
 			}
 
-			function showDialog(dialogId){
-				$$('.dialog-box').invoke('addClassName', 'hidden-block');
-				$(dialogId).removeClassName('hidden-block');
+			function showDialog(dialogId) {
+				$j('.dialog-box').addClass('hidden-block');
+				$j('#' + dialogId).removeClass('hidden-block');
 				return false
 			};
 
-			function hideDialogs(){
-				$$('.dialog-box').invoke('addClassName', 'hidden-block');
+			function hideDialogs() {
+				$j('.dialog-box').addClass('hidden-block');
 				return false
 			};
 
 
-			$j(function(){
-				$j('input[type=submit],input[type=button]').each(function(){
+			$j(function() {
+				$j('input[type=submit],input[type=button]').each(function() {
 					var label = $j(this).val();
 					var onclick = $j(this).attr('onclick') || '';
 					var name = $j(this).attr('name') || '';
@@ -125,6 +131,9 @@
 
 					$j(this).replaceWith('<button class="btn btn-primary" type="' + type + '" onclick="' + onclick + '" name="' + name + '" value="' + label + '">' + label + '</button>');
 				});
+
+				/* fix links inside alerts */
+				$j('.alert a:not(.btn)').addClass('alert-link');
 			});
 
 		</script>
@@ -146,68 +155,114 @@
 			.hidden-block{
 				display: none;
 			}
+			.menu-item-icon{
+				margin-right: .5em;
+			}
+			.rtl .menu-item-icon{
+				margin-right: inherit !important;
+				margin-left: .5em;
+			}
 		</style>
 	</head>
 	<body>
-	<div class="container">
+	<div class="admin-area container theme-bootstrap theme-3d theme-compact">
 
 		<!-- top navbar -->
 		<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
 			<div class="navbar-header">
 				<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
-					<span class="sr-only">Toggle navigation</span>
+					<span class="sr-only"><?php echo $Translation['toggle navigation'];?></span>
 					<span class="icon-bar"></span>
 					<span class="icon-bar"></span>
 					<span class="icon-bar"></span>
 				</button>
-				<a class="navbar-brand" href="pageHome.php"><span class="text-warning"><i class="glyphicon glyphicon-cog"></i> Admin Area</span></a>
+				<a class="navbar-brand" href="pageHome.php"><span class="text-info"><i class="glyphicon glyphicon-cog"></i> <?php echo $Translation['admin area']; ?></span></a>
 			</div>
 
 			<div class="collapse navbar-collapse navbar-ex1-collapse">
 				<ul class="nav navbar-nav">
 					<li class="dropdown">
-						<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="glyphicon glyphicon-globe"></i> Groups <b class="caret"></b></a>
+						<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="glyphicon glyphicon-globe"></i> <?php echo $Translation['groups']; ?> <b class="caret"></b></a>
 						<ul class="dropdown-menu">
-							<li><a href="pageViewGroups.php">View Groups</a></li>
-							<li><a href="pageEditGroup.php">Add Group</a></li>
+							<li><a href="pageViewGroups.php"><i class="glyphicon menu-item-icon text-info glyphicon-eye-open"></i> <?php echo $Translation['view groups']; ?></a></li>
+							<li><a href="pageEditGroup.php"><i class="glyphicon menu-item-icon text-info glyphicon-plus"></i> <?php echo   $Translation['add group']  ; ?></a></li>
 							<li class="divider"></li>
-							<li><a href="pageEditGroup.php?groupID=<?php echo sqlValue("select groupID from membership_groups where name='" . makeSafe($adminConfig['anonymousGroup']) . "'"); ?>">Edit Anonymous Permissions</a></li>
+							<li><a href="pageEditGroup.php?groupID=<?php echo sqlValue("select groupID from membership_groups where name='" . makeSafe($adminConfig['anonymousGroup']) . "'"); ?>"><i class="glyphicon menu-item-icon text-info glyphicon-user"></i> <?php echo  $Translation['edit anonymous permissions'] ; ?></a></li>
 						</ul>
 					</li>
 
 					<li class="dropdown">
-						<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="glyphicon glyphicon-user"></i> Members <b class="caret"></b></a>
+						<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="glyphicon glyphicon-user"></i> <?php echo $Translation['members']  ;?> <b class="caret"></b></a>
 						<ul class="dropdown-menu">
-							<li><a href="pageViewMembers.php">View Members</a></li>
-							<li><a href="pageEditMember.php">Add Member</a></li>
+							<li><a href="pageViewMembers.php"><i class="glyphicon menu-item-icon text-info glyphicon-eye-open"></i> <?php echo $Translation['view members'] ; ?></a></li>
+							<li><a href="pageEditMember.php"><i class="glyphicon menu-item-icon text-info glyphicon-plus"></i> <?php echo $Translation['add member']; ?></a></li>
 							<li class="divider"></li>
-							<li><a href="pageViewRecords.php">View Members' Records</a></li>
+							<li><a href="pageViewRecords.php"><i class="glyphicon menu-item-icon text-info glyphicon-th"></i> <?php echo $Translation["view members' records"]; ?> </a></li>
 						</ul>
 					</li>
 
 					<li class="dropdown">
-						<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="glyphicon glyphicon-cog"></i> Utilities <b class="caret"></b></a>
+						<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="glyphicon glyphicon-cog"></i> <?php echo $Translation['utilities']; ?> <b class="caret"></b></a>
 						<ul class="dropdown-menu">
-							<li><a href="pageSettings.php">Admin Settings</a></li>
+							<?php if(Authentication::getSuperAdmin()) { ?>
+								<li><a href="pageSettings.php"><i class="glyphicon menu-item-icon text-info glyphicon-cog"></i> <?php echo $Translation['admin settings']; ?></a></li>
+								<li class="divider"></li>
+							<?php } ?>
+							<li><a href="pageMail.php?sendToAll=1"><i class="glyphicon menu-item-icon text-info glyphicon-envelope"></i> <?php echo $Translation['mail all users']; ?></a></li>
 							<li class="divider"></li>
-							<li><a href="pageRebuildFields.php">Rebuild fields</a></li>
-							<li><a href="pageUploadCSV.php">Import CSV data</a></li>
-							<li><a href="pageTransferOwnership.php">Batch Transfer Wizard</a></li>
-							<li><a href="pageMail.php?sendToAll=1">Mail All Users</a></li>
+							<li><a href="pageTranslation.php"><i class="glyphicon menu-item-icon text-info glyphicon-globe"></i> <?php echo $Translation['translation tool']; ?></a></li>
+							<li><a href="pageTransferOwnership.php"><i class="glyphicon menu-item-icon text-info glyphicon-transfer"></i> <?php echo $Translation['batch transfer']; ?></a></li>
+							<li><a href="pageRebuildFields.php"><i class="glyphicon menu-item-icon text-info glyphicon-refresh"></i> <?php echo  $Translation['view or rebuild fields']; ?></a></li>
+							<li><a href="pageBackupRestore.php"><i class="glyphicon menu-item-icon text-info glyphicon-tasks"></i> <?php echo $Translation['database backups']; ?></a></li>
+							<li><a href="pageUploadCSV.php"><i class="glyphicon menu-item-icon text-info glyphicon-upload"></i> <?php echo $Translation['import CSV']; ?></a></li>
+							<li><a href="pageQueryLogs.php"><i class="glyphicon menu-item-icon text-info glyphicon-book"></i> <?php echo $Translation['Query logs']; ?></a></li>
+							<li><a href="pageSQL.php"><i class="glyphicon menu-item-icon text-danger glyphicon-console"></i> <?php echo $Translation['Interactive SQL queries tool']; ?></a></li>
 							<li class="divider"></li>
-							<li><a href="http://forums.appgini.com" target="_blank"><i class="glyphicon glyphicon-new-window"></i> AppGini Community Forum</a></li>
+							<li><a href="https://forums.appgini.com" target="_blank"><i class="glyphicon menu-item-icon text-info glyphicon-new-window"></i> <?php echo $Translation['AppGini forum']; ?></a></li>
 						</ul>
 					</li>
+
+					<?php $plugins = get_plugins(); ?>
+
+					<?php if(count($plugins)) { ?>
+						<li class="dropdown">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="glyphicon glyphicon-plus"></i> <?php echo $Translation["plugins"] ; ?> <b class="caret"></b></a>
+							<ul class="dropdown-menu">
+								<?php foreach($plugins as $plugin) { ?>
+									<?php
+										$plugin_icon = '';
+										if($plugin['glyphicon']) $plugin_icon = "<i class=\"glyphicon glyphicon-{$plugin['glyphicon']}\"></i> ";
+										if($plugin['icon']) $plugin_icon = "<img class=\"rspacer-md\" src=\"{$plugin['admin_path']}/{$plugin['icon']}\"> ";
+									?>
+									<li><a target="_blank" href="<?php echo $plugin['admin_path']; ?>"><?php echo $plugin_icon . $plugin['title']; ?></a></li>
+								<?php } ?>
+							</ul>
+						</li>
+					<?php } ?>
 				</ul>
 
 				<div class="navbar-right">
-					<a href="../index.php" class="btn btn-success navbar-btn">User's area</a>
-					<a href="pageHome.php?signOut=1" class="btn btn-warning navbar-btn"><i class="glyphicon glyphicon-log-out"></i> Sign out</a>
+					<a href="<?php echo PREPEND_PATH; ?>index.php" class="btn btn-success navbar-btn"><?php echo $Translation["user's area"] ; ?></a>
+					<a href="<?php echo PREPEND_PATH; ?>index.php?signOut=1" class="btn btn-warning navbar-btn"><i class="glyphicon glyphicon-log-out"></i> <?php echo $Translation["sign out"] ; ?></a>
 				</div>
 			</div>
 		</nav>
+		<script>
+			/* periodically check if user is still signed in */
+			setInterval(function() {
+				$j.ajax({
+					url: '<?php echo PREPEND_PATH; ?>ajax_check_login.php',
+					success: function(username) {
+						if(!username.length) window.location = '<?php echo PREPEND_PATH; ?>index.php?signIn=1';
+					}
+				});
+			}, 60000);
+		</script>
 
+		<?php echo handle_maintenance(true); ?>
 		<div style="height: 80px;"></div>
+
+		<?php echo Notification::placeholder(); ?>
 
 		<!-- tool tips support -->
 		<div id="TipLayer" style="visibility:hidden;position:absolute;z-index:1000;top:-100"></div>
@@ -215,16 +270,16 @@
 		<!-- /tool tips support -->
 
 <?php
-	if(!strstr($_SERVER['PHP_SELF'], 'pageSettings.php') && $adminConfig['adminPassword'] == md5('admin')){
-		$noSignup=TRUE;
+	if(!strstr($_SERVER['PHP_SELF'], 'pageSettings.php') && password_match('admin', $adminConfig['adminPassword'])) {
+		$noSignup = true;
 		?>
 		<div class="alert alert-danger">
-			<p><strong>Attention!</strong></p>
-			<p>You are using the default admin
-			<?php if($adminConfig['adminUsername'] == 'admin'){ ?>username and<?php } ?> password. This is a huge security
-			risk. Please change <?php if($adminConfig['adminUsername'] == 'admin'){ ?> at least <?php } ?>
-			the admin password from the
-			<a href="pageSettings.php">Admin Settings</a> page <em>immediately</em>.</p>
+			<p><strong><?php echo $Translation["attention"] ; ?></strong></p>
+			<p><?php if($adminConfig['adminUsername'] == 'admin') {
+					echo $Translation['security risk admin'];
+			} else {
+					echo $Translation['security risk'];
+			} ?></p>
 		</div>
-	<?php } ?>
+	<?php  } ?>
 

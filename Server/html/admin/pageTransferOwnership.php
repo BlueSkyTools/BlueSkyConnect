@@ -1,7 +1,7 @@
 <?php
-	$currDir=dirname(__FILE__);
-	require("$currDir/incCommon.php");
-	include("$currDir/incHeader.php");
+	require(__DIR__ . '/incCommon.php');
+	$GLOBALS['page_title'] = $Translation['ownership batch transfer'];
+	include(__DIR__ . '/incHeader.php');
 
 	/* we need the following variables:
 		$sourceGroupID
@@ -14,301 +14,388 @@
 	*/
 
 	// validate input vars
-	$sourceGroupID=intval($_GET['sourceGroupID']);
-	$sourceMemberID=makeSafe(strtolower($_GET['sourceMemberID']));
-	$destinationGroupID=intval($_GET['destinationGroupID']);
-	$destinationMemberID=makeSafe(strtolower($_GET['destinationMemberID']));
-	$moveMembers=intval($_GET['moveMembers']);
+	$sourceGroupID = intval(Request::val('sourceGroupID'));
+	$sourceMemberID = makeSafe(strtolower(Request::val('sourceMemberID')));
+	$destinationGroupID = intval(Request::val('destinationGroupID'));
+	$destinationMemberID = makeSafe(strtolower(Request::val('destinationMemberID')));
+	$moveMembers = intval(Request::val('moveMembers'));
+	$statuses = [];
 
 	// transfer operations
-	if($sourceGroupID && $sourceMemberID && $destinationGroupID && ($destinationMemberID || $moveMembers) && $_GET['beginTransfer']!=''){
+	if($sourceGroupID && $sourceMemberID && $destinationGroupID && ($destinationMemberID || $moveMembers) && Request::has('beginTransfer')) {
+
+		// csrf check
+		if(!csrf_token(true)) die(str_replace('pageSettings.php', basename(htmlspecialchars($_SERVER['PHP_SELF'])), $Translation['invalid security token']));
+
 		/* validate everything:
 			1. Make sure sourceMemberID belongs to sourceGroupID
 			2. if moveMembers is false, make sure destinationMemberID belongs to destinationGroupID
 		*/
-		if(!sqlValue("select count(1) from membership_users where lcase(memberID)='$sourceMemberID' and groupID='$sourceGroupID'")){
-			if($sourceMemberID!=-1){
-				errorMsg("Invalid source member selected.");
-				include("$currDir/incFooter.php");
+		if(!sqlValue("select count(1) from membership_users where lcase(memberID)='$sourceMemberID' and groupID='$sourceGroupID'")) {
+			if($sourceMemberID!=-1) {
+				errorMsg($Translation['invalid source member']);
+				include(__DIR__ . '/incFooter.php');
 			}
 		}
-		if(!$moveMembers){
-			if(!sqlValue("select count(1) from membership_users where lcase(memberID)='$destinationMemberID' and groupID='$destinationGroupID'")){
-				errorMsg("Invalid destination member selected.");
-				include("$currDir/incFooter.php");
+		if(!$moveMembers) {
+			if(!sqlValue("select count(1) from membership_users where lcase(memberID)='$destinationMemberID' and groupID='$destinationGroupID'")) {
+				errorMsg($Translation['invalid destination member']);
+				include(__DIR__ . '/incFooter.php');
 			}
 		}
 
 		// get group names
-		$sourceGroup=sqlValue("select name from membership_groups where groupID='$sourceGroupID'");
-		$destinationGroup=sqlValue("select name from membership_groups where groupID='$destinationGroupID'");
+		$sourceGroup = htmlspecialchars(sqlValue("SELECT `name` FROM `membership_groups` WHERE `groupID`='$sourceGroupID'"));
+		$destinationGroup = htmlspecialchars(sqlValue("SELECT `name` FROM `membership_groups` WHERE `groupID`='$destinationGroupID'"));
 
 		// begin transfer
-		echo "<br><br><br>";
-		if($moveMembers && $sourceMemberID!=-1){
-			echo "Moving member '$sourceMemberID' and his data from group '$sourceGroup' to group '$destinationGroup' ...";
+		if($moveMembers && $sourceMemberID != -1) {
+			$originalValues = ['<MEMBERID>', '<SOURCEGROUP>', '<DESTINATIONGROUP>'];
+			$replaceValues = [$sourceMemberID, $sourceGroup, $destinationGroup];
+			$statuses[] = str_replace($originalValues, $replaceValues, $Translation['moving member']);
 
 			// change source member group
 			sql("update membership_users set groupID='$destinationGroupID' where lcase(memberID)='$sourceMemberID' and groupID='$sourceGroupID'", $eo);
-			$newGroup=sqlValue("select name from membership_users u, membership_groups g where u.groupID=g.groupID and lcase(u.memberID)='$sourceMemberID'");
+			$newGroup = sqlValue("select name from membership_users u, membership_groups g where u.groupID=g.groupID and lcase(u.memberID)='$sourceMemberID'");
 
 			// change group of source member's data
 			sql("update membership_userrecords set groupID='$destinationGroupID' where lcase(memberID)='$sourceMemberID' and groupID='$sourceGroupID'", $eo);
-			$dataRecs=sqlValue("select count(1) from membership_userrecords where lcase(memberID)='$sourceMemberID' and groupID='$destinationGroupID'");
+			$dataRecs = sqlValue("select count(1) from membership_userrecords where lcase(memberID)='$sourceMemberID' and groupID='$destinationGroupID'");
 
 			// status
-			$status="Member '$sourceMemberID' now belongs to group '$newGroup'. Data records transfered: $dataRecs.";
+			$originalValues =  ['<MEMBERID>', '<NEWGROUP>', '<DATARECORDS>'];
+			$replaceValues = [$sourceMemberID, $newGroup, $dataRecs];
+			$statuses[] = str_replace($originalValues, $replaceValues, $Translation['data records transferred']);
 
-		}elseif(!$moveMembers && $sourceMemberID!=-1){
-			echo "Moving data of member '$sourceMemberID' from group '$sourceGroup' to member '$destinationMemberID' from group '$destinationGroup' ...";
+		} elseif(!$moveMembers && $sourceMemberID != -1) {
+			$originalValues = ['<SOURCEMEMBER>', '<SOURCEGROUP>', '<DESTINATIONMEMBER>', '<DESTINATIONGROUP>'];
+			$replaceValues = [$sourceMemberID, $sourceGroup, $destinationMemberID, $destinationGroup];
+			$statuses[] = str_replace($originalValues, $replaceValues, $Translation['moving data']);
 
 			// change group and owner of source member's data
-			$srcDataRecsBef=sqlValue("select count(1) from membership_userrecords where lcase(memberID)='$sourceMemberID' and groupID='$sourceGroupID'");
+			$srcDataRecsBef = sqlValue("select count(1) from membership_userrecords where lcase(memberID)='$sourceMemberID' and groupID='$sourceGroupID'");
 			sql("update membership_userrecords set groupID='$destinationGroupID', memberID='$destinationMemberID' where lcase(memberID)='$sourceMemberID' and groupID='$sourceGroupID'", $eo);
-			$srcDataRecsAft=sqlValue("select count(1) from membership_userrecords where lcase(memberID)='$sourceMemberID' and groupID='$sourceGroupID'");
+			$srcDataRecsAft = sqlValue("select count(1) from membership_userrecords where lcase(memberID)='$sourceMemberID' and groupID='$sourceGroupID'");
 
 			// status
-			$status="Member '$sourceMemberID' of group '$sourceGroup' had $srcDataRecsBef data records. ".($srcDataRecsAft>0 ? "No records were tranfered" : "These records now belong")." to member '$destinationMemberID' of group '$destinationGroup'.";
+			$originalValues = ['<SOURCEMEMBER>', '<SOURCEGROUP>', '<DATABEFORE>','<TRANSFERSTATUS>', '<DESTINATIONMEMBER>', '<DESTINATIONGROUP>'];
+			$transferStatus = ($srcDataRecsAft>0 ? "No records were transferred" : "These records now belong");
+			$replaceValues = [$sourceMemberID, $sourceGroup, $srcDataRecsBef, $transferStatus ,$destinationMemberID, $destinationGroup];
+			$statuses[] = str_replace ($originalValues, $replaceValues, $Translation['member records status']);
 
-		}elseif($moveMembers){
-			echo "Moving all members and data of group '$sourceGroup' to group '$destinationGroup' ...";
+		} elseif($moveMembers) {
+			$originalValues = ['<SOURCEGROUP>', '<DESTINATIONGROUP>'];
+			$replaceValues = [$sourceGroup, $destinationGroup];
+			$statuses[] = str_replace($originalValues, $replaceValues, $Translation['moving all group members']);
 
 			// change source members group
 			sql("update membership_users set groupID='$destinationGroupID' where groupID='$sourceGroupID'", $eo);
 			$srcGroupMembers=sqlValue("select count(1) from membership_users where groupID='$sourceGroupID'");
 
 			// change group of source member's data
-			if(!$srcGroupMembers){
-				$dataRecsBef=sqlValue("select count(1) from membership_userrecords where groupID='$sourceGroupID'");
+			$dataRecsBef = $dataRecsAft = null;
+			if(!$srcGroupMembers) {
+				$dataRecsBef = sqlValue("select count(1) from membership_userrecords where groupID='$sourceGroupID'");
 				sql("update membership_userrecords set groupID='$destinationGroupID' where groupID='$sourceGroupID'", $eo);
-				$dataRecsAft=sqlValue("select count(1) from membership_userrecords where groupID='$sourceGroupID'");
+				$dataRecsAft = sqlValue("select count(1) from membership_userrecords where groupID='$sourceGroupID'");
 			}
 
 			// status
-			if($srcGroupMembers){
-				$status="Operation failed. No members were transfered from group '$sourceGroup' to '$destinationGroup'.";
-			}else{
-				$status="All members of group '$sourceGroup' now belong to '$destinationGroup'. ";
-				if($dataRecsAft){
-					$status.="However, data records failed to transfer.";
-				}else{
-					$status.="$dataRecsBef data records were transfered.";
+			$originalValues = ['<SOURCEGROUP>', '<DESTINATIONGROUP>'];
+			$replaceValues = [$sourceGroup ,$destinationGroup];
+			if($srcGroupMembers) {
+				$statuses[] = str_replace($originalValues, $replaceValues, $Translation['failed transferring group members']);
+			} else {
+				$statuses[] = str_replace($originalValues, $replaceValues, $Translation['group members transferred']);
+
+				if($dataRecsAft) {
+					$statuses[] = $Translation['failed transfer data records'];
+				} else {
+					$statuses[] = str_replace('<DATABEFORE>', $dataRecsBef, $Translation['data records were transferred']);
 				}
 			}
 
-		}else{
-			echo "Moving data of all members of group '$sourceGroup' to member '$destinationMemberID' from group '$destinationGroup' ...";
+		} else {
+			$originalValues = ['<SOURCEGROUP>', '<DESTINATIONMEMBER>', '<DESTINATIONGROUP>'];
+			$replaceValues = [$sourceGroup, $destinationMemberID, $destinationGroup];
+			$statuses[] = str_replace($originalValues, $replaceValues, $Translation['moving group data to member']);
 
 			// change group of source member's data
-			$recsBef=sqlValue("select count(1) from membership_userrecords where lcase(memberID)='$destinationMemberID'");
+			$recsBef = sqlValue("select count(1) from membership_userrecords where lcase(memberID)='$destinationMemberID'");
 			sql("update membership_userrecords set groupID='$destinationGroupID', memberID='$destinationMemberID' where groupID='$sourceGroupID'", $eo);
-			$recsAft=sqlValue("select count(1) from membership_userrecords where lcase(memberID)='$destinationMemberID'");
+			$recsAft = sqlValue("select count(1) from membership_userrecords where lcase(memberID)='$destinationMemberID'");
 
 			// status
-			$status=intval($recsAft-$recsBef)." record(s) were transfered from group '$sourceGroup' to member '$destinationMemberID' of group '$destinationGroup'";
-
+			$originalValues =  ['<NUMBER>', '<SOURCEGROUP>', '<DESTINATIONMEMBER>', '<DESTINATIONGROUP>'];
+			$recordsNumber = intval($recsAft-$recsBef);
+			$replaceValues = [$recordsNumber,  $sourceGroup, $destinationMemberID, $destinationGroup];
+			$statuses[] = str_replace($originalValues, $replaceValues, $Translation['moving group data to member status']);
 		}
 
 		// display status and a batch bookmark for later instant reuse of the wizard
+		$status = implode('<br>', $statuses);
+		echo Notification::show([
+			'message' => "<b>{$Translation['status']}</b><br>{$status}",
+			'class' => 'info',
+			'dismiss_seconds' => 3600
+		]);
 		?>
-		<div class="alert alert-info"><b>STATUS:</b><br><?php echo $status; ?></div>
 		<div>
-			To repeat the same batch transfer again later you can
-			<a href="pageTransferOwnership.php?sourceGroupID=<?php echo $sourceGroupID; ?>&amp;sourceMemberID=<?php echo urlencode($sourceMemberID); ?>&amp;destinationGroupID=<?php echo $destinationGroupID; ?>&amp;destinationMemberID=<?php echo urlencode($destinationMemberID); ?>&amp;moveMembers=<?php echo $moveMembers; ?>">bookmark or copy this link</a>.
-			</div>
+			<?php 
+				$originalValues = ['<SOURCEGROUP>', '<SOURCEMEMBER>', '<DESTINATIONGROUP>', '<DESTINATIONMEMBER>', '<MOVEMEMBERS>'];
+				$replaceValues = [$sourceGroupID, urlencode($sourceMemberID), $destinationGroupID, urlencode($destinationMemberID), $moveMembers];
+				echo str_replace ($originalValues, $replaceValues, $Translation['batch transfer link']);
+			?>
+		</div>
+
+		<a href="pageTransferOwnership.php" class="btn btn-default btn-lg vspacer-lg"><i class="glyphicon glyphicon-chevron-left"></i> <?php echo $Translation['batch transfer']; ?></a>
+
 		<?php
 
 		// quit
-		include("$currDir/incFooter.php");
+		include(__DIR__ . '/incFooter.php');
 	}
+?>
 
+<div class="page-header"><h1><?php echo $Translation['ownership batch transfer']; ?></h1></div>
 
-	// STEP 1
-	?>
+<form method="get" action="pageTransferOwnership.php" class="form-horizontal">
+	<?php echo csrf_token(); ?>
 
-	<div class="page-header"><h1>Batch Transfer Of Ownership</h1></div>
-
-	<form method="get" action="pageTransferOwnership.php">
-		<table class="table table-striped">
-			<tr>
-				<td class="tdHeader" colspan="2">
-					<h3>STEP 1:</h3>
-					The batch transfer wizard allows you to tranfer data records
-					of one or all members of a group (the <i>source group</i>)
-					to a member of another group (the <i>destination member</i> of the <i>destination group</i>)
-					</td>
-				</tr>
-			<tr>
-				<td class="tdFormCaption">
-					Source group
-					</td>
-				<td class="tdCell">
-					<?php
-						echo htmlSQLSelect("sourceGroupID", "select distinct g.groupID, g.name from membership_groups g, membership_users u where g.groupID=u.groupID order by g.name", $sourceGroupID);
-					?>
-					<input type="submit" value="<?php echo ($sourceGroupID ? "Update" : "Next Step"); ?>">
-					</td>
-				</tr>
-	<?php
-
-	// STEP 2
-		if($sourceGroupID){
-			?>
-			<tr>
-				<td class="tdCell" colspan="2">
-					This group has <?php echo sqlValue("select count(1) from membership_users where groupID='$sourceGroupID'"); ?> members, and
-					<?php echo sqlValue("select count(1) from membership_userrecords where groupID='$sourceGroupID'"); ?> data records.
-					</td>
-				</tr>
-			<tr>
-				<td class="tdHeader" colspan="2">
-					<h3>STEP 2:</h3>
-					The source member could be one member or all members of the source group.
-					</td>
-				</tr>
-			<tr>
-				<td class="tdFormCaption">
-					Source member
-					</td>
-				<td class="tdCell">
-					<?php
-						$arrVal[]='';
-						$arrCap[]='';
-						$arrVal[]='-1';
-						$arrCap[]="All members of '".htmlspecialchars(sqlValue("select name from membership_groups where groupID='$sourceGroupID'"))."'";
-						if($res=sql("select lcase(memberID), lcase(memberID) from membership_users where groupID='$sourceGroupID' order by memberID", $eo)){
-							while($row=db_fetch_row($res)){
-								$arrVal[]=$row[0];
-								$arrCap[]=$row[1];
-							}
-							echo htmlSelect("sourceMemberID", $arrVal, $arrCap, $sourceMemberID);
-						}
-					?>
-					<input type="submit" value="<?php echo ($sourceMemberID ? "Update" : "Next Step"); ?>">
-					</td>
-				</tr>
-			<?php
-		}
-
-	// STEP 3
-		if($sourceMemberID){
-			?>
-			<tr>
-				<td class="tdCell" colspan="2">
-					This member has <?php echo sqlValue("select count(1) from membership_userrecords where ".($sourceMemberID==-1 ? "groupID='$sourceGroupID'" : "memberID='$sourceMemberID'")); ?> data records.
-					</td>
-				</tr>
-			<tr>
-				<td class="tdHeader" colspan="2">
-					<h3>STEP 3:</h3>
-					The destination group could be the same or different from the source group. Only groups that have members are listed below.
-					</td>
-				</tr>
-			<tr>
-				<td class="tdFormCaption">
-					Destination group
-					</td>
-				<td class="tdCell">
-					<?php
-						echo htmlSQLSelect("destinationGroupID", "select distinct membership_groups.groupID, name from membership_groups, membership_users where membership_groups.groupID=membership_users.groupID order by name", $destinationGroupID);
-					?>
-					<input type="submit" value="<?php echo ($destinationGroupID ? "Update" : "Next Step"); ?>">
-					</td>
-				</tr>
-			<?php
-		}
-
-	// STEP 4, source group same as destination
-		if($destinationGroupID && $destinationGroupID==$sourceGroupID){
-			?>
-			<tr>
-				<td class="tdHeader" colspan="2">
-					<h3>STEP 4:</h3>
-					The destination member will be the new owner of the data records of the source
-					member.
-					</td>
-				</tr>
-			<tr>
-				<td class="tdFormCaption">
-					Destination member
-					</td>
-				<td class="tdCell">
-					<?php
-						echo htmlSQLSelect("destinationMemberID", "select lcase(memberID), lcase(memberID) from membership_users where groupID='$destinationGroupID' and lcase(memberID)!='$sourceMemberID' order by memberID", $destinationMemberID);
-					?>
-					</td>
-				</tr>
-			<tr>
-				<td class="tdFormFooter" colspan="2" align="right">
-					<input type="submit" name="beginTransfer" value="Begin Transfer" onClick="return jsConfirmTransfer();">
-					</td>
-				</tr>
-			<?php
-
-	// STEP 4, source group not same as destination
-		}elseif($destinationGroupID){
-			?>
-			<tr>
-				<td class="tdHeader" colspan="2">
-					<h3>STEP 4:</h3>
-					<?php
-						$noMove=($sourceGroupID==sqlValue("select groupID from membership_groups where name='".$adminConfig['anonymousGroup']."'"));
-						if(!$noMove){
+	<div id="step-1" class="panel panel-default">
+		<div class="panel-heading">
+			<h3 class="panel-title">
+				<b><?php echo $Translation['step 1']; ?></b>
+				<?php if($sourceGroupID) { ?>
+					<span class="pull-right text-success">
+						<i class="glyphicon glyphicon-ok"></i> 
+						<?php echo $Translation['source group']; ?>:
+						<b><?php echo htmlspecialchars(sqlValue("SELECT `name` FROM `membership_groups` WHERE `groupID`='{$sourceGroupID}'")); ?></b>
+					</span>
+				<?php } ?>
+			</h3>
+		</div>
+		<div class="panel-body">
+			<div class="step-details"><?php echo $Translation['batch transfer wizard']; ?></div>
+			<div class="form-group">
+				<label for="sourceGroupID" class="control-label col-sm-2"><?php echo $Translation['source group']; ?></label>
+				<div class="col-sm-6 col-md-4">
+					<?php echo htmlSQLSelect("sourceGroupID", "select distinct g.groupID, g.name from membership_groups g, membership_users u where g.groupID=u.groupID order by g.name", $sourceGroupID); ?>
+					<?php if($sourceGroupID) { ?>
+						<span class="help-block text-info">
+							<i class="glyphicon glyphicon-info-sign"></i> 
+							<?php 
+								$originalValues =  ['<MEMBERS>', '<RECORDS>'];
+								$membersNum = sqlValue("select count(1) from membership_users where groupID='$sourceGroupID'"); 
+								$recordsNum = sqlValue("select count(1) from membership_userrecords where groupID='$sourceGroupID'");
+								$replaceValues = [$membersNum, $recordsNum];
+								echo str_replace($originalValues, $replaceValues, $Translation['group statistics']);
 							?>
-							You could either move records from the source member(s) to a member in the
-							destination group, or move the source member(s), together with
-							their data records to the destination group.
-							<?php
-						}
+						</span>
+					<?php } ?>
+				</div>
+				<div class="col-sm-4 col-md-2">
+					<button type="submit" class="btn btn-block btn-primary">
+						<i class="glyphicon glyphicon-ok"></i> 
+						<?php echo ($sourceGroupID ? $Translation['update'] : $Translation['next step']); ?>
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<?php if($sourceGroupID) { ?>
+		<div id="step-2" class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">
+					<b><?php echo $Translation['step 2'] ; ?></b>
+					<?php if($sourceMemberID) { ?>
+						<span class="pull-right text-success">
+							<i class="glyphicon glyphicon-ok"></i> 
+							<?php echo $Translation['source member']; ?>:
+							<b><?php echo strip_tags($sourceMemberID); ?></b>
+						</span>
+					<?php } ?>
+				</h3>
+			</div>
+			<div class="panel-body">
+				<div class="step-details"><?php echo $Translation['source member message'] ; ?></div>
+				<div class="form-group">
+					<label for="sourceGroupID" class="control-label col-sm-2"><?php echo $Translation['source member'] ; ?></label>
+					<div class="col-sm-6 col-md-4">
+						<?php
+							$arrVal = ['', '-1'];
+							$arrCap = ['', str_replace ('<GROUPNAME>', html_attr(sqlValue("select name from membership_groups where groupID='$sourceGroupID'")), $Translation['all group members'])];
+							if($res = sql("select lcase(memberID), lcase(memberID) from membership_users where groupID='$sourceGroupID' order by memberID", $eo)) {
+								while($row = db_fetch_row($res)) {
+									$arrVal[] = $row[0];
+									$arrCap[] = $row[1];
+								}
+								echo htmlSelect("sourceMemberID", $arrVal, $arrCap, $sourceMemberID);
+							}
+						?>
+						<?php if($sourceMemberID) { ?>
+							<span class="help-block text-info">
+								<i class="glyphicon glyphicon-info-sign"></i> 
+								<?php
+									$recordsNum = sqlValue("select count(1) from membership_userrecords where ".($sourceMemberID==-1 ? "groupID='$sourceGroupID'" : "memberID='$sourceMemberID'"));
+									echo str_replace ('<RECORDS>', $recordsNum, $Translation['member statistics']);
+								?>
+							</span>
+						<?php } ?>
+					</div>
+					<div class="col-sm-4 col-md-2">
+						<button type="submit" class="btn btn-block btn-primary">
+							<i class="glyphicon glyphicon-ok"></i> 
+							<?php echo ($sourceMemberID ? $Translation['update'] : $Translation['next step']); ?>
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	<?php } ?>
+
+	<?php if($sourceMemberID) { ?>
+		<div id="step-3" class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">
+					<b><?php echo $Translation['step 3']; ?></b>
+					<?php if($destinationGroupID) { ?>
+						<span class="pull-right text-success">
+							<i class="glyphicon glyphicon-ok"></i> 
+							<?php echo $Translation['destination group']; ?>:
+							<b><?php echo htmlspecialchars(sqlValue("SELECT `name` FROM `membership_groups` WHERE `groupID`='{$destinationGroupID}'")); ?></b>
+						</span>
+					<?php } ?>
+				</h3>
+			</div>
+			<div class="panel-body">
+				<div class="step-details"><?php echo $Translation['destination group message']; ?></div>
+				<div class="form-group">
+					<label for="destinationGroupID" class="control-label col-sm-2"><?php echo $Translation['destination group']; ?></label>
+					<div class="col-sm-6 col-md-4">
+						<?php echo htmlSQLSelect("destinationGroupID", "select distinct membership_groups.groupID, name from membership_groups, membership_users where membership_groups.groupID=membership_users.groupID order by name", $destinationGroupID); ?>
+						<span class="help-block"></span>
+					</div>
+					<div class="col-sm-4 col-md-2">
+						<button type="submit" class="btn btn-block btn-primary">
+							<i class="glyphicon glyphicon-ok"></i> 
+							<?php echo ($destinationGroupID ? $Translation['update'] : $Translation['next step']); ?>
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	<?php } ?>
+
+	<?php if($destinationGroupID && $destinationGroupID == $sourceGroupID) { /* source group same as destination */ ?>
+		<div id="step-4" class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">
+					<b><?php echo $Translation['step 4'] ; ?></b>
+					<?php if($destinationMemberID) { ?>
+						<span class="pull-right text-success">
+							<i class="glyphicon glyphicon-ok"></i> 
+							<?php echo $Translation['destination member']; ?>:
+							<b><?php echo $destinationMemberID; ?></b>
+						</span>
+					<?php } ?>
+				</h3>
+			</div>
+			<div class="panel-body">
+				<div class="step-details"><?php echo $Translation['destination member message'] ; ?></div>
+				<div class="form-group">
+					<label for="sourceGroupID" class="control-label col-sm-2"><?php echo $Translation['destination member'] ; ?></label>
+					<div class="col-sm-6 col-md-4">
+						<?php
+							echo htmlSQLSelect("destinationMemberID", "select lcase(memberID), lcase(memberID) from membership_users where groupID='$destinationGroupID' and lcase(memberID)!='$sourceMemberID' order by memberID", $destinationMemberID);
+						?>
+					</div>
+				</div>
+			</div>
+		</div>
+
+	<?php } elseif($destinationGroupID) { /* source group not same as destination */ ?>
+		<div id="step-4" class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">
+					<b><?php echo $Translation['step 4'] ; ?></b>
+				</h3>
+			</div>
+			<div class="panel-body">
+				<div class="step-details">
+					<?php
+						$anon_group_safe = makeSafe(config('adminConfig')['anonymousGroup']);
+						$anonGroupId = sqlValue("SELECT groupID FROM membership_groups WHERE name='{$anon_group_safe}'");
+
+						// present option to move member to destination group only if 
+						// source/destination group is not anonymous group and
+						// source member is not super admin and
+						// source member is not 'all members'
+						$noMove = (
+							$sourceGroupID == $anonGroupId ||
+							$destinationGroupID == $anonGroupId ||
+							$sourceMemberID == config('adminConfig')['adminUsername'] ||
+							$sourceMemberID == -1
+						);
+
+						$destinationHasMembers = sqlValue("SELECT COUNT(1) FROM membership_users WHERE groupID='{$destinationGroupID}'");
+
+						if(!$noMove) echo $Translation['move records'];
 					?>
-					</td>
-				</tr>
-			<?php
-				if(sqlValue("select count(1) from membership_users where groupID='$destinationGroupID'")>0){
-					$destinationHasMembers=TRUE;
-					?>
-					<tr>
-						<td class="tdCell" colspan="2">
+				</div>
+
+				<?php if($destinationHasMembers) { ?>
+					<div class="form-group">
+						<label class="col-xs-12 col-sm-8 col-md-6">
 							<input type="radio" name="moveMembers" id="dontMoveMembers" value="0" <?php echo ($moveMembers ? "" : "checked"); ?>>
-							Move data records to this member:
-							<?php
+							<?php 
+								echo $Translation['move data records to member'] . ' '; 
 								echo htmlSQLSelect("destinationMemberID", "select lcase(memberID), lcase(memberID) from membership_users where groupID='$destinationGroupID' order by memberID", $destinationMemberID);
 							?>
-							</td>
-						</tr>
-					<?php
-				}else{
-					$destinationHasMembers=FALSE;
-				}
+						</label>
+					</div>
+				<?php } ?>
 
-				if(!$noMove){
-					?>
-					<tr>
-						<td class="tdCell" colspan="2">
+				<?php if(!$noMove) { ?>
+					<div class="form-group">
+						<label class="col-md-10">
 							<input type="radio" name="moveMembers" id="moveMembers" value="1" <?php echo ($moveMembers || !$destinationHasMembers ? "checked" : ""); ?>>
-							Move source member(s) and all his/their data records to the '<?php echo sqlValue("select name from membership_groups where groupID='$destinationGroupID'"); ?>' group.
-							</td>
-						</tr>
-					<?php
-				}
-			?>
-			<tr>
-				<td class="tdFormFooter" colspan="2" align="right">
-					<input type="submit" name="beginTransfer" value="Begin Transfer" onClick="return jsConfirmTransfer();">
-					</td>
-				</tr>
-			<?php
-		}
-	?>
-			</table>
-		</form>
+							<?php echo str_replace('<GROUPNAME>', sqlValue("select name from membership_groups where groupID='$destinationGroupID'"), $Translation['move source member to group']); ?>
+						</label>
+					</div>
+				<?php } ?>
 
+			</div>
+		</div>
+	<?php } ?>
 
-	<?php
+	<?php if($destinationGroupID) { ?>
+		<div class="row">
+			<div class="col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3 col-lg-4 col-lg-offset-4">
+				<button type="submit" name="beginTransfer" value="1" class="btn btn-lg btn-success btn-block" onClick="return jsConfirmTransfer();">
+					<i class="glyphicon glyphicon-ok"></i> 
+					<?php echo $Translation['begin transfer']; ?>
+				</button>
+			</div>
+		</div>
+	<?php } ?>
+</form>
 
+<style>
+	.step-details{ margin: 1em 0; font-size: 1.2em; }
+	form{ margin-bottom: 2em; }
+</style>
 
-?>
+<script>
+	$j(function() {
+		$j('select').addClass('form-control').attr('style', 'width: 100% !important;');
 
-<?php
-	include("$currDir/incFooter.php");
-?>
+		/* when a select is changed, automatically apply the change */
+		$j('select').change(function() {
+			$j(this).parent().next().children('.btn').click();
+		})
+	})
+</script>
+
+<?php include(__DIR__ . '/incFooter.php');

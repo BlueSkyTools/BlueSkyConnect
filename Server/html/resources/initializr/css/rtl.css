@@ -1167,7 +1167,7 @@ th {
   }
   .navbar-right.flip {
     float: left !important;
-    margin-left: -15px;
+    margin-left: 15px;
     margin-right: auto;
   }
   .navbar-right .dropdown-menu {
@@ -1464,6 +1464,14 @@ th {
 }
 .pull-left.flip {
   float: right !important;
+}
+
+.text-right.flip {
+	text-align: left !important;
+}
+
+.text-left.flip {
+	text-align: right !important;
 }
 
 @font-face {

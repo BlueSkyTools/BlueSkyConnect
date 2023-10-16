@@ -1,15 +1,15 @@
 <?php
-	// For help on using hooks, please refer to http://bigprof.com/appgini/help/working-with-generated-web-database-application/hooks
+	// For help on using hooks, please refer to https://bigprof.com/appgini/help/working-with-generated-web-database-application/hooks
 
-	function connections_init(&$options, $memberInfo, &$args){
+	function connections_init(&$options, $memberInfo, &$args) {
 
 		return TRUE;
 	}
 
-	function connections_header($contentType, $memberInfo, &$args){
+	function connections_header($contentType, $memberInfo, &$args) {
 		$header='';
 
-		switch($contentType){
+		switch($contentType) {
 			case 'tableview':
 				$header='';
 				break;
@@ -38,10 +38,10 @@
 		return $header;
 	}
 
-	function connections_footer($contentType, $memberInfo, &$args){
+	function connections_footer($contentType, $memberInfo, &$args) {
 		$footer='';
 
-		switch($contentType){
+		switch($contentType) {
 			case 'tableview':
 				$footer='';
 				break;
@@ -70,44 +70,44 @@
 		return $footer;
 	}
 
-	function connections_before_insert(&$data, $memberInfo, &$args){
+	function connections_before_insert(&$data, $memberInfo, &$args) {
 
 		return TRUE;
 	}
 
-	function connections_after_insert($data, $memberInfo, &$args){
+	function connections_after_insert($data, $memberInfo, &$args) {
 
 		return TRUE;
 	}
 
-	function connections_before_update(&$data, $memberInfo, &$args){
+	function connections_before_update(&$data, $memberInfo, &$args) {
 
 		return TRUE;
 	}
 
-	function connections_after_update($data, $memberInfo, &$args){
+	function connections_after_update($data, $memberInfo, &$args) {
 
 		return TRUE;
 	}
 
-	function connections_before_delete($selectedID, &$skipChecks, $memberInfo, &$args){
+	function connections_before_delete($selectedID, &$skipChecks, $memberInfo, &$args) {
 
 		return TRUE;
 	}
 
-	function connections_after_delete($selectedID, $memberInfo, &$args){
+	function connections_after_delete($selectedID, $memberInfo, &$args) {
 
 	}
 
-	function connections_dv($selectedID, $memberInfo, &$html, &$args){
+	function connections_dv($selectedID, $memberInfo, &$html, &$args) {
 
 	}
 
-	function connections_csv($query, $memberInfo, &$args){
+	function connections_csv($query, $memberInfo, &$args) {
 
 		return $query;
 	}
-	function connections_batch_actions(&$args){
+	function connections_batch_actions(&$args) {
 
-		return array();
+		return [];
 	}
