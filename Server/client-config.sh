@@ -131,6 +131,7 @@ if [[ ${IN_DOCKER} ]]; then
 	/usr/bin/killall sshd
 
 	# lets make an installer pkg!
+	find /var/www/html/ -type d -regextype posix-extended -regex '.*/[^/]{32}$' -prune -exec rm -rf {} \;
 	/usr/local/bin/build_pkg.sh
 	/usr/local/bin/build_admin_pkg.sh
 fi
