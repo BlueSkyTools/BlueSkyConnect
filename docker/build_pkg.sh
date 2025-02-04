@@ -81,7 +81,7 @@ ln -s "${PKG_LOCATION}" /var/www/html/"${RANDOM_DIR}"/
 if grep -q '<ul class="nav navbar-nav" id="agent">' /var/www/html/hooks/agent-links.php; then
     # Agent link exists, replace it
     sed -i "/<ul class=\"nav navbar-nav\" id=\"agent\">/,/<\/ul>/c\\
-<ul class=\"nav navbar-nav\" id=\"admin_agent\">\\
+<ul class=\"nav navbar-nav\" id=\"agent\">\\
   <a href=\"${RANDOM_DIR}/${APPNAME}-${BLUESKY_VERSION}.pkg\" class=\"btn btn-default navbar-btn visible-sm visible-md visible-lg\"><i class=\"glyphicon glyphicon-download-alt\"></i>Download BlueSky Agent</a>\\
   <a href=\"${RANDOM_DIR}/${APPNAME}-${BLUESKY_VERSION}.pkg\" class=\"visible-xs btn btn-default navbar-btn btn-lg\"><i class=\"glyphicon glyphicon-download-alt\"></i>Download BlueSky Agent</a>\\
 </ul>" /var/www/html/hooks/agent-links.php
