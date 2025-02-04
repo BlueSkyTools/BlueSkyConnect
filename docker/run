@@ -23,7 +23,7 @@ do
 	sleep 1;
 	COUNT=$((COUNT+1));
 
-  MYSQL_IS_RUNNING=$(mysqladmin -h db -u root -p'$mysqlRootPass' status 2>1 /dev/null | grep Uptime)
+  MYSQL_IS_RUNNING=$(mysqladmin -h "$MYSQLSERVER" -u root -p"$mysqlRootPass" status 2>1 /dev/null | grep Uptime)
 
   if [[ -z $MYSQL_IS_RUNNING ]]; then
     if [ $COUNT -gt 60 ]; then
