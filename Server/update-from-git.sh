@@ -43,7 +43,7 @@ if [ "$mysqlCollectorPass" == "" ]; then
   myQry="grant select on BlueSky.computers to 'collector'@'localhost';"
   $myCmd "$myQry"
 fi
-sed -i "s/CHANGETHIS/$mysqlCollectorPass/g" /usr/lib/cgi-bin/collector.php
+sed -i "s/CHANGETHIS/$(printf '%s\n' "$mysqlCollectorPass" | sed 's/[\/&]/\\&/g')/g" /usr/lib/cgi-bin/collector.php
 
 ## double-check permissions on uploaded BlueSky files
 chown -R root:root /usr/local/bin/BlueSkyConnect/Server

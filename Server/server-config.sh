@@ -223,7 +223,7 @@ crontab /tmp/mycron
 ln -fs /usr/local/bin/BlueSkyConnect/Server/collector.php /usr/lib/cgi-bin/collector.php
 chown www-data /usr/local/bin/BlueSkyConnect/Server/collector.php
 chmod 700 /usr/local/bin/BlueSkyConnect/Server/collector.php
-sed -i "s/CHANGETHIS/$mysqlCollectorPass/g" /usr/lib/cgi-bin/collector.php
+sed -i "s/CHANGETHIS/$(printf '%s\n' "$mysqlCollectorPass" | sed 's/[\/&]/\\&/g')/g" /usr/lib/cgi-bin/collector.php
 if [[ ${IN_DOCKER} ]]; then
   sed -i "s/localhost/$MYSQLSERVER/g" /usr/lib/cgi-bin/collector.php
 fi
@@ -252,7 +252,7 @@ fi
 myCmd="/usr/bin/mysql --defaults-file=/var/local/my.cnf BlueSky -N -B -e"
 
 ## setup credentials in /var/www/html/config.php
-sed -i "s/MYSQLROOT/$mysqlRootPass/g" /var/www/html/config.php
+sed -i "s/MYSQLROOT/$(printf '%s\n' "$mysqlRootPass" | sed 's/[\/&]/\\&/g')/g" /var/www/html/config.php
 if [[ ${IN_DOCKER} ]]; then
   sed -i "s/localhost/$MYSQLSERVER/g" /var/www/html/config.php
 fi
