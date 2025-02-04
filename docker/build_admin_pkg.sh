@@ -66,9 +66,18 @@ echo "osx package has been built: ${PKG_LOCATION}"
 RANDOM_DIR=`uuidgen`
 mkdir /var/www/html/"${RANDOM_DIR}"
 ln -s "${PKG_LOCATION}" /var/www/html/"${RANDOM_DIR}"/
-cat <<EOF >> /var/www/html/hooks/agent-links.php
-<ul class="nav navbar-nav">
-  <a href="${RANDOM_DIR}/${APPNAME}-${BLUESKY_VERSION}.pkg" class="btn btn-default navbar-btn visible-sm visible-md visible-lg"><i class="glyphicon glyphicon-download-alt"></i> Download BlueSky Admin Tools</a>
-  <a href="${RANDOM_DIR}/${APPNAME}-${BLUESKY_VERSION}.pkg" class="visible-xs btn btn-default navbar-btn btn-lg"><i class="glyphicon glyphicon-download-alt"></i> Download BlueSky Admin Tools</a>
+if grep -q '<ul class="nav navbar-nav" id="admin_agent">' /var/www/html/hooks/agent-links.php; then
+    # Agent link exists, replace it
+    sed -i "/<ul class=\"nav navbar-nav\" id=\"admin_agent\">/,/<\/ul>/c\\
+<ul class=\"nav navbar-nav\" id=\"admin_agent\">\\
+  <a href=\"${RANDOM_DIR}/${APPNAME}-${BLUESKY_VERSION}.pkg\" class=\"btn btn-default navbar-btn visible-sm visible-md visible-lg\"><i class=\"glyphicon glyphicon-download-alt\"></i>Download BlueSky Admin Tools</a>\\
+  <a href=\"${RANDOM_DIR}/${APPNAME}-${BLUESKY_VERSION}.pkg\" class=\"visible-xs btn btn-default navbar-btn btn-lg\"><i class=\"glyphicon glyphicon-download-alt\"></i>Download BlueSky Admin Tools</a>\\
+</ul>" /var/www/html/hooks/agent-links.php
+else
+    cat <<EOF >> /var/www/html/hooks/agent-links.php
+<ul class="nav navbar-nav" id="admin_agent">
+  <a href="${RANDOM_DIR}/${APPNAME}-${BLUESKY_VERSION}.pkg" class="btn btn-default navbar-btn visible-sm visible-md visible-lg"><i class="glyphicon glyphicon-download-alt"></i>Download BlueSky Admin Tools</a>
+  <a href="${RANDOM_DIR}/${APPNAME}-${BLUESKY_VERSION}.pkg" class="visible-xs btn btn-default navbar-btn btn-lg"><i class="glyphicon glyphicon-download-alt"></i>Download BlueSky Admin Tools</a>
 </ul>
 EOF
+fi
