@@ -15,6 +15,19 @@ webAdminPassword=""
 mysqlRootPass=""
 emailAlertAddress=""
 # --------- DO NOT EDIT BELOW ------------------------------------------------------
+## Function to update sshd_config safely
+function update_sshd_config() {
+    local key="$1"
+    local value="$2"
+    local config_file="/etc/ssh/sshd_config"
+
+    # Remove any existing occurrences of the key to avoid duplicates
+    sed -i "/^$key/d" "$config_file"
+
+    # Append the correct key-value pair
+    echo "$key $value" >> "$config_file"
+}
+
 if [[ -z ${USE_HTTP} ]]; then
   USE_HTTP=0
 fi
@@ -105,21 +118,26 @@ chmod 755 /usr/local/bin/BlueSkyConnect/Server/*.sh
 echo "$serverFQDN" > /usr/local/bin/BlueSkyConnect/Server/server.txt
 echo "$serverFQDN" > /usr/local/bin/BlueSkyConnect/Admin\ Tools/server.txt
 
-## reconfigure sshd_config to meet our specifications
-echo 'Ciphers chacha20-poly1305@openssh.com,aes256-ctr' >> /etc/ssh/sshd_config
-echo 'MACs hmac-sha2-512-etm@openssh.com' >> /etc/ssh/sshd_config
+## Reconfigure sshd_config to meet our specifications
+enabledSSHCiphers="aes256-gcm@openssh.com"
+if [[ ${INSECURE_CIPHERS} ]]; then
+  enabledSSHCiphers="${enabledSSHCiphers},chacha20-poly1305@openssh.com"
+fi
+update_sshd_config "Ciphers" "${enabledSSHCiphers}"
+update_sshd_config "MACs" "hmac-sha2-512-etm@openssh.com"
+
 sed -i '/HostKey \/etc\/ssh\/ssh_host_dsa_key/d' /etc/ssh/sshd_config
 sed -i '/HostKey \/etc\/ssh\/ssh_host_ecdsa_key/d' /etc/ssh/sshd_config
 sed -i 's/#Port 22/Port 3122/g' /etc/ssh/sshd_config
 service sshd restart
 if [[ ${IN_DOCKER} ]]; then
-  # disable password authentication for ssh in docker
-  echo 'PasswordAuthentication no' >> /etc/ssh/sshd_config
-  echo 'ChallengeResponseAuthentication no' >> /etc/ssh/sshd_config
+  update_sshd_config "PasswordAuthentication" "no"
+  update_sshd_config "ChallengeResponseAuthentication" "no"
 fi
-# set shorter tunnel timeouts
-echo 'ClientAliveInterval 10' >> /etc/ssh/sshd_config
-echo 'ClientAliveCountMax 3' >> /etc/ssh/sshd_config
+
+## Set shorter tunnel timeouts
+update_sshd_config "ClientAliveInterval" "10"
+update_sshd_config "ClientAliveCountMax" "3"
 
 ## setup local firewall
 if [[ -z ${IN_DOCKER} ]]; then

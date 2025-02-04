@@ -302,7 +302,7 @@ if [ ${osVersionMajor:-0} -eq 10 ] && [ ${osVersionMinor:-0} -lt 11 ] && [ ${osV
 else
   keyAlg="ssh-ed25519"
   serverKey="serverkey"
-  prefCipher="chacha20-poly1305@openssh.com"
+  prefCipher="aes256-gcm@openssh.com"
   kexAlg="-o KexAlgorithms=curve25519-sha256@libssh.org"
   msgAuth="hmac-sha2-512-etm@openssh.com"
 fi
