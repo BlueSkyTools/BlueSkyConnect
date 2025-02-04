@@ -226,10 +226,6 @@ function startMeUp {
   else
     logMe "SSH port is set to $altPort per settings"
   fi
-  # is this 10.6 which doesn't support UseRoaming or 10.12+ which doesn't need the flag?
-  if [ ${osVersionMajor:-0} -eq 10 ] && [ "$osVersionMinor" != "6" ] && [ ${osVersionMinor:-0} -lt 12 ]; then
-    noRoam="-o UseRoaming=no"
-  fi
   ## main command right here
   $ourHome/autossh -M $monport -f \
   -c $prefCipher -m $msgAuth \
@@ -292,20 +288,12 @@ osRaw=`sw_vers -productVersion`
 osVersionMajor=`echo "$osRaw" | awk -F . '{ print $1 }'`
 osVersionMinor=`echo "$osRaw" | awk -F . '{ print $2 }'`
 
-# select all of our algorithms - treating OS X 10.10 and below as insecure, defaulting to secure
-if [ ${osVersionMajor:-0} -eq 10 ] && [ ${osVersionMinor:-0} -lt 11 ] && [ ${osVersionMinor:-0} -ne 0 ]; then
-  keyAlg="ssh-rsa"
-  serverKey="serverkeyrsa"
-  prefCipher="aes256-ctr"
-  kexAlg=""
-  msgAuth="hmac-ripemd160"
-else
-  keyAlg="ssh-ed25519"
-  serverKey="serverkey"
-  prefCipher="aes256-gcm@openssh.com"
-  kexAlg="-o KexAlgorithms=curve25519-sha256@libssh.org"
-  msgAuth="hmac-sha2-512-etm@openssh.com"
-fi
+# select all of our algorithms
+keyAlg="ssh-ed25519"
+serverKey="serverkey"
+prefCipher="aes256-gcm@openssh.com"
+kexAlg="-o KexAlgorithms=curve25519-sha256@libssh.org"
+msgAuth="hmac-sha2-512-etm@openssh.com"
 
 # server key will be pre-populated in the installer - put it into known hosts
 serverKey=`/usr/libexec/PlistBuddy -c "Print :$serverKey" "$ourHome/server.plist"  2> /dev/null`
