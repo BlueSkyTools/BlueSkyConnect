@@ -19,21 +19,26 @@ if [ -e "$ourHome/.debug" ]; then
 fi
 
 function callApi {
-  payload=""
+  local payload=()
+
+  # Loop through all arguments and add --data-urlencode for each
   for datum in "$@"; do
-    payload="$payload --data-urlencode $datum"
+    payload+=(--data-urlencode "$datum")
   done
-  "$curl" \
-    "$cacert" \
-    "$payload" \
+
+  result=$("$curl" -v \
+    ${cacert:+$cacert} \
+    "${payload[@]}" \
     --max-time 60 \
-    "$curlProxy" \
+    ${curlProxy:+$curlProxy} \
     --request POST \
     --retry 4 \
     --show-error \
     --silent \
     --tlsv1 \
-    "https://$blueskyServer/cgi-bin/collector.php"
+    "https://$blueskyServer/cgi-bin/collector.php")
+
+  echo "$result"
 }
 
 function getAutoPid {
