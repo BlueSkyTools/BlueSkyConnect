@@ -116,6 +116,14 @@ else
 fi
 ;;
 
+"deleted")
+# when bluesky.sh executes a self-destruct (either locally or from server command)
+# delete the computer from the database
+# TODO - lookup option in database global to not do this
+myQry="delete from computers where serialnum='$serialNum'"
+myUser=`$myCmd "$myQry"`
+;;
+
 "status")
 # attempts an ssh connection back through the tunnel
 # also sends self destruct, notify mail
