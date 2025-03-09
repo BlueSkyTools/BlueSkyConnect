@@ -429,6 +429,8 @@ connStat=`curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem
 if [ "$connStat" != "OK" ]; then
   if [ "$connStat" == "selfdestruct" ]; then
     killShells
+    #send actionStep to tell server to delete the database record
+    curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=deleted https://$blueskyServer/cgi-bin/collector.php
 	echo "selfdestruct" > "$ourHome/.getHelp"
     exit 0
   fi
