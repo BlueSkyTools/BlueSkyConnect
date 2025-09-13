@@ -20,6 +20,7 @@
 serialNum="$1"
 actionStep="$2"
 hostName="$3"
+operatingSystem="$4"
 
 # did we get everything?
 if [ "$serialNum" == "" ] || [ "$actionStep" == "" ]; then
@@ -116,6 +117,14 @@ else
 fi
 ;;
 
+"deleted")
+# when bluesky.sh executes a self-destruct (either locally or from server command)
+# delete the computer from the database
+# TODO - lookup option in database global to not do this
+myQry="delete from computers where serialnum='$serialNum'"
+myUser=`$myCmd "$myQry"`
+;;
+
 "status")
 # attempts an ssh connection back through the tunnel
 # also sends self destruct, notify mail
@@ -137,8 +146,15 @@ fi
 myQry="select blueskyid from computers where serialnum='$serialNum'"
 myPort=`$myCmd "$myQry"`
 sshPort=$((22000 + myPort))
+if [ "$operatingSystem" == "Windows" ]; then
+testConn=`ssh -p $sshPort -o StrictHostKeyChecking=no -l BlueConnect -i /usr/local/bin/BlueSky/Server/blueskyd localhost`
+testExit=$?
+testConn=`echo "$testConn" | jq -r .serial`
+else
 testConn=`ssh -p $sshPort -o StrictHostKeyChecking=no -o ConnectTimeout=10 -l bluesky -o BatchMode=yes -i /usr/local/bin/BlueSky/Server/blueskyd localhost "/usr/bin/defaults read /var/bluesky/settings serial"`
 testExit=$?
+fi
+
 if [ $testExit -eq 0 ]; then
   if [ "$testConn" == "$serialNum" ]; then
     allGood
