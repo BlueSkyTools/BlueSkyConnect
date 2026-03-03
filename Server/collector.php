@@ -35,7 +35,10 @@ if (isset($_POST['serialNum'], $_POST['actionStep']) ) {
         }
 
         // Pass it on
-        $procResult = `/usr/local/bin/BlueSkyConnect/Server/processor.sh "$serialNum" "$actionStep" "$hostName"`;
+        $serialNum = escapeshellarg($serialNum);
+        $actionStep = escapeshellarg($actionStep);
+        $hostName = escapeshellarg($hostName);
+        $procResult = `/usr/local/bin/BlueSkyConnect/Server/processor.sh $serialNum $actionStep $hostName`;
         echo "$procResult";
 
     } else {
@@ -45,8 +48,8 @@ if (isset($_POST['serialNum'], $_POST['actionStep']) ) {
 } else {
 
   if (isset($_POST['newpub']) ) {
-    $pubKey = ($_POST['newpub']);
-    $keyResult = `/usr/local/bin/BlueSkyConnect/Server/keymaster.sh "$pubKey"`;
+    $pubKey = escapeshellarg($_POST['newpub']);
+    $keyResult = `/usr/local/bin/BlueSkyConnect/Server/keymaster.sh $pubKey`;
     echo "$keyResult";
   } else {
     //debugReport=`curl $curlProxy -1 -s -S -m 600 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" --data-urlencode "activity@/tmp/.bluAct" --data-urlencode "main@/tmp/.bluMain" --data-urlencode "helper@/tmp/.bluHelp" --data-urlencode "auto@/tmp/.bluAuto" --data-urlencode "auto1@/tmp/.bluAuto1" --data-urlencode "launchctl@/tmp/.bluLaunchd" --data-urlencode "settings@$ourHome/settings.plist" https://"$serverAddress"/cgi-bin/collector.php`
