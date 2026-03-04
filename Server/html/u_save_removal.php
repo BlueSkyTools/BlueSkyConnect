@@ -6,12 +6,15 @@
 	
 	$selected_ids=$_REQUEST['selected_ids'];
 	$each_id = explode(",", $selected_ids);
-	
-	$selfdestruct=$_REQUEST['selfdestruct'];
-	
+
+	$selfdestruct = (intval($_REQUEST['selfdestruct']) === 1) ? 1 : 0;
+
 foreach ($each_id as $id) {
-	$query="UPDATE BlueSky.computers SET selfdestruct = '$selfdestruct' WHERE computers.id =$id;";
-    sql($query,$eo);
+	$id = intval($id);
+	if ($id > 0) {
+		$query="UPDATE BlueSky.computers SET selfdestruct = $selfdestruct WHERE computers.id = $id;";
+		sql($query,$eo);
+	}
 
 }
 	
