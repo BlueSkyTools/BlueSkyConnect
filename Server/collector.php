@@ -35,7 +35,7 @@ if (isset($_POST['serialNum'], $_POST['actionStep']) ) {
         }
         
         // Pass it on
-        $procResult = `/usr/local/bin/BlueSky/Server/processor.sh "$serialNum" "$actionStep" "$hostName"`;
+        $procResult = shell_exec("/usr/local/bin/BlueSky/Server/processor.sh " . escapeshellarg($serialNum) . " " . escapeshellarg($actionStep) . " " . escapeshellarg($hostName) . " " . escapeshellarg($operatingSystem));
         echo "$procResult";
 
     } else {
@@ -46,7 +46,14 @@ if (isset($_POST['serialNum'], $_POST['actionStep']) ) {
 
   if (isset($_POST['newpub']) ) {
     $pubKey = ($_POST['newpub']);
-    $keyResult = `/usr/local/bin/BlueSky/Server/keymaster.sh "$pubKey"`;
+	
+	// validation that newpub is an actual certificate
+    if (!preg_match('/-----BEGIN PKCS7-----.*-----END PKCS7-----/s', $pubKey)) {
+		http_response_code(400);
+		exit("Invalid PKCS7 data");
+	}
+
+    $keyResult = shell_exec("/usr/local/bin/BlueSky/Server/keymaster.sh " . escapeshellarg($pubKey));
     echo "$keyResult";
   } else {
     //debugReport=`curl $curlProxy -1 -s -S -m 600 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" --data-urlencode "activity@/tmp/.bluAct" --data-urlencode "main@/tmp/.bluMain" --data-urlencode "helper@/tmp/.bluHelp" --data-urlencode "auto@/tmp/.bluAuto" --data-urlencode "auto1@/tmp/.bluAuto1" --data-urlencode "launchctl@/tmp/.bluLaunchd" --data-urlencode "settings@$ourHome/settings.plist" https://"$serverAddress"/cgi-bin/collector.php`
