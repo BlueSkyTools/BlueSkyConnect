@@ -14,6 +14,8 @@ Read more in the [Wiki](https://github.com/BlueSkyTools/BlueSkyConnect/wiki)
 
 Visit the #bluesky channel of MacAdmins Slack for unofficial help.
 
+Want to contribute?  Here's our [Trello board](https://trello.com/invite/b/aM8Y7XzR/4e6acab01031bd5aac72a91347d5e875/bluesky-kanban)
+
 ### Docker Information
 
 Information regarding running BlueSky with docker can be found [in this README](docker/README.md)
