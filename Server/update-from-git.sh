@@ -9,6 +9,43 @@
 
 ## TODO - ensure this is run by root
 
+## Non-Docker rename migration: /usr/local/bin/BlueSky -> /usr/local/bin/BlueSkyConnect
+# 2.3.2 installed to /usr/local/bin/BlueSky; 2.5.0 hardcodes the new path
+# everywhere. Detect the old layout and migrate the surrounding system config
+# (symlinks, root crontab, authorized_keys forced-command prefix, running
+# inoticoming watchers) before the rest of this script touches anything.
+# Idempotent: skipped if the new directory already exists.
+if [ -d /usr/local/bin/BlueSky ] && [ ! -d /usr/local/bin/BlueSkyConnect ]; then
+  echo "Migrating /usr/local/bin/BlueSky -> /usr/local/bin/BlueSkyConnect..."
+
+  mv /usr/local/bin/BlueSky /usr/local/bin/BlueSkyConnect
+
+  # symlinks that server-config.sh creates on first setup
+  if [ -L /var/www/html ]; then
+    rm -f /var/www/html
+    ln -s /usr/local/bin/BlueSkyConnect/Server/html /var/www/html
+  fi
+  if [ -L /usr/lib/cgi-bin/collector.php ]; then
+    ln -fs /usr/local/bin/BlueSkyConnect/Server/collector.php /usr/lib/cgi-bin/collector.php
+  fi
+
+  # root crontab entries (@reboot startGozer, purgeTemp, serverup)
+  crontab -l 2> /dev/null | sed 's|/usr/local/bin/BlueSky/|/usr/local/bin/BlueSkyConnect/|g' | crontab -
+
+  # forced-command prefix in authorized_keys for both roles
+  for keyFile in /home/admin/.ssh/authorized_keys /home/bluesky/.ssh/authorized_keys; do
+    if [ -f "$keyFile" ]; then
+      sed -i 's|/usr/local/bin/BlueSky/Server|/usr/local/bin/BlueSkyConnect/Server|g' "$keyFile"
+    fi
+  done
+
+  # restart inoticoming watchers so they exec the new gatekeeper path
+  pkill -f 'inoticoming.*BlueSky/Server/gatekeeper.sh' 2> /dev/null
+  /usr/local/bin/BlueSkyConnect/Server/startGozer.sh
+
+  echo "Migration complete."
+fi
+
 ## get variables
 serverFQDN=`cat /usr/local/bin/BlueSkyConnect/Server/server.txt`
 mysqlRootPass=`grep password /var/local/my.cnf | awk '{ print $NF }'`
