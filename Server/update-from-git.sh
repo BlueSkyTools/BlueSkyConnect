@@ -1,27 +1,67 @@
 #!/bin/bash
 
-# c)2011-2014 Best Macs, Inc.
-# c)2014-2015 Mac-MSP LLC
-# Copyright 2016-2017 SolarWinds Worldwide, LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-
-#       http://www.apache.org/licenses/LICENSE-2.0
-
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
+# BlueSkyConnect macOS SSH tunnel
+#
 # this will do a git pull and ensure files keep your configurations
+#
+# See https://github.com/BlueSkyTools/BlueSkyConnect
+# Licensed under the Apache License, Version 2.0
 
 ## TODO - ensure this is run by root
 
+## Non-Docker rename migration: /usr/local/bin/BlueSky -> /usr/local/bin/BlueSkyConnect
+# 2.3.2 installed to /usr/local/bin/BlueSky; 2.5.0 hardcodes the new path
+# everywhere. Detect the old layout and migrate the surrounding system config
+# (symlinks, root crontab, authorized_keys forced-command prefix) before the
+# rest of this script touches anything. The inoticoming watchers are then
+# respawned after the git reset below, once the new startGozer.sh /
+# gatekeeper.sh are on disk.
+# Idempotent: skipped if the new directory already exists.
+if [ -d /usr/local/bin/BlueSky ] && [ ! -d /usr/local/bin/BlueSkyConnect ]; then
+  echo "Migrating /usr/local/bin/BlueSky -> /usr/local/bin/BlueSkyConnect..."
+
+  mv /usr/local/bin/BlueSky /usr/local/bin/BlueSkyConnect
+
+  # symlinks that server-config.sh creates on first setup
+  if [ -L /var/www/html ]; then
+    rm -f /var/www/html
+    ln -s /usr/local/bin/BlueSkyConnect/Server/html /var/www/html
+  fi
+  if [ -L /usr/lib/cgi-bin/collector.php ]; then
+    ln -fs /usr/local/bin/BlueSkyConnect/Server/collector.php /usr/lib/cgi-bin/collector.php
+  fi
+
+  # root crontab entries (@reboot startGozer, purgeTemp, serverup)
+  crontab -l 2> /dev/null | sed 's|/usr/local/bin/BlueSky/|/usr/local/bin/BlueSkyConnect/|g' | crontab -
+
+  # forced-command prefix in authorized_keys for both roles
+  for keyFile in /home/admin/.ssh/authorized_keys /home/bluesky/.ssh/authorized_keys; do
+    if [ -f "$keyFile" ]; then
+      sed -i 's|/usr/local/bin/BlueSky/Server|/usr/local/bin/BlueSkyConnect/Server|g' "$keyFile"
+    fi
+  done
+
+  # /usr/lib/cgi-bin/collector.php is a regular file frozen at install-time
+  # content: server-config.sh originally ln -fs'd it to the source-of-truth,
+  # but its own sed -i CHANGETHIS replacement broke the symlink and replaced
+  # it with a regular file. The git reset below won't touch it (it's outside
+  # the working tree), so its hardcoded processor.sh / keymaster.sh shell-out
+  # paths still point at the old /usr/local/bin/BlueSky/Server/ location.
+  # Rewrite them in place; without this, every client check-in and every
+  # web key upload silently returns empty.
+  sed -i 's|/usr/local/bin/BlueSky/Server|/usr/local/bin/BlueSkyConnect/Server|g' /usr/lib/cgi-bin/collector.php
+
+  # The running inoticoming watchers still exec the 2.3.2-hardcoded
+  # /usr/local/bin/BlueSky/Server/gatekeeper.sh path. Defer the restart
+  # until after the git reset below — the file we'd run right now,
+  # startGozer.sh, is still the 2.3.2 version with the old path hardcoded.
+  migratedFromOldPath=1
+
+  echo "Migration complete."
+fi
+
 ## get variables
-serverFQDN=`cat /usr/local/bin/BlueSky/Server/server.txt`
+serverFQDN=`cat /usr/local/bin/BlueSkyConnect/Server/server.txt`
 mysqlRootPass=`grep password /var/local/my.cnf | awk '{ print $NF }'`
 ## TODO test this
 mysqlCollectorPass=`grep localhost /usr/lib/cgi-bin/collector.php | head -n 1 | awk '{ print $5 }' | tr -d ,\'`
@@ -37,16 +77,23 @@ if [ "$mysqlRootPass" == "" ]; then
 fi
 
 # do the pull
-cd /usr/local/bin/BlueSky
+cd /usr/local/bin/BlueSkyConnect
 git fetch
 git reset --hard origin/master
+
+## Part 2 of the BlueSky -> BlueSkyConnect migration: respawn the inoticoming
+## watchers now that the new startGozer.sh / gatekeeper.sh are on disk.
+if [ "$migratedFromOldPath" = "1" ]; then
+  pkill -f 'inoticoming.*BlueSky/Server/gatekeeper.sh' 2> /dev/null
+  /usr/local/bin/BlueSkyConnect/Server/startGozer.sh
+fi
 
 myCmd="/usr/bin/mysql --defaults-file=/var/local/my.cnf BlueSky -N -B -e"
 
 ## if git pull was ran ahead of this script, we lost collector password. need to reset
 if [ "$mysqlCollectorPass" == "" ]; then
 	echo "Collector creds got trashed. Will reset."
-  mysqlCollectorPass=`tr -dc A-Za-z0-9 < /dev/urandom | head -c 48 | xargs`
+  mysqlCollectorPass=`openssl rand -base64 36`
   myQry="drop user 'collector'@'localhost';"
   $myCmd "$myQry"
   myQry="create user 'collector'@'localhost' identified by '$mysqlCollectorPass';"
@@ -54,18 +101,18 @@ if [ "$mysqlCollectorPass" == "" ]; then
   myQry="grant select on BlueSky.computers to 'collector'@'localhost';"
   $myCmd "$myQry"
 fi
-sed -i "s/CHANGETHIS/$mysqlCollectorPass/g" /usr/lib/cgi-bin/collector.php
+sed -i "s/CHANGETHIS/$(printf '%s\n' "$mysqlCollectorPass" | sed 's/[\/&]/\\&/g')/g" /usr/lib/cgi-bin/collector.php
 
 ## double-check permissions on uploaded BlueSky files
-chown -R root:root /usr/local/bin/BlueSky/Server
-chmod 755 /usr/local/bin/BlueSky/Server
-chown www-data /usr/local/bin/BlueSky/Server/keymaster.sh
-chown www-data /usr/local/bin/BlueSky/Server/processor.sh
-chmod 755 /usr/local/bin/BlueSky/Server/*.sh
-chown -R www-data /usr/local/bin/BlueSky/Server/html
-chown www-data /usr/local/bin/BlueSky/Server/collector.php
-chmod 700 /usr/local/bin/BlueSky/Server/collector.php
-chown www-data /usr/local/bin/BlueSky/Server/blueskyd
+chown -R root:root /usr/local/bin/BlueSkyConnect/Server
+chmod 755 /usr/local/bin/BlueSkyConnect/Server
+chown www-data /usr/local/bin/BlueSkyConnect/Server/keymaster.sh
+chown www-data /usr/local/bin/BlueSkyConnect/Server/processor.sh
+chmod 755 /usr/local/bin/BlueSkyConnect/Server/*.sh
+chown -R www-data /usr/local/bin/BlueSkyConnect/Server/html
+chown www-data /usr/local/bin/BlueSkyConnect/Server/collector.php
+chmod 700 /usr/local/bin/BlueSkyConnect/Server/collector.php
+chown www-data /usr/local/bin/BlueSkyConnect/Server/blueskyd
 
 # sets auth.log so admin can read it
 chgrp admin /var/log/auth.log
@@ -130,25 +177,25 @@ if [ $remakePlist -eq 1 ]; then
     <key>serverkeyrsa</key>
     <string>[$serverFQDN]:3122,[$ipAddress]:3122 $hostKeyRSA</string>
 </dict>
-</plist>" > /usr/local/bin/BlueSky/Client/server.plist
+</plist>" > /usr/local/bin/BlueSkyConnect/Client/server.plist
 fi
 
 ## get emailAlertAddress from mysql
 myQry="select defaultemail from global"
 emailAlertAddress=`$myCmd "$myQry"`
 
-## setup credentials in /usr/local/bin/BlueSky/Server/html/config.php
-sed -i "s/MYSQLROOT/$mysqlRootPass/g" /usr/local/bin/BlueSky/Server/html/config.php
+## setup credentials in /usr/local/bin/BlueSkyConnect/Server/html/config.php
+sed -i "s/MYSQLROOT/$mysqlRootPass/g" /usr/local/bin/BlueSkyConnect/Server/html/config.php
 
 ## fail2ban conf - not making these active but updating our copies
-sed -i "s/SERVERFQDN/$serverFQDN/g" /usr/local/bin/BlueSky/Server/sendEmail-whois-lines.conf
-sed -i "s/EMAILADDRESS/$emailAlertAddress/g" /usr/local/bin/BlueSky/Server/jail.local
+sed -i "s/SERVERFQDN/$serverFQDN/g" /usr/local/bin/BlueSkyConnect/Server/sendEmail-whois-lines.conf
+sed -i "s/EMAILADDRESS/$emailAlertAddress/g" /usr/local/bin/BlueSkyConnect/Server/jail.local
 
 ## update emailHelper-dist.  You still need to enable it.
-sed -i "s/EMAILADDRESS/$emailAlertAddress/g" /usr/local/bin/BlueSky/Server/emailHelper-dist.sh
+sed -i "s/EMAILADDRESS/$emailAlertAddress/g" /usr/local/bin/BlueSkyConnect/Server/emailHelper-dist.sh
 
 ## put server fqdn into client config.disabled for proxy routing
-sed -i "s/SERVER/$serverFQDN/g" /usr/local/bin/BlueSky/Client/.ssh/config.disabled
+sed -i "s/SERVER/$serverFQDN/g" /usr/local/bin/BlueSkyConnect/Client/.ssh/config.disabled
 
 ## That's all folks!
 echo "All set.  You're up to date!"

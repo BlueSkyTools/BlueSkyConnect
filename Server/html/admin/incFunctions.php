@@ -517,8 +517,8 @@
 	}
 
 	########################################################################
-	function thisOr($this, $or='&nbsp;'){
-		return ($this!='' ? $this : $or);
+	function thisOr($thisVal, $or='&nbsp;'){
+		return ($thisVal!='' ? $thisVal : $or);
 	}
 	########################################################################
 	function getUploadedFile($FieldName, $MaxSize=0, $FileTypes='csv|txt', $NoRename=false, $dir=''){

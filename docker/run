@@ -1,27 +1,32 @@
 #!/bin/bash
 
-# wait for database
-if [[ ${MYSQLROOTPASS} ]]; then
-	mysqlRootPass=$MYSQLROOTPASS
+# BlueSkyConnect macOS SSH tunnel
+# See https://github.com/BlueSkyTools/BlueSkyConnect
+# Licensed under the Apache License, Version 2.0
+
+# set mysql admin password
+if [[ $MYSQLROOTPASS ]]; then
+  mysqlRootPass=$MYSQLROOTPASS
 else
 	# lets check for the linked containers password
-	if [[ ${DB_ENV_MYSQL_ROOT_PASSWORD} ]]; then
+	if [[ $DB_ENV_MYSQL_ROOT_PASSWORD ]]; then
 		mysqlRootPass=$DB_ENV_MYSQL_ROOT_PASSWORD
 	else
 		mysqlRootPass="admin"
 	fi
 fi
 
+# wait for database
 COUNT=0
 while [ $COUNT -le 30 ]
 do
 	sleep 1;
 	COUNT=$((COUNT+1));
 
-  MYSQL_IS_RUNNING=`mysqladmin -h db -u root -p"${mysqlRootPass}" status 2>1 /dev/null | grep Uptime`
+  MYSQL_IS_RUNNING=$(mysqladmin -h "$MYSQLSERVER" -u root -p"$mysqlRootPass" status 2>1 /dev/null | grep Uptime)
 
-  if [[ -z ${MYSQL_IS_RUNNING} ]]; then
-    if [ $COUNT -gt 30 ]; then
+  if [[ -z $MYSQL_IS_RUNNING ]]; then
+    if [ $COUNT -gt 60 ]; then
       echo "We failed to connect to the database, exiting..."
       exit 1;
     fi
@@ -33,7 +38,7 @@ do
 done
 
 # run bluesky server config
-/usr/local/bin/BlueSky/Server/server-config.sh
+/usr/local/bin/BlueSkyConnect/Server/server-config.sh
 
 # purge hanging sockets/pids
 rm -f /var/run/fail2ban/*
@@ -47,8 +52,18 @@ chmod +r /certs/blueskyadmin.key
 chmod +r /certs/blueskyclient.key
 
 # set default bluesky user
-if [[ ! -z ${DEFAULT_USER} ]]; then
-	echo "${DEFAULT_USER}" > /usr/local/bin/BlueSky/Server/defaultLogin.txt
+if [[ ! -z $DEFAULT_USER ]]; then
+	echo "$DEFAULT_USER" > /usr/local/bin/BlueSkyConnect/Server/defaultLogin.txt
+fi
+
+# migrate ssh wrapper path for existing keys
+if [ ! -e /home/admin/.ssh/.authorized_keys_migrated ]; then
+  sed -i "s/bin\/BlueSky\/Server/bin\/BlueSkyConnect\/Server/g" /home/admin/.ssh/authorized_keys
+  touch /home/admin/.ssh/.authorized_keys_migrated
+fi
+if [ ! -e /home/bluesky/.ssh/.authorized_keys_migrated ]; then
+  sed -i "s/bin\/BlueSky\/Server/bin\/BlueSkyConnect\/Server/g" /home/bluesky/.ssh/authorized_keys
+  touch /home/bluesky/.ssh/.authorized_keys_migrated
 fi
 
 # start it up

@@ -1,20 +1,12 @@
 #!/bin/bash
 
-# Copyright 2016-2017 SolarWinds Worldwide, LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-
-#       http://www.apache.org/licenses/LICENSE-2.0
-
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
-# This script runs server-side, gets the data from collector.php, parses, writes to MySQL, and returns action step.
+# BlueSkyConnect macOS SSH tunnel
+#
+# This script runs server-side, gets the data from collector.php,
+# parses, writes to MySQL, and returns action step.
+#
+# See https://github.com/BlueSkyTools/BlueSkyConnect
+# Licensed under the Apache License, Version 2.0
 
 # grab the inputs
 serialNum="$1"
@@ -53,7 +45,7 @@ myQry="select id from computers where serialnum='$serialNum'"
 compRec=`$myCmd "$myQry"`
 
 #get the default bluesky user name
-loginName=`cat /usr/local/bin/BlueSky/Server/defaultLogin.txt 2> /dev/null`
+loginName=`cat /usr/local/bin/BlueSkyConnect/Server/defaultLogin.txt 2> /dev/null`
 
 if [ "$compRec" == "" ]; then
 
@@ -109,7 +101,7 @@ if [ "$myUser" != "" ] && [ "$myUser" != "NULL" ]; then
   echo "$myUser"
 else
   # TODO: put default login in global table
-  myUser=`cat /usr/local/bin/BlueSky/Server/defaultLogin.txt`
+  myUser=`cat /usr/local/bin/BlueSkyConnect/Server/defaultLogin.txt`
   if [ "$myUser" != "" ]; then
     echo "$myUser"
   fi
@@ -137,7 +129,7 @@ fi
 myQry="select blueskyid from computers where serialnum='$serialNum'"
 myPort=`$myCmd "$myQry"`
 sshPort=$((22000 + myPort))
-testConn=`ssh -p $sshPort -o StrictHostKeyChecking=no -o ConnectTimeout=10 -l bluesky -o BatchMode=yes -i /usr/local/bin/BlueSky/Server/blueskyd localhost "/usr/bin/defaults read /var/bluesky/settings serial"`
+testConn=`ssh -p $sshPort -o StrictHostKeyChecking=no -o ConnectTimeout=10 -l bluesky -o BatchMode=yes -i /usr/local/bin/BlueSkyConnect/Server/blueskyd localhost "/usr/bin/defaults read /var/bluesky/settings serial"`
 testExit=$?
 if [ $testExit -eq 0 ]; then
   if [ "$testConn" == "$serialNum" ]; then
@@ -146,7 +138,7 @@ if [ $testExit -eq 0 ]; then
     snMismatch
   fi
 else #either down or defaults is messed up, try using PlistBuddy
-	testConn2=`ssh -p $sshPort -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes -l bluesky -i /usr/local/bin/BlueSky/Server/blueskyd localhost "/usr/libexec/PlistBuddy -c 'Print serial' /var/bluesky/settings.plist" 2>&1`
+	testConn2=`ssh -p $sshPort -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes -l bluesky -i /usr/local/bin/BlueSkyConnect/Server/blueskyd localhost "/usr/libexec/PlistBuddy -c 'Print serial' /var/bluesky/settings.plist" 2>&1`
 	testExit2=$?
 	if [ $testExit2 -eq 0 ]; then
 		if [ "$testConn2" == "$serialNum" ]; then
@@ -188,9 +180,9 @@ if [ "$notifyMe" == "1" ]; then
 	myQry="select status from username where serialnum='$serialNum'"
 	myUser=`$myCmd "$myQry"`
 
-	if [ -e /usr/local/bin/BlueSky/Server/emailHelper.sh ]; then
-		serverFQDN=`cat /usr/local/bin/BlueSky/Server/server.txt`
-		/usr/local/bin/BlueSky/Server/emailHelper.sh "BlueSky Notification $serialNum" "You requested to be notified when we next saw $hostName with serial number $serialNum, ID: $myPort.
+	if [ -e /usr/local/bin/BlueSkyConnect/Server/emailHelper.sh ]; then
+		serverFQDN=`cat /usr/local/bin/BlueSkyConnect/Server/server.txt`
+		/usr/local/bin/BlueSkyConnect/Server/emailHelper.sh "BlueSky Notification $serialNum" "You requested to be notified when we next saw $hostName with serial number $serialNum, ID: $myPort.
 https://$serverFQDN/blu=$myPort
 SSH bluesky://com.solarwindsmsp.bluesky.admin?blueSkyID=$myPort&user=$myUser&action=ssh
 VNC bluesky://com.solarwindsmsp.bluesky.admin?blueSkyID=$myPort&user=$myUser&action=vnc

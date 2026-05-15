@@ -1,7 +1,12 @@
 #!/bin/bash
 
-### This script replaces the "proxy-config" binary of unknown provenience but functions similar
+# BlueSkyConnect macOS SSH tunnel
+#
+# This script replaces the "proxy-config" binary of unknown provenience but functions similar
 # returns the URL and port if configured, nothing if not. Exits 255 for non response.s
+#
+# See https://github.com/BlueSkyTools/BlueSkyConnect
+# Licensed under the Apache License, Version 2.0
 
 usage () {
 	echo 'Usage: proxy-config [-h] [-s]

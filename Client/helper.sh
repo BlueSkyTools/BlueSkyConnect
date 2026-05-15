@@ -1,29 +1,27 @@
 #!/bin/bash
 
-# c)2011-2014 Best Macs, Inc.
-# c)2014-2015 Mac-MSP LLC
-# Copyright 2016-2017 SolarWinds Worldwide, LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-
-#       http://www.apache.org/licenses/LICENSE-2.0
-
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
+# BlueSkyConnect macOS SSH tunnel
+#
 # helper script performs privileged tasks for BlueSky, does initial client setup
+#
+# See https://github.com/BlueSkyTools/BlueSkyConnect
+# Licensed under the Apache License, Version 2.0
 
 ourHome="/var/bluesky"
-bVer="2.3.2"
+bVer="2.5.0"
 
 if [ -e "$ourHome/.debug" ]; then
   set -x
 fi
+
+function killShells {
+    kill -9 `ps -ax | grep "$ourHome/autossh" | grep -v grep | awk '{ print $1 }'`
+    shellList=`ps -ax | grep ssh | grep 'bluesky\@' | awk '{ print $1 }'`
+    for shellPid in $shellList; do
+        kill -9 $shellPid
+        logMe "Killed stale shell on $shellPid"
+    done
+}
 
 function logMe {
   logMsg="$1"
@@ -36,15 +34,6 @@ function logMe {
   if [ -e "$ourHome/.debug" ]; then
     echo "$logMsg"
   fi
-}
-
-function killShells {
-    kill -9 `ps -ax | grep "$ourHome/autossh" | grep -v grep | awk '{ print $1 }'`
-    shellList=`ps -ax | grep ssh | grep 'bluesky\@' | awk '{ print $1 }'`
-    for shellPid in $shellList; do
-        kill -9 $shellPid
-        logMe "Killed stale shell on $shellPid"
-    done
 }
 
 #if server.plist is not present, error and exit
@@ -111,11 +100,10 @@ if [ "$userCheck" == "" ]; then
 
     dscl . -create /Users/bluesky UserShell /bin/bash
     dscl . -create /Users/bluesky PrimaryGroupID 20
+    dscl . -create /Users/bluesky IsHidden 1
     dscl . -create /Users/bluesky NFSHomeDirectory "$ourHome"
     dscl . -create /Users/bluesky RealName "BlueSky"
     dscl . -create /Users/bluesky Password "*"
-    defaults write /Library/Preferences/com.apple.loginwindow HiddenUsersList -array-add bluesky
-    defaults write /Library/Preferences/com.apple.loginwindow Hide500Users -bool TRUE
     dseditgroup -o edit -a bluesky -t user com.apple.access_ssh 2> /dev/null
     # kill any autossh and shells that may have belonged to the old user
     killShells
@@ -146,7 +134,6 @@ fi
 if [ "$helpWithWhat" == "fixPerms" ]; then
     logMe "Fixing permissions on our directory"
     chown -R bluesky "$ourHome"
-    defaults write /Library/Preferences/com.apple.loginwindow HiddenUsersList -array-add bluesky
 fi
 
 #GSS API config lines mess up client connections in 10.12+
@@ -181,6 +168,18 @@ if [ "$setCheck" == "" ]; then
 elif [ "$setCheck" != "$bVer" ]; then
   logMe "Setting version in the settings plist"
   /usr/libexec/PlistBuddy -c "Set :version $bVer" "$ourHome/settings.plist"
+fi
+
+#ensure openssl path links for older OS/our curl.
+if [ ${osVersionMajor:-10} -eq 10 ] && [ ${osVersionMinor} -lt 14 ]; then
+  if [ ! -e "/usr/local/opt/openssl@1.1" ]; then
+    mkdir -p "/usr/local/opt"
+    ln -s "$ourHome/openssl" "/usr/local/opt/openssl@1.1"
+  fi
+  if [ ! -e "/usr/local/Cellar/openssl@1.1/1.1.1n" ]; then
+    mkdir -p "/usr/local/Cellar/openssl@1.1"
+    ln -s "$ourHome/openssl" "/usr/local/Cellar/openssl@1.1/1.1.1n"
+  fi
 fi
 
 #make sure we stay executable - helps with initial install if someone isn't packaging

@@ -1,47 +1,44 @@
 #!/bin/bash
 
-# c)2011-2014 Best Macs, Inc.
-# c)2014-2015 Mac-MSP LLC
-# Copyright 2016-2017 SolarWinds Worldwide, LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-
-#       http://www.apache.org/licenses/LICENSE-2.0
-
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
+# BlueSkyConnect macOS SSH tunnel
+#
 # This script is called by launchd every 5 minutes.
 # Ensures that the connection to BlueSky is up and running, attempts repair if there is a problem.
+#
+# See https://github.com/BlueSkyTools/BlueSkyConnect
+# Licensed under the Apache License, Version 2.0
 
 # Set this to a different location if you'd prefer it live somewhere else
 ourHome="/var/bluesky"
 
-bVer="2.3.2"
+bVer="2.5.0"
 
 # planting a debug flag runs bash in -x so you get all the output
 if [ -e "$ourHome/.debug" ]; then
   set -x
 fi
 
-function logMe {
-# gets message from first argument attaches date stamp and puts it in our log file
-# if debug flag is present, echo the log message to stdout
-  logMsg="$1"
-  logFile="$ourHome/activity.txt"
-  if [ ! -e "$logFile" ]; then
-    touch "$logFile"
-  fi
-  dateStamp=`date '+%Y-%m-%d %H:%M:%S'`
-  echo "$dateStamp - v$bVer - $logMsg" >> "$logFile"
-  if [ -e "$ourHome/.debug" ]; then
-    echo "$logMsg"
-  fi
+function callApi {
+  local payload=()
+
+  # Loop through all arguments and add --data-urlencode for each
+  for datum in "$@"; do
+    payload+=(--data-urlencode "$datum")
+  done
+
+  result=$("$curl" -v \
+    ${cacert:+$cacert} \
+    "${payload[@]}" \
+    --max-time 60 \
+    ${curlProxy:+$curlProxy} \
+    --request POST \
+    --retry 4 \
+    --show-error \
+    --silent \
+    --tlsv1 \
+    "https://$blueskyServer/cgi-bin/collector.php")
+
+  echo "$result"
 }
 
 function getAutoPid {
@@ -88,81 +85,19 @@ function killShells {
   fi
 }
 
-function rollLog {
-  logName="$1"
-  if [ -e "$ourHome/$logName" ];then
-    rollCount=5
-    rm -f "$ourHome/$logName.$rollCount" &> /dev/null
-    while [ $rollCount -gt 0 ]; do
-      let prevCount=rollCount-1
-      if [ -e "$ourHome/$logName.$prevCount" ]; then
-        mv "$ourHome/$logName.$prevCount" "$ourHome/$logName.$rollCount"
-      fi
-      if [ $prevCount -eq 0 ]; then
-        mv "$ourHome/$logName" "$ourHome/$logName.$rollCount"
-      fi
-      rollCount=$prevCount
-    done
-    timeStamp=`date "+%Y-%m-%d %H:%M:%S"`
-    echo "Log file created at $timeStamp" > "$ourHome/$logName"
+function logMe {
+# gets message from first argument attaches date stamp and puts it in our log file
+# if debug flag is present, echo the log message to stdout
+  logMsg="$1"
+  logFile="$ourHome/activity.txt"
+  if [ ! -e "$logFile" ]; then
+    touch "$logFile"
   fi
-}
-
-function startMeUp {
-  export AUTOSSH_PIDFILE="$ourHome/autossh.pid"
-  export AUTOSSH_LOGFILE="$ourHome/autossh.log"
-  #rollLog autossh.log
-  timeStamp=`date "+%Y-%m-%d %H:%M:%S"`
-  echo "$timeStamp BlueSky starting AutoSSH"
-  # check for alternate SSH port
-  altPort=`/usr/libexec/PlistBuddy -c "Print :altport" "$ourHome/settings.plist"  2> /dev/null`
-  if [ "$altPort" == "" ]; then
-    altPort=22
-  else
-    logMe "SSH port is set to $altPort per settings"
+  dateStamp=`date '+%Y-%m-%d %H:%M:%S'`
+  echo "$dateStamp - v$bVer - $logMsg" >> "$logFile"
+  if [ -e "$ourHome/.debug" ]; then
+    echo "$logMsg"
   fi
-  # is this 10.6 which doesn't support UseRoaming or 10.12+ which doesn't need the flag?
-  if [ ${osVersionMajor:-0} -eq 10 ] && [ "$osVersionMinor" != "6" ] && [ ${osVersionMinor:-0} -lt 12 ]; then
-    noRoam="-o UseRoaming=no"
-  fi
-  ## main command right here
-  $ourHome/autossh -M $monport -f \
-  -c $prefCipher -m $msgAuth \
-  $kexAlg \
-  -o HostKeyAlgorithms=$keyAlg \
-  -nNT -R $sshport:127.0.0.1:$altPort -R $vncport:127.0.0.1:5900 -p 3122 \
-  $noRoam \
-  -i "$ourHome/.ssh/bluesky_client" bluesky@$blueskyServer
-  #echo "$!" > "$ourHome/autossh.pid"
-  # are we live?
-  sleep 5
-  while [ ${autoTimer:-0} -lt 35 ]; do
-	sshProc=`ps -ax | grep ssh | grep 'bluesky\@'`
-	if [ "$sshProc" != "" ]; then
-		break
-	fi
-	sleep 1
-	(( autoTimer++ ))
-  done
-  # looks like it started up, lets check
-  getAutoPid
-  if [ "$autoPid" == "" ]; then
-    logMe "ERROR - autossh wont start, check logs. Exiting."
-    exit 1
-  else
-  	sshProc=`ps -ax | grep ssh | grep 'bluesky\@'`
-  	if [ "$sshProc" != "" ]; then
-	  logMe "autossh started successfully"
-	else
-	  logMe "ERROR - autossh is running but no tunnel, check logs. Exiting."
-	  exit 1
-	fi
-  fi
-}
-
-function restartConnection {
-  killShells
-  startMeUp
 }
 
 function reKey {
@@ -189,7 +124,7 @@ function reKey {
   fi
 
   # upload pubkey
-  installResult=`curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "newpub=$pubKey" https://$blueskyServer/cgi-bin/collector.php`
+  installResult=`callApi "newpub=$pubKey"`
   curlExit=$?
   if [ "$installResult" != "Installed" ] || [ $curlExit -ne 0 ]; then
     logMe "ERROR - upload of new public key failed. Exiting."
@@ -207,7 +142,7 @@ function reKey {
   fi
 
   # upload info to get registered
-  uploadResult=`curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=register --data-urlencode "hostName=$hostName" https://$blueskyServer/cgi-bin/collector.php`
+  uploadResult=`callApi "serialNum=$serialNum" "actionStep=register" "hostName=$hostName"`
   curlExit=$?
   if [ "$uploadResult" != "Registered" ] || [ $curlExit -ne 0 ]; then
     logMe "ERROR - registration with server failed. Exiting."
@@ -216,6 +151,31 @@ function reKey {
 
   /usr/libexec/PlistBuddy -c "Add :keytime integer `date +%s`" "$ourHome/settings.plist" 2> /dev/null
   /usr/libexec/PlistBuddy -c "Set :keytime `date +%s`" "$ourHome/settings.plist"
+}
+
+function restartConnection {
+  killShells
+  startMeUp
+}
+
+function rollLog {
+  logName="$1"
+  if [ -e "$ourHome/$logName" ];then
+    rollCount=5
+    rm -f "$ourHome/$logName.$rollCount" &> /dev/null
+    while [ $rollCount -gt 0 ]; do
+      let prevCount=rollCount-1
+      if [ -e "$ourHome/$logName.$prevCount" ]; then
+        mv "$ourHome/$logName.$prevCount" "$ourHome/$logName.$rollCount"
+      fi
+      if [ $prevCount -eq 0 ]; then
+        mv "$ourHome/$logName" "$ourHome/$logName.$rollCount"
+      fi
+      rollCount=$prevCount
+    done
+    timeStamp=`date "+%Y-%m-%d %H:%M:%S"`
+    echo "Log file created at $timeStamp" > "$ourHome/$logName"
+  fi
 }
 
 function serialMonster {
@@ -258,6 +218,54 @@ else
 fi
 }
 
+function startMeUp {
+  export AUTOSSH_PIDFILE="$ourHome/autossh.pid"
+  export AUTOSSH_LOGFILE="$ourHome/autossh.log"
+  #rollLog autossh.log
+  timeStamp=`date "+%Y-%m-%d %H:%M:%S"`
+  echo "$timeStamp BlueSky starting AutoSSH"
+  # check for alternate SSH port
+  altPort=`/usr/libexec/PlistBuddy -c "Print :altport" "$ourHome/settings.plist"  2> /dev/null`
+  if [ "$altPort" == "" ]; then
+    altPort=22
+  else
+    logMe "SSH port is set to $altPort per settings"
+  fi
+  ## main command right here
+  $ourHome/autossh -M $monport -f \
+  -c $prefCipher -m $msgAuth \
+  $kexAlg \
+  -o HostKeyAlgorithms=$keyAlg \
+  -nNT -R $sshport:127.0.0.1:$altPort -R $vncport:127.0.0.1:5900 -p 3122 \
+  $noRoam \
+  -i "$ourHome/.ssh/bluesky_client" bluesky@$blueskyServer
+  #echo "$!" > "$ourHome/autossh.pid"
+  # are we live?
+  sleep 5
+  while [ ${autoTimer:-0} -lt 35 ]; do
+	sshProc=`ps -ax | grep ssh | grep 'bluesky\@'`
+	if [ "$sshProc" != "" ]; then
+		break
+	fi
+	sleep 1
+	(( autoTimer++ ))
+  done
+  # looks like it started up, lets check
+  getAutoPid
+  if [ "$autoPid" == "" ]; then
+    logMe "ERROR - autossh wont start, check logs. Exiting."
+    exit 1
+  else
+  	sshProc=`ps -ax | grep ssh | grep 'bluesky\@'`
+  	if [ "$sshProc" != "" ]; then
+	  logMe "autossh started successfully"
+	else
+	  logMe "ERROR - autossh is running but no tunnel, check logs. Exiting."
+	  exit 1
+	fi
+  fi
+}
+
 # make me a sandwich? make it yourself
 userName=`whoami`
 if [ "$userName" != "bluesky" ]; then
@@ -285,20 +293,12 @@ osRaw=`sw_vers -productVersion`
 osVersionMajor=`echo "$osRaw" | awk -F . '{ print $1 }'`
 osVersionMinor=`echo "$osRaw" | awk -F . '{ print $2 }'`
 
-# select all of our algorithms - treating OS X 10.10 and below as insecure, defaulting to secure
-if [ ${osVersionMajor:-0} -eq 10 ] && [ ${osVersionMinor:-0} -lt 11 ] && [ ${osVersionMinor:-0} -ne 0 ]; then
-  keyAlg="ssh-rsa"
-  serverKey="serverkeyrsa"
-  prefCipher="aes256-ctr"
-  kexAlg=""
-  msgAuth="hmac-ripemd160"
-else
-  keyAlg="ssh-ed25519"
-  serverKey="serverkey"
-  prefCipher="chacha20-poly1305@openssh.com"
-  kexAlg="-o KexAlgorithms=curve25519-sha256@libssh.org"
-  msgAuth="hmac-sha2-512-etm@openssh.com"
-fi
+# select all of our algorithms
+keyAlg="ssh-ed25519"
+serverKey="serverkey"
+prefCipher="aes256-gcm@openssh.com"
+kexAlg="-o KexAlgorithms=curve25519-sha256@libssh.org"
+msgAuth="hmac-sha2-512-etm@openssh.com"
 
 # server key will be pre-populated in the installer - put it into known hosts
 serverKey=`/usr/libexec/PlistBuddy -c "Print :$serverKey" "$ourHome/server.plist"  2> /dev/null`
@@ -331,11 +331,25 @@ else
   curlProxy=""
 fi
 
+# set curl location for older OS
+cacert=""
+if [ ${osVersionMajor:-0} -eq 10 ] && [ ${osVersionMinor:-0} -lt 14 ] && [ -f "$ourHome/curl/bin/curl" ]; then
+  curl="$ourHome/curl/bin/curl"
+else
+  curl="curl"
+fi
+
+# set cacert for older OS
+cacert=""
+if [ ${osVersionMajor:-0} -eq 10 ] && [ ${osVersionMinor:-0} -lt 15 ]; then
+  cacert="--cacert $ourHome/cacert.pem"
+fi
+
 # get serial number
 serialMonster
 
 # Attempt to get our port
-port=`curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=port https://$blueskyServer/cgi-bin/collector.php`
+port=`callApi "serialNum=$serialNum" "actionStep=port"`
 curlExit=$?
 
 # Is the server up?
@@ -360,7 +374,7 @@ if [ "$port" == "" ]; then
 		#no cached copy either, try rekey
 		reKey
 		sleep 5
-    port=`curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=port https://$blueskyServer/cgi-bin/collector.php`
+    port=`callApi "serialNum=$serialNum" "actionStep=port"`
     curlExit=$?
 		if [ "$port" == "" ] || [ $curlExit -ne 0 ]; then
   		logMe "ERROR - cant reach server and have no port. Exiting."
@@ -418,14 +432,14 @@ if [ "$autoPid" == "" ]; then
 fi
 
 # ask server for the default username so we can pass on to Watchman
-defaultUser=`curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=user https://$blueskyServer/cgi-bin/collector.php`
+defaultUser=`callApi "serialNum=$serialNum" "actionStep=user"`
 if [ "$defaultUser" != "" ]; then
 	/usr/libexec/PlistBuddy -c "Add :defaultuser string $defaultUser" "$ourHome/settings.plist" 2> /dev/null
 	/usr/libexec/PlistBuddy -c "Set :defaultuser $defaultUser" "$ourHome/settings.plist"
 fi
 
 #autossh is running - check against server
-connStat=`curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=status https://$blueskyServer/cgi-bin/collector.php`
+connStat=`callApi "serialNum=$serialNum" "actionStep=status"`
 if [ "$connStat" != "OK" ]; then
   if [ "$connStat" == "selfdestruct" ]; then
     killShells
@@ -435,14 +449,14 @@ if [ "$connStat" != "OK" ]; then
   logMe "server says we are down. restarting tunnels. Server said $connStat"
   restartConnection
   sleep 5
-  connStatRetry=`curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=status https://$blueskyServer/cgi-bin/collector.php`
+  connStatRetry=`callApi "serialNum=$serialNum" "actionStep=status"`
   if [ "$connStatRetry" != "OK" ]; then
     logMe "server still says we are down. trying reKey. Server said $connStat"
     reKey
     sleep 5
     restartConnection
     sleep 5
-    connStatLastTry=`curl $curlProxy -s -S -m 60 -1 --retry 4 --cacert "$ourHome/cacert.pem" -X POST --data-urlencode "serialNum=$serialNum" -d actionStep=status https://$blueskyServer/cgi-bin/collector.php`
+    connStatLastTry=`callApi "serialNum=$serialNum" "actionStep=status"`
     if [ "$connStatLastTry" != "OK" ]; then
       logMe "ERROR - server still says we are down. needs manual intervention. Server said $connStat"
       exit 1

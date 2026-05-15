@@ -1,26 +1,15 @@
 #!/bin/bash
 
-# c)2011-2014 Best Macs, Inc.
-# c)2014-2015 Mac-MSP LLC
-# Copyright 2016-2017 SolarWinds Worldwide, LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-
-#       http://www.apache.org/licenses/LICENSE-2.0
-
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
-# sets up client and admin keys as well as client's server.plist and auth_key
+# BlueSkyConnect macOS SSH tunnel
+#
+# sets up client and admin keys as well as client’s server.plist and auth_key
+#
+# See https://github.com/BlueSkyTools/BlueSkyConnect
+# Licensed under the Apache License, Version 2.0
 
 # reads option to only do one set of keys or the other
 reKey="$1"
-mkdir -p /usr/local/bin/BlueSky/Client/.ssh 2> /dev/null
+mkdir -p /usr/local/bin/BlueSkyConnect/Client/.ssh 2> /dev/null
 apacheConf="default-ssl"
 if [[ ${USE_HTTP} ]]; then
 	apacheConf="000-default"
@@ -55,17 +44,22 @@ if [[ ${IN_DOCKER} ]]; then
 	/usr/sbin/sshd
 fi
 
+# update cacerts for our clients
+echo "Updating cacert.pem..."
+curl -o /usr/local/bin/BlueSkyConnect/Client/cacert.pem https://curl.se/ca/cacert.pem
+
 # safety check if these files are there - ignore if in docker
-if [ -e /usr/local/bin/BlueSky/Server/blueskyd ] && [ "$reKey" == "" ] && [[ -z ${IN_DOCKER} ]]; then
+if [ -e /usr/local/bin/BlueSkyConnect/Server/blueskyd ] && [ "$reKey" == "" ] && [[ -z ${IN_DOCKER} ]]; then
 	echo "This server has already been configured.  Please use --client or --admin to re-key the client apps."
-	echo "If you are trying to set up the server again, please delete /usr/local/bin/BlueSky/Server/blueskyd* and try again."
+	echo "If you are trying to set up the server again, please delete /usr/local/bin/BlueSkyConnect/Server/blueskyd* and try again."
 	exit 1
 fi
 
 if [ "$reKey" != "--admin" ]; then
 	# make blueskyclient pair - used for encrypting uploaded SSH keys to the server for clients
 	if [[ -z ${IN_DOCKER} ]]; then
-		openssl req -x509 -nodes -days 100000 -newkey rsa:2048 -keyout /usr/local/bin/BlueSky/Server/blueskyclient.key -out /usr/local/bin/BlueSky/Client/blueskyclient.pub -subj '/'
+		openssl req -x509 -nodes -days 100000 -newkey rsa:2048 -keyout /usr/local/bin/BlueSkyConnect/Server/blueskyclient.key -out /usr/local/bin/BlueSkyConnect/Client/blueskyclient.pub -subj '/'
+		chown www-data /usr/local/bin/BlueSkyConnect/Server/blueskyclient.key
 	else
 		# in docker: check to see if we are given existing key - create new one if not
 		if [ ! -e /certs/blueskyclient.key ] || [ ! -e /certs/blueskyclient.pub ]; then
@@ -73,15 +67,16 @@ if [ "$reKey" != "--admin" ]; then
 			openssl req -x509 -nodes -days 100000 -newkey rsa:2048 -keyout /certs/blueskyclient.key -out /certs/blueskyclient.pub -subj '/'
 		fi
 		# link keys to correct location
-		ln -fs /certs/blueskyclient.key /usr/local/bin/BlueSky/Server/
-		ln -fs /certs/blueskyclient.pub /usr/local/bin/BlueSky/Client/
+		ln -fs /certs/blueskyclient.key /usr/local/bin/BlueSkyConnect/Server/
+		ln -fs /certs/blueskyclient.pub /usr/local/bin/BlueSkyConnect/Client/
 	fi
 fi
 
 if [ "$reKey" != "--client" ]; then
 	# make blueskyadmin pair - used for encrypting uploaded SSH keys to the server for admins
 	if [[ -z ${IN_DOCKER} ]]; then
-		openssl req -x509 -nodes -days 100000 -newkey rsa:2048 -keyout /usr/local/bin/BlueSky/Server/blueskyadmin.key -out /usr/local/bin/BlueSky/Admin\ Tools/blueskyadmin.pub -subj '/'
+		openssl req -x509 -nodes -days 100000 -newkey rsa:2048 -keyout /usr/local/bin/BlueSkyConnect/Server/blueskyadmin.key -out /usr/local/bin/BlueSkyConnect/Admin\ Tools/blueskyadmin.pub -subj '/'
+		chown www-data /usr/local/bin/BlueSkyConnect/Server/blueskyadmin.key
 	else
 		# in docker: check to see if we are given existing key - create new one if not
 		if [ ! -e /certs/blueskyadmin.key ] || [ ! -e /certs/blueskyadmin.pub ]; then
@@ -89,8 +84,8 @@ if [ "$reKey" != "--client" ]; then
 			openssl req -x509 -nodes -days 100000 -newkey rsa:2048 -keyout /certs/blueskyadmin.key -out /certs/blueskyadmin.pub -subj '/'
 		fi
 		# link keys to correct location
-		ln -fs /certs/blueskyadmin.key /usr/local/bin/BlueSky/Server/
-		ln -fs /certs/blueskyadmin.pub /usr/local/bin/BlueSky/Admin\ Tools/
+		ln -fs /certs/blueskyadmin.key /usr/local/bin/BlueSkyConnect/Server/
+		ln -fs /certs/blueskyadmin.pub /usr/local/bin/BlueSkyConnect/Admin\ Tools/
 	fi
 fi
 
@@ -99,7 +94,7 @@ if [ "$reKey" == "" ]; then
 	# make bluesky-server-check keys - used for allowing the server to SSH in and validate the tunnel
 	# still using RSA here so we can shell into older Macs
 	if [[ -z ${IN_DOCKER} ]]; then
-		ssh-keygen -q -t rsa -N '' -f /usr/local/bin/BlueSky/Server/blueskyd -C "$hostName"
+		ssh-keygen -q -t rsa -N '' -f /usr/local/bin/BlueSkyConnect/Server/blueskyd -C "$hostName"
 	else
 		# in docker: check to see if we are given existing key - create new one if not
 		if [ ! -e /certs/blueskyd ] || [ ! -e /certs/blueskyd.pub ]; then
@@ -107,15 +102,15 @@ if [ "$reKey" == "" ]; then
 			ssh-keygen -q -t rsa -N '' -f /certs/blueskyd -C "$hostName"
 		fi
 		# link keys to correct location
-		ln -fs /certs/blueskyd.pub /usr/local/bin/BlueSky/Server/
-		ln -fs /certs/blueskyd /usr/local/bin/BlueSky/Server/
+		ln -fs /certs/blueskyd.pub /usr/local/bin/BlueSkyConnect/Server/
+		ln -fs /certs/blueskyd /usr/local/bin/BlueSkyConnect/Server/
 	fi
-	chown www-data /usr/local/bin/BlueSky/Server/blueskyd
-	echo command=\"/var/bluesky/.ssh/wrapper.sh\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty `cat /usr/local/bin/BlueSky/Server/blueskyd.pub` > /usr/local/bin/BlueSky/Client/.ssh/authorized_keys
+	chown www-data /usr/local/bin/BlueSkyConnect/Server/blueskyd
+	echo command=\"/var/bluesky/.ssh/wrapper.sh\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty `cat /usr/local/bin/BlueSkyConnect/Server/blueskyd.pub` > /usr/local/bin/BlueSkyConnect/Client/.ssh/authorized_keys
 
 	# create server.plist
-	hostKey=`ssh-keyscan -t ed25519 localhost | awk '{ print $2,$3 }'`
-	hostKeyRSA=`ssh-keyscan -t rsa localhost | awk '{ print $2,$3 }'`
+	hostKey=`ssh-keyscan -t ed25519 -p 3122 localhost | awk '{ print $2,$3 }'`
+	hostKeyRSA=`ssh-keyscan -t rsa -p 3122 localhost | awk '{ print $2,$3 }'`
 	ipAddress=`curl -s http://ipinfo.io/ip`
 	echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
@@ -128,7 +123,7 @@ if [ "$reKey" == "" ]; then
 	<key>serverkeyrsa</key>
 	<string>[$hostName]:3122,[$ipAddress]:3122 $hostKeyRSA</string>
 </dict>
-</plist>" > /usr/local/bin/BlueSky/Client/server.plist
+</plist>" > /usr/local/bin/BlueSkyConnect/Client/server.plist
 fi
 
 if [[ ${IN_DOCKER} ]]; then
@@ -136,6 +131,7 @@ if [[ ${IN_DOCKER} ]]; then
 	/usr/bin/killall sshd
 
 	# lets make an installer pkg!
+	find /var/www/html/ -type d -regextype posix-extended -regex '.*/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' -prune -exec rm -rf {} \;
 	/usr/local/bin/build_pkg.sh
 	/usr/local/bin/build_admin_pkg.sh
 fi

@@ -1,26 +1,17 @@
 #!/bin/bash
 
-# Copyright 2016-2017 SolarWinds Worldwide, LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-
-#       http://www.apache.org/licenses/LICENSE-2.0
-
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
+# BlueSkyConnect macOS SSH tunnel
+#
 # This wrapper script is called by requiring it in /home/admin/.ssh/authorized_keys
 # It prevents admin users from shelling directly into the server with their BlueSky creds
+#
+# See https://github.com/BlueSkyTools/BlueSkyConnect
+# Licensed under the Apache License, Version 2.0
 
 myCmd="/usr/bin/mysql --defaults-file=/var/local/my.cnf --default-character-set=utf8 BlueSky -N -B -e"
 
 # grab things necessary for all phases
-keyUsed="TBD" 
+keyUsed="TBD"
 startTime=`date '+%Y-%m-%d %H:%M:%S %Z'`
 sourceIP=`tail /var/log/auth.log | grep 'for admin' | tail -n 1 | awk -F 'for admin from ' '{ print $2 }' | awk '{ print $1 }'`
 
@@ -30,6 +21,14 @@ sourceIP=`tail /var/log/auth.log | grep 'for admin' | tail -n 1 | awk -F 'for ad
 #fingerPrint=`ssh-keygen -l -f /home/$targetLoc/newkeys/$tmpFile | awk '{ print $2 }' | cut -d : -f 2`
 
 
+function closeAudit {
+	# closes the previous mysql record with an exit code and finish time
+	# $1 should be exit code
+	endTime=`date '+%Y-%m-%d %H:%M:%S %Z'`
+	myQry="update connections set endTime='$endTime',exitStatus='$1' where id='$auditID'"
+	$myCmd "$myQry"
+}
+
 function writeAudit {
 	# creates a record in mysql for tracking admin activity
 	# $1 should be error description, if any
@@ -37,14 +36,6 @@ function writeAudit {
 	$myCmd "$myQry"
     myQry="select id from connections where startTime='$startTime' and adminkey='$keyUsed'"
 	auditID=`$myCmd "$myQry"`
-}
-
-function closeAudit {
-	# closes the previous mysql record with an exit code and finish time
-	# $1 should be exit code
-	endTime=`date '+%Y-%m-%d %H:%M:%S %Z'`
-	myQry="update connections set endTime='$endTime',exitStatus='$1' where id='$auditID'"
-	$myCmd "$myQry"
 }
 
 # no command equals no access, punk

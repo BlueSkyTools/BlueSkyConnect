@@ -1,6 +1,11 @@
 #!/bin/bash
 
-# script that reloads bluesky upon network event in hopes of faster reconnection
+# BlueSkyConnect macOS SSH tunnel
+#
+# script that reloads BlueSky upon network event in hopes of faster reconnection
+#
+# See https://github.com/BlueSkyTools/BlueSkyConnect
+# Licensed under the Apache License, Version 2.0
 
 ourHome="/var/bluesky"
 

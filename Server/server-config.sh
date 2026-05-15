@@ -1,23 +1,12 @@
 #!/bin/bash
 
-# c)2011-2014 Best Macs, Inc.
-# c)2014-2015 Mac-MSP LLC
-# Copyright 2016-2017 SolarWinds Worldwide, LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-
-#       http://www.apache.org/licenses/LICENSE-2.0
-
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
+# BlueSkyConnect macOS SSH tunnel
+#
 # sets up a base install of Ubuntu Server with configuration needed for BlueSky
 # DO NOT RUN this on migrated BlueSky 1.x servers
+#
+# See https://github.com/BlueSkyTools/BlueSkyConnect
+# Licensed under the Apache License, Version 2.0
 
 ## get variables
 # you can fill these in here or the script will ask for them
@@ -26,6 +15,19 @@ webAdminPassword=""
 mysqlRootPass=""
 emailAlertAddress=""
 # --------- DO NOT EDIT BELOW ------------------------------------------------------
+## Function to update sshd_config safely
+function update_sshd_config() {
+    local key="$1"
+    local value="$2"
+    local config_file="/etc/ssh/sshd_config"
+
+    # Remove any existing occurrences of the key to avoid duplicates
+    sed -i "/^$key/d" "$config_file"
+
+    # Append the correct key-value pair
+    echo "$key $value" >> "$config_file"
+}
+
 if [[ -z ${USE_HTTP} ]]; then
   USE_HTTP=0
 fi
@@ -98,40 +100,44 @@ if [ "$mysqlRootPass" == "" ]; then
   echo "Please enter a root password for MySQL. Leave it blank and we'll generate one."
   read mysqlRootPass
   if [ "$mysqlRootPass" == "" ]; then
-    mysqlRootPass=`tr -dc A-Za-z0-9 < /dev/urandom | head -c 48 | xargs`
+    mysqlRootPass=`openssl rand -base64 36`
   fi
 fi
 
 ## variables no one will care about
-mysqlCollectorPass=`tr -dc A-Za-z0-9 < /dev/urandom | head -c 48 | xargs`
+mysqlCollectorPass=`openssl rand -base64 36`
 
 ## double-check permissions on uploaded BlueSky files
-chown -R root:root /usr/local/bin/BlueSky/Server
-chmod 755 /usr/local/bin/BlueSky/Server
-chown www-data /usr/local/bin/BlueSky/Server/keymaster.sh
-chown www-data /usr/local/bin/BlueSky/Server/processor.sh
-chmod 755 /usr/local/bin/BlueSky/Server/*.sh
+chown -R root:root /usr/local/bin/BlueSkyConnect/Server
+chmod 755 /usr/local/bin/BlueSkyConnect/Server
+chown www-data /usr/local/bin/BlueSkyConnect/Server/keymaster.sh
+chown www-data /usr/local/bin/BlueSkyConnect/Server/processor.sh
+chmod 755 /usr/local/bin/BlueSkyConnect/Server/*.sh
 
 ## write server FQDN to a file for easy reference in case hostname changes
-echo "$serverFQDN" > /usr/local/bin/BlueSky/Server/server.txt
-echo "$serverFQDN" > /usr/local/bin/BlueSky/Admin\ Tools/server.txt
+echo "$serverFQDN" > /usr/local/bin/BlueSkyConnect/Server/server.txt
+echo "$serverFQDN" > /usr/local/bin/BlueSkyConnect/Admin\ Tools/server.txt
 
-## reconfigure sshd_config to meet our specifications
-echo 'Ciphers chacha20-poly1305@openssh.com,aes256-ctr' >> /etc/ssh/sshd_config
-echo 'MACs hmac-sha2-512-etm@openssh.com,hmac-ripemd160' >> /etc/ssh/sshd_config
+## Reconfigure sshd_config to meet our specifications
+enabledSSHCiphers="aes256-gcm@openssh.com"
+if [[ ${INSECURE_CIPHERS} ]]; then
+  enabledSSHCiphers="${enabledSSHCiphers},chacha20-poly1305@openssh.com"
+fi
+update_sshd_config "Ciphers" "${enabledSSHCiphers}"
+update_sshd_config "MACs" "hmac-sha2-512-etm@openssh.com"
+
 sed -i '/HostKey \/etc\/ssh\/ssh_host_dsa_key/d' /etc/ssh/sshd_config
 sed -i '/HostKey \/etc\/ssh\/ssh_host_ecdsa_key/d' /etc/ssh/sshd_config
-if [[ -z ${IN_DOCKER} ]]; then
-  sed -i 's/Port 22/Port 3122/g' /etc/ssh/sshd_config
-  service sshd restart
-else
-  # disable password authentication for ssh in docker
-  echo 'PasswordAuthentication no' >> /etc/ssh/sshd_config
-  echo 'ChallengeResponseAuthentication no' >> /etc/ssh/sshd_config
+sed -i 's/#Port 22/Port 3122/g' /etc/ssh/sshd_config
+service sshd restart
+if [[ ${IN_DOCKER} ]]; then
+  update_sshd_config "PasswordAuthentication" "no"
+  update_sshd_config "ChallengeResponseAuthentication" "no"
 fi
-# set shorter tunnel timeouts
-echo 'ClientAliveInterval 10' >> /etc/ssh/sshd_config
-echo 'ClientAliveCountMax 3' >> /etc/ssh/sshd_config
+
+## Set shorter tunnel timeouts
+update_sshd_config "ClientAliveInterval" "10"
+update_sshd_config "ClientAliveCountMax" "3"
 
 ## setup local firewall
 if [[ -z ${IN_DOCKER} ]]; then
@@ -221,21 +227,21 @@ fi
 
 ## move web site to /var/www/html
 mv /var/www/html /var/www/html.old
-ln -s /usr/local/bin/BlueSky/Server/html /var/www/html
-chown -R www-data /usr/local/bin/BlueSky/Server/html
+ln -s /usr/local/bin/BlueSkyConnect/Server/html /var/www/html
+chown -R www-data /usr/local/bin/BlueSkyConnect/Server/html
 
 ## configure cron jobs
-echo "@reboot /usr/local/bin/BlueSky/Server/startGozer.sh" > /tmp/mycron
-echo "*/30 * * * *  /usr/local/bin/BlueSky/Server/purgeTemp.sh" >> /tmp/mycron
-echo "*/5 * * * * /usr/local/bin/BlueSky/Server/serverup.sh" >> /tmp/mycron
+echo "@reboot /usr/local/bin/BlueSkyConnect/Server/startGozer.sh" > /tmp/mycron
+echo "*/30 * * * *  /usr/local/bin/BlueSkyConnect/Server/purgeTemp.sh" >> /tmp/mycron
+echo "*/5 * * * * /usr/local/bin/BlueSkyConnect/Server/serverup.sh" >> /tmp/mycron
 crontab /tmp/mycron
-/usr/local/bin/BlueSky/Server/startGozer.sh
+/usr/local/bin/BlueSkyConnect/Server/startGozer.sh
 
 ## setup collector.php
-ln -fs /usr/local/bin/BlueSky/Server/collector.php /usr/lib/cgi-bin/collector.php
-chown www-data /usr/local/bin/BlueSky/Server/collector.php
-chmod 700 /usr/local/bin/BlueSky/Server/collector.php
-sed -i "s/CHANGETHIS/$mysqlCollectorPass/g" /usr/lib/cgi-bin/collector.php
+ln -fs /usr/local/bin/BlueSkyConnect/Server/collector.php /usr/lib/cgi-bin/collector.php
+chown www-data /usr/local/bin/BlueSkyConnect/Server/collector.php
+chmod 700 /usr/local/bin/BlueSkyConnect/Server/collector.php
+sed -i "s/CHANGETHIS/$(printf '%s\n' "$mysqlCollectorPass" | sed 's/[\/&]/\\&/g')/g" /usr/lib/cgi-bin/collector.php
 if [[ ${IN_DOCKER} ]]; then
   sed -i "s/localhost/$MYSQLSERVER/g" /usr/lib/cgi-bin/collector.php
 fi
@@ -258,13 +264,13 @@ dbExists=$(/usr/bin/mysql --defaults-file=/var/local/my.cnf -N -B -e "SELECT sch
 if [[ -z "${dbExists}" ]]; then
   # does not exist
   /usr/bin/mysql --defaults-file=/var/local/my.cnf -N -B -e 'create database BlueSky;'
-  /usr/bin/mysql --defaults-file=/var/local/my.cnf BlueSky < /usr/local/bin/BlueSky/Server/myBlueSQL.sql
+  /usr/bin/mysql --defaults-file=/var/local/my.cnf BlueSky < /usr/local/bin/BlueSkyConnect/Server/myBlueSQL.sql
 fi
 
 myCmd="/usr/bin/mysql --defaults-file=/var/local/my.cnf BlueSky -N -B -e"
 
 ## setup credentials in /var/www/html/config.php
-sed -i "s/MYSQLROOT/$mysqlRootPass/g" /var/www/html/config.php
+sed -i "s/MYSQLROOT/$(printf '%s\n' "$mysqlRootPass" | sed 's/[\/&]/\\&/g')/g" /var/www/html/config.php
 if [[ ${IN_DOCKER} ]]; then
   sed -i "s/localhost/$MYSQLSERVER/g" /var/www/html/config.php
 fi
@@ -291,10 +297,10 @@ myQry="grant select on BlueSky.computers to 'collector'@'$mysqlHostSecurity';"
 $myCmd "$myQry"
 
 ## fail2ban conf
-sed -i "s/SERVERFQDN/$serverFQDN/g" /usr/local/bin/BlueSky/Server/sendEmail-whois-lines.conf
-cp /usr/local/bin/BlueSky/Server/sendEmail-whois-lines.conf /etc/fail2ban/action.d/sendEmail-whois-lines.conf
-sed -i "s/EMAILADDRESS/$emailAlertAddress/g" /usr/local/bin/BlueSky/Server/jail.local
-cp /usr/local/bin/BlueSky/Server/jail.local /etc/fail2ban
+sed -i "s/SERVERFQDN/$serverFQDN/g" /usr/local/bin/BlueSkyConnect/Server/sendEmail-whois-lines.conf
+cp /usr/local/bin/BlueSkyConnect/Server/sendEmail-whois-lines.conf /etc/fail2ban/action.d/sendEmail-whois-lines.conf
+sed -i "s/EMAILADDRESS/$emailAlertAddress/g" /usr/local/bin/BlueSkyConnect/Server/jail.local
+cp /usr/local/bin/BlueSkyConnect/Server/jail.local /etc/fail2ban
 if [[ -z ${IN_DOCKER} ]]; then
   service fail2ban start
 fi
@@ -304,24 +310,24 @@ myQry="update global set defaultemail='$emailAlertAddress'"
 $myCmd "$myQry"
 
 ## update emailHelper-dist.  You still need to enable it.
-sed -i "s/EMAILADDRESS/$emailAlertAddress/g" /usr/local/bin/BlueSky/Server/emailHelper-dist.sh 2>/dev/null
+sed -i "s/EMAILADDRESS/$emailAlertAddress/g" /usr/local/bin/BlueSkyConnect/Server/emailHelper-dist.sh 2>/dev/null
 
 ## put server fqdn into client config.disabled for proxy routing
-sed -i "s/SERVER/$serverFQDN/g" /usr/local/bin/BlueSky/Client/.ssh/config.disabled
+sed -i "s/SERVER/$serverFQDN/g" /usr/local/bin/BlueSkyConnect/Client/.ssh/config.disabled
 
 ## Run setup for client files
-/usr/local/bin/BlueSky/Server/client-config.sh
+/usr/local/bin/BlueSkyConnect/Server/client-config.sh
 
 ## That's all folks!
 if [[ -z ${IN_DOCKER} ]]; then
   echo "All set.  Please be sure to generate a CSR and/or install a verifiable SSL certificate"
   echo "in Apache by editing SSL paths in /etc/apache2/sites-enabled/default-ssl.conf"
   echo "BlueSky will not connect to servers with self-signed or invalid certificates."
-  echo "And configure /usr/local/bin/BlueSky/Server/emailHelper.sh with your preferred SMTP setup."
+  echo "And configure /usr/local/bin/BlueSkyConnect/Server/emailHelper.sh with your preferred SMTP setup."
 else
   if [[ ${SMTP_SERVER} && ${SMTP_AUTH} && ${SMTP_PASS} ]]; then
     # enable email alerts
-    mv /usr/local/bin/BlueSky/Server/emailHelper-dist.sh /usr/local/bin/BlueSky/Server/emailHelper.sh 2>/dev/null
+    mv /usr/local/bin/BlueSkyConnect/Server/emailHelper-dist.sh /usr/local/bin/BlueSkyConnect/Server/emailHelper.sh 2>/dev/null
   fi
 fi
 exit 0

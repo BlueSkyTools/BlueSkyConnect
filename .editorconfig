@@ -1,0 +1,19 @@
+[*]
+charset                  = utf-8
+end_of_line              = lf
+insert_final_newline     = true
+trim_trailing_whitespace = true
+
+[*.{plist,xml}]
+indent_style             = tab
+
+[*.sh]
+# uses shfmt
+binary_next_line         = true
+function_next_line       = false
+indent_size              = 2
+indent_style             = space
+keep_padding             = true
+shell_variant            = bash
+space_redirects          = true
+switch_case_indent       = true

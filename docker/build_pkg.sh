@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# BlueSkyConnect macOS SSH tunnel
+# See https://github.com/BlueSkyTools/BlueSkyConnect
+# Licensed under the Apache License, Version 2.0
+
 IDENTIFIER="com.solarwindsmsp.bluesky.pkg"
 APPNAME="BlueSky"
 
@@ -17,8 +21,8 @@ rm -rf /tmp/pkg-scripts/*
 rm -rf /tmp/pkg/BlueSky-*.pkg
 
 # copy the files we want to go into the pkg and get info about them
-cp -RL /usr/local/bin/BlueSky/Client/* /tmp/pkg-payload/
-cp -R /usr/local/bin/BlueSky/Client/.ssh /tmp/pkg-payload/
+cp -RL /usr/local/bin/BlueSkyConnect/Client/* /tmp/pkg-payload/
+cp -R /usr/local/bin/BlueSkyConnect/Client/.ssh /tmp/pkg-payload/
 NUM_FILES=$(find /tmp/pkg-payload | wc -l)
 INSTALL_KB_SIZE=$(du -k -s /tmp/pkg-payload | awk '{print $1}')
 
@@ -71,12 +75,21 @@ rm -f /tmp/pkg/.bom
 ( cd /tmp/pkg-flat && xar --compression none -cf "${PKG_LOCATION}" * )
 echo "osx package has been built: ${PKG_LOCATION}"
 
-RANDOM_DIR=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w ${1:-32} | head -n 1`
+RANDOM_DIR=`uuidgen`
 mkdir /var/www/html/"${RANDOM_DIR}"
 ln -s "${PKG_LOCATION}" /var/www/html/"${RANDOM_DIR}"/
-cat <<EOF > /var/www/html/hooks/agent-links.php
-<ul class="nav navbar-nav">
-  <a href="${RANDOM_DIR}/${APPNAME}-${BLUESKY_VERSION}.pkg" class="btn btn-default navbar-btn visible-sm visible-md visible-lg"><i class="glyphicon glyphicon-download-alt"></i> Download BlueSky Agent</a>
-  <a href="${RANDOM_DIR}/${APPNAME}-${BLUESKY_VERSION}.pkg" class="visible-xs btn btn-default navbar-btn btn-lg"><i class="glyphicon glyphicon-download-alt"></i> Download BlueSky Agent</a>
+if grep -q '<ul class="nav navbar-nav" id="agent">' /var/www/html/hooks/agent-links.php; then
+    # Agent link exists, replace it
+    sed -i "/<ul class=\"nav navbar-nav\" id=\"agent\">/,/<\/ul>/c\\
+<ul class=\"nav navbar-nav\" id=\"agent\">\\
+  <a href=\"${RANDOM_DIR}/${APPNAME}-${BLUESKY_VERSION}.pkg\" class=\"btn btn-default navbar-btn visible-sm visible-md visible-lg\"><i class=\"glyphicon glyphicon-download-alt\"></i>Download BlueSky Agent</a>\\
+  <a href=\"${RANDOM_DIR}/${APPNAME}-${BLUESKY_VERSION}.pkg\" class=\"visible-xs btn btn-default navbar-btn btn-lg\"><i class=\"glyphicon glyphicon-download-alt\"></i>Download BlueSky Agent</a>\\
+</ul>" /var/www/html/hooks/agent-links.php
+else
+    cat <<EOF >> /var/www/html/hooks/agent-links.php
+<ul class="nav navbar-nav" id="agent">
+  <a href="${RANDOM_DIR}/${APPNAME}-${BLUESKY_VERSION}.pkg" class="btn btn-default navbar-btn visible-sm visible-md visible-lg"><i class="glyphicon glyphicon-download-alt"></i>Download BlueSky Agent</a>
+  <a href="${RANDOM_DIR}/${APPNAME}-${BLUESKY_VERSION}.pkg" class="visible-xs btn btn-default navbar-btn btn-lg"><i class="glyphicon glyphicon-download-alt"></i>Download BlueSky Agent</a>
 </ul>
 EOF
+fi

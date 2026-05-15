@@ -73,8 +73,8 @@ on run
 	set portNum to random number from 1950 to 1999
 	set sshPort to (22000 + portNum)
 	set vncPort to (24000 + portNum)
-	
-	do shell script "ssh -o StrictHostKeyChecking=no -c chacha20-poly1305@openssh.com -o HostKeyAlgorithms=ssh-ed25519 -m hmac-sha2-512-etm@openssh.com -o KexAlgorithms=curve25519-sha256@libssh.org -i ~/.ssh/bluesky_tmp -nNT -R " & sshPort & ":localhost:22 -R " & vncPort & ":localhost:5900 -p 3122 bluesky@" & serverAddr & " &> /dev/null & echo $!"
+
+	do shell script "ssh -o StrictHostKeyChecking=no -c aes256-gcm@openssh.com -o HostKeyAlgorithms=ssh-ed25519 -m hmac-sha2-512-etm@openssh.com -o KexAlgorithms=curve25519-sha256@libssh.org -i ~/.ssh/bluesky_tmp -nNT -R " & sshPort & ":localhost:22 -R " & vncPort & ":localhost:5900 -p 3122 bluesky@" & serverAddr & " &> /dev/null & echo $!"
 	set sshPid to the result
 	try
 		delay 2

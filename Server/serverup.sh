@@ -1,27 +1,18 @@
 #!/bin/bash
 
-# Copyright 2016-2017 SolarWinds Worldwide, LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-
-#       http://www.apache.org/licenses/LICENSE-2.0
-
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
-## This script handles the sending of down or up alerts for computers marked with the Alert checkbox
+# BlueSkyConnect macOS SSH tunnel
+#
+# This script handles the sending of down or up alerts for computers marked with the Alert checkbox
+#
+# See https://github.com/BlueSkyTools/BlueSkyConnect
+# Licensed under the Apache License, Version 2.0
 
 function sendAlert {
   myQry="select hostname from computers where serialnum='$serialNum'"
   hostName=`$myCmd "$myQry"`
-  
+
   lastDate=`date -d @"$lastConn" '+%Y-%m-%d %H:%M:%S %Z'`
-  
+
   alertStat="$1"
   if [ "$alertStat" == "Down" ]; then
     messBody="You requested to be notified when $hostName with serial number $serialNum has been offline for more than 15 minutes. Last time we saw it was $lastDate"
@@ -30,9 +21,9 @@ function sendAlert {
   else
     return
   fi
-  
-  if [ -e /usr/local/bin/BlueSky/Server/emailHelper.sh ]; then
-    /usr/local/bin/BlueSky/Server/emailHelper.sh "BlueSky $alertStat Alert $serialNum" "$messBody"
+
+  if [ -e /usr/local/bin/BlueSkyConnect/Server/emailHelper.sh ]; then
+    /usr/local/bin/BlueSkyConnect/Server/emailHelper.sh "BlueSky $alertStat Alert $serialNum" "$messBody"
   fi
 }
 
@@ -65,7 +56,7 @@ for serialNum in $alertList; do
 		myQry="select blueskyid from computers where serialnum='$serialNum'"
 		myPort=`$myCmd "$myQry"`
 		sshPort=$((22000 + myPort))
-		testSN=`ssh -p $sshPort -o ConnectTimeout=5 -o ConnectionAttempts=5 -o StrictHostKeyChecking=no -l bluesky -i /usr/local/bin/BlueSky/Server/blueskyd localhost "/usr/bin/defaults read /var/bluesky/settings serial"`
+		testSN=`ssh -p $sshPort -o ConnectTimeout=5 -o ConnectionAttempts=5 -o StrictHostKeyChecking=no -l bluesky -i /usr/local/bin/BlueSkyConnect/Server/blueskyd localhost "/usr/bin/defaults read /var/bluesky/settings serial"`
 		testExit=$?
 		if [ $testExit -ne 0 ]; then
 		  # we did not connect, mark down the counter
@@ -87,7 +78,7 @@ for serialNum in $alertList; do
 		#server was down last time, mark up
 		myQry="update computers set downup='1' where serialnum='$serialNum'"
 		$myCmd "$myQry"
-		if [ ${firstStat:-0} -lt -1 ]; then 
+		if [ ${firstStat:-0} -lt -1 ]; then
 		  #down alert has been sent, follow up
 		  sendAlert Up
 		  timeStamp=`date '+%Y-%m-%d %H:%M:%S %Z'`

@@ -2,21 +2,24 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>CURL_SSL_BACKEND</key>
+		<string>secure-transport</string>
+	</dict>
 	<key>Label</key>
 	<string>com.solarwindsmsp.bluesky</string>
-	<key>ProgramArguments</key>
-	<array>
-		<string>/var/bluesky/bluesky.sh</string>
-	</array>
+	<key>Program</key>
+	<string>/var/bluesky/bluesky.sh</string>
 	<key>RunAtLoad</key>
 	<true/>
-	<key>UserName</key>
-	<string>bluesky</string>
-    <key>StandardOutPath</key>
-	<string>/var/bluesky/main.stdout</string>
 	<key>StandardErrorPath</key>
+	<string>/var/bluesky/main.stdout</string>
+	<key>StandardOutPath</key>
 	<string>/var/bluesky/main.stdout</string>
 	<key>StartInterval</key>
 	<integer>300</integer>
+	<key>UserName</key>
+	<string>bluesky</string>
 </dict>
 </plist>

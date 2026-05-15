@@ -10,16 +10,6 @@
 # Generation Time: 2017-11-16 19:18:48 +0000
 # ************************************************************
 
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8 */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-
-
 # Dump of table computers
 # ------------------------------------------------------------
 
@@ -50,35 +40,6 @@ CREATE TABLE `computers` (
   UNIQUE KEY `blueskyid` (`blueskyid`),
   UNIQUE KEY `serialnum` (`serialnum`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
-DELIMITER ;;
-/*!50003 SET SESSION SQL_MODE="ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION" */;;
-/*!50003 CREATE */ /*!50017 DEFINER=`root`@`localhost` */ /*!50003 TRIGGER `links_bi` BEFORE INSERT ON `computers` FOR EACH ROW BEGIN 
-IF (NEW.username is NULL) or (NEW.username = '') THEN
-SET NEW.sshlink = CONCAT('bluesky://com.solarwindsmsp.bluesky.admin?blueSkyID=',NEW.blueskyid,'&action=ssh');
-SET NEW.vnclink = CONCAT('bluesky://com.solarwindsmsp.bluesky.admin?blueSkyID=',NEW.blueskyid,'&action=vnc');
-SET NEW.scplink = CONCAT('bluesky://com.solarwindsmsp.bluesky.admin?blueSkyID=',NEW.blueskyid,'&action=scp');
-ELSE
-SET NEW.sshlink = CONCAT('bluesky://com.solarwindsmsp.bluesky.admin?blueSkyID=',NEW.blueskyid,'&user=',NEW.username,'&action=ssh');
-SET NEW.vnclink = CONCAT('bluesky://com.solarwindsmsp.bluesky.admin?blueSkyID=',NEW.blueskyid,'&user=',NEW.username,'&action=vnc');
-SET NEW.scplink = CONCAT('bluesky://com.solarwindsmsp.bluesky.admin?blueSkyID=',NEW.blueskyid,'&user=',NEW.username,'&action=scp');
-END IF;
-END */;;
-/*!50003 SET SESSION SQL_MODE="ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION" */;;
-/*!50003 CREATE */ /*!50017 DEFINER=`root`@`localhost` */ /*!50003 TRIGGER `links_bu` BEFORE UPDATE ON `computers` FOR EACH ROW BEGIN 
-IF (NEW.username is NULL) or (NEW.username = '') THEN
-SET NEW.sshlink = CONCAT('bluesky://com.solarwindsmsp.bluesky.admin?blueSkyID=',NEW.blueskyid,'&action=ssh');
-SET NEW.vnclink = CONCAT('bluesky://com.solarwindsmsp.bluesky.admin?blueSkyID=',NEW.blueskyid,'&action=vnc');
-SET NEW.scplink = CONCAT('bluesky://com.solarwindsmsp.bluesky.admin?blueSkyID=',NEW.blueskyid,'&action=scp');
-ELSE
-SET NEW.sshlink = CONCAT('bluesky://com.solarwindsmsp.bluesky.admin?blueSkyID=',NEW.blueskyid,'&user=',NEW.username,'&action=ssh');
-SET NEW.vnclink = CONCAT('bluesky://com.solarwindsmsp.bluesky.admin?blueSkyID=',NEW.blueskyid,'&user=',NEW.username,'&action=vnc');
-SET NEW.scplink = CONCAT('bluesky://com.solarwindsmsp.bluesky.admin?blueSkyID=',NEW.blueskyid,'&user=',NEW.username,'&action=scp');
-END IF;
-END */;;
-DELIMITER ;
-/*!50003 SET SESSION SQL_MODE=@OLD_SQL_MODE */;
 
 
 # Dump of table connections
@@ -116,13 +77,11 @@ CREATE TABLE `global` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 LOCK TABLES `global` WRITE;
-/*!40000 ALTER TABLE `global` DISABLE KEYS */;
 
 INSERT INTO `global` (`id`, `defaultemail`, `adminkeys`, `clickhere`, `updateNames`)
 VALUES
 	(1,NULL,NULL,'Click Here To Edit',NULL);
 
-/*!40000 ALTER TABLE `global` ENABLE KEYS */;
 UNLOCK TABLES;
 
 
@@ -143,7 +102,6 @@ CREATE TABLE `membership_grouppermissions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 LOCK TABLES `membership_grouppermissions` WRITE;
-/*!40000 ALTER TABLE `membership_grouppermissions` DISABLE KEYS */;
 
 INSERT INTO `membership_grouppermissions` (`permissionID`, `groupID`, `tableName`, `allowInsert`, `allowView`, `allowEdit`, `allowDelete`)
 VALUES
@@ -151,7 +109,6 @@ VALUES
 	(2,2,'global',1,3,3,3),
 	(3,2,'connections',1,3,3,3);
 
-/*!40000 ALTER TABLE `membership_grouppermissions` ENABLE KEYS */;
 UNLOCK TABLES;
 
 
@@ -170,14 +127,12 @@ CREATE TABLE `membership_groups` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 LOCK TABLES `membership_groups` WRITE;
-/*!40000 ALTER TABLE `membership_groups` DISABLE KEYS */;
 
 INSERT INTO `membership_groups` (`groupID`, `name`, `description`, `allowSignup`, `needsApproval`)
 VALUES
 	(1,'anonymous','Anonymous group created automatically on 2017-11-16',0,0),
 	(2,'Admins','Admin group created automatically on 2017-11-16',0,1);
 
-/*!40000 ALTER TABLE `membership_groups` ENABLE KEYS */;
 UNLOCK TABLES;
 
 
@@ -246,21 +201,10 @@ CREATE TABLE `membership_users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 LOCK TABLES `membership_users` WRITE;
-/*!40000 ALTER TABLE `membership_users` DISABLE KEYS */;
 
 INSERT INTO `membership_users` (`memberID`, `passMD5`, `email`, `signupDate`, `groupID`, `isBanned`, `isApproved`, `custom1`, `custom2`, `custom3`, `custom4`, `comments`, `pass_reset_key`, `pass_reset_expiry`)
 VALUES
 	('admin','eb8784b668ebfcfff84767eef83c2484','user@pretendco.com','2017-11-16',2,0,1,NULL,NULL,NULL,NULL,'Admin member created automatically on 2017-11-16\nRecord updated automatically on 2017-11-16',NULL,NULL),
 	('guest',NULL,NULL,'2017-11-16',1,1,1,NULL,NULL,NULL,NULL,'Anonymous member created automatically on 2017-11-16',NULL,NULL);
 
-/*!40000 ALTER TABLE `membership_users` ENABLE KEYS */;
 UNLOCK TABLES;
-
-
-
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

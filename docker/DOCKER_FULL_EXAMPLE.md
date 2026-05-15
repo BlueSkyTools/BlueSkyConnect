@@ -72,6 +72,7 @@ docker run -d --name bluesky \
   --link bluesky_db:db \
   -e SERVERFQDN=bluesky.example.com \
   -e WEBADMINPASS=admin \
+  -e MYSQLROOTPASS=admin \
   -e EMAILALERT=email@example.com \
   -e SMTP_SERVER=smtp.office365.com:587 \
   -e SMTP_AUTH=email@example.com \
@@ -80,7 +81,7 @@ docker run -d --name bluesky \
   -v /var/docker/bluesky/admin.ssh:/home/admin/.ssh \
   -v /var/docker/bluesky/bluesky.ssh:/home/bluesky/.ssh \
   --cap-add=NET_ADMIN \
-  -p 3122:22 \
+  -p 3122:3122 \
   --restart always \
   sphen/bluesky
 ```
