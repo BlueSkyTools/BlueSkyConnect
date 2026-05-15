@@ -4,9 +4,11 @@ This is an attempt at getting BlueSky to run within docker.  This should allow i
 
 ### TL;DR
 
-We have a full example setup utilizing Caddy for automatic SSL cert generation [at this page](https://github.com/logicnow/BlueSky/blob/master/docker/DOCKER_FULL_EXAMPLE.md).
+We have a full example setup utilizing Caddy for automatic SSL cert generation [at this page](https://github.com/BlueSkyTools/BlueSkyConnect/blob/master/docker/DOCKER_FULL_EXAMPLE.md).
 
-We also have a Docker [troubleshooting page](https://github.com/logicnow/BlueSky/wiki/Docker-Troubleshooting).
+We also have a Docker [troubleshooting page](https://github.com/BlueSkyTools/BlueSkyConnect/wiki/Docker-Troubleshooting).
+
+> **Image location:** Releases are published to GitHub Container Registry as `ghcr.io/blueskytools/blueskyconnect`. The legacy Docker Hub repo (`sphen/bluesky`) is no longer updated — please switch any `docker pull` / `docker-compose` references.
 
 ### Environment variables
 
@@ -106,7 +108,7 @@ docker run -d --name bluesky \
   -p 80:80 \
   -p 443:443 \
   -p 3122:3122 \
-  sphen/bluesky
+  ghcr.io/blueskytools/blueskyconnect
 ```
 
 > _The `--cap-add=NET_ADMIN` argument is only needed if using fail2ban (default)_
@@ -124,13 +126,13 @@ Keep in mind if you have a chain certificate you should combine the entire chain
 
 To update your BlueSky docker instance it is very simple
 ```
-docker pull sphen/bluesky
+docker pull ghcr.io/blueskytools/blueskyconnect
 docker rm -f bluesky
 ```
 
 Then just issue the `docker run` command you originally used to build your specific container!
 ```
-docker run -d --name bluesky <the rest of your arguments...> sphen/bluesky
+docker run -d --name bluesky <the rest of your arguments...> ghcr.io/blueskytools/blueskyconnect
 ```
 
 ### Troubleshooting
@@ -148,5 +150,5 @@ docker exec -it bluesky bash
 
 ### Links
 
-- Auto-build on Docker Hub: https://hub.docker.com/r/sphen/bluesky/
-- Parent BlueSky repo on GitHub: https://github.com/logicnow/BlueSky
+- Container image on GHCR: https://github.com/BlueSkyTools/BlueSkyConnect/pkgs/container/blueskyconnect
+- Source repo on GitHub: https://github.com/BlueSkyTools/BlueSkyConnect
