@@ -9,14 +9,14 @@
 # Licensed under the Apache License, Version 2.0
 
 # Escape single quotes for safe MySQL interpolation
-sanitize_sql() {
+sanitizeSql() {
 	echo "${1//\'/\'\'}"
 }
 
 # grab the inputs and sanitize for SQL
-serialNum=$(sanitize_sql "$1")
+serialNum=$(sanitizeSql "$1")
 actionStep="$2"
-hostName=$(sanitize_sql "$3")
+hostName=$(sanitizeSql "$3")
 
 # did we get everything?
 if [ "$serialNum" == "" ] || [ "$actionStep" == "" ]; then
@@ -35,7 +35,7 @@ function allGood {
 
 function snMismatch {
 	echo "Serial mismatch. Returned: $testConn"
-	safeTestConn=$(sanitize_sql "$testConn")
+	safeTestConn=$(sanitizeSql "$testConn")
 	myQry="update computers set status='ERROR: serial mismatch returned $safeTestConn',datetime='$timeStamp' where serialnum='$serialNum'"
 	$myCmd "$myQry"
 }
