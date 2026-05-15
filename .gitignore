@@ -29,3 +29,9 @@ Temporary Items
 
 ### BUILD STUFF ###
 Client/ssh
+
+### CLAUDE ###
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+.mcp.json
