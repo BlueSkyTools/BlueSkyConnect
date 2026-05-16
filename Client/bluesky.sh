@@ -11,7 +11,7 @@
 # Set this to a different location if you'd prefer it live somewhere else
 ourHome="/var/bluesky"
 
-bVer="2.5.0"
+bVer="2.5.1"
 
 # planting a debug flag runs bash in -x so you get all the output
 if [ -e "$ourHome/.debug" ]; then
