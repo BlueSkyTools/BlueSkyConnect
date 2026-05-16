@@ -34,7 +34,8 @@ if [ -d /usr/local/bin/BlueSky ] && [ ! -d /usr/local/bin/BlueSkyConnect ]; then
   # root crontab entries (@reboot startGozer, purgeTemp, serverup)
   crontab -l 2> /dev/null | sed 's|/usr/local/bin/BlueSky/|/usr/local/bin/BlueSkyConnect/|g' | crontab -
 
-  # forced-command prefix in authorized_keys for both roles
+  # forced-command prefix in authorized_keys for both roles.
+  # Note: one-shot. Future wrapper.sh path/contract changes need a new migration block.
   for keyFile in /home/admin/.ssh/authorized_keys /home/bluesky/.ssh/authorized_keys; do
     if [ -f "$keyFile" ]; then
       sed -i 's|/usr/local/bin/BlueSky/Server|/usr/local/bin/BlueSkyConnect/Server|g' "$keyFile"
@@ -101,6 +102,14 @@ if [ "$mysqlCollectorPass" == "" ]; then
   myQry="grant select on BlueSky.computers to 'collector'@'localhost';"
   $myCmd "$myQry"
 fi
+## Refresh /usr/lib/cgi-bin/collector.php from canonical source on every run.
+## The install-time ln -fs was broken by sed -i CHANGETHIS, leaving a regular
+## file frozen at install content; canonical-file changes (security fixes,
+## new shell-outs) otherwise never reach what Apache actually serves.
+cp /usr/local/bin/BlueSkyConnect/Server/collector.php /usr/lib/cgi-bin/collector.php
+chown www-data /usr/lib/cgi-bin/collector.php
+chmod 700 /usr/lib/cgi-bin/collector.php
+
 sed -i "s/CHANGETHIS/$(printf '%s\n' "$mysqlCollectorPass" | sed 's/[\/&]/\\&/g')/g" /usr/lib/cgi-bin/collector.php
 
 ## double-check permissions on uploaded BlueSky files

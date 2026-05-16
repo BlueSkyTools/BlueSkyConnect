@@ -8,10 +8,15 @@
 # See https://github.com/BlueSkyTools/BlueSkyConnect
 # Licensed under the Apache License, Version 2.0
 
-# grab the inputs
-serialNum="$1"
+# Escape single quotes for safe MySQL interpolation
+sanitizeSql() {
+	echo "${1//\'/\'\'}"
+}
+
+# grab the inputs and sanitize for SQL
+serialNum=$(sanitizeSql "$1")
 actionStep="$2"
-hostName="$3"
+hostName=$(sanitizeSql "$3")
 
 # did we get everything?
 if [ "$serialNum" == "" ] || [ "$actionStep" == "" ]; then
@@ -30,7 +35,8 @@ function allGood {
 
 function snMismatch {
 	echo "Serial mismatch. Returned: $testConn"
-	myQry="update computers set status='ERROR: serial mismatch returned $testConn',datetime='$timeStamp' where serialnum='$serialNum'"
+	safeTestConn=$(sanitizeSql "$testConn")
+	myQry="update computers set status='ERROR: serial mismatch returned $safeTestConn',datetime='$timeStamp' where serialnum='$serialNum'"
 	$myCmd "$myQry"
 }
 
