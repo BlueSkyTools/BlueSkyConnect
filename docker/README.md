@@ -18,7 +18,7 @@ Variable | Default Value | Note
 --- | --- | ---
 SERVERFQDN | localhost | BlueSky FQDN
 WEBADMINPASS | admin |
-USE_HTTP | 0 | Set to 1 to use HTTP instead of HTTPS
+USE_HTTP | 0 | Set to 1 to serve plain HTTP (recommended when running behind a TLS-terminating reverse proxy such as Caddy/nginx; container honors X-Forwarded-Proto)
 SSL_CERT | | Filename referring to your ssl cert file in /certs
 SSL_KEY | | Filename referring to your ssl key file in /certs
 FAIL2BAN | 1 | Set to 0 to disable fail2ban

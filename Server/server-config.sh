@@ -204,6 +204,10 @@ head -n 5 /etc/apache2/sites-enabled/"$apacheConf".conf > /tmp/"$apacheConf".con
 echo "    ServerName $serverFQDN" >> /tmp/"$apacheConf".conf
 if [ "$USE_HTTP" -ne "1" ]; then
   echo '        SSLProtocol All -SSLv2 -SSLv3' >> /tmp/"$apacheConf".conf
+else
+  # Honor an upstream reverse proxy's X-Forwarded-Proto so AppGini's $_SERVER['HTTPS']
+  # check sees 'on' and generates https:// redirects instead of http://.
+  echo '    SetEnvIf X-Forwarded-Proto "https" HTTPS=on' >> /tmp/"$apacheConf".conf
 fi
 #write the bottom half
 tail -n +6 /etc/apache2/sites-enabled/"$apacheConf".conf  >> /tmp/"$apacheConf".conf
