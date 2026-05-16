@@ -8,7 +8,7 @@
 # Licensed under the Apache License, Version 2.0
 
 ourHome="/var/bluesky"
-bVer="2.5.0"
+bVer="2.5.1"
 
 if [ -e "$ourHome/.debug" ]; then
   set -x

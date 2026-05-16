@@ -2,13 +2,13 @@
 
 This page shows an example setup consisting of several docker containers working together for easy deployment.
 
-The main documentation on how to use the bluesky container is in our main [README](https://github.com/logicnow/BlueSky/blob/master/docker/README.md)
+The main documentation on how to use the bluesky container is in our main [README](https://github.com/BlueSkyTools/BlueSkyConnect/blob/master/docker/README.md)
 
 ### Assumptions for this example
 
 We will be using these docker containers:
 - [mysql:5.7](https://hub.docker.com/_/mysql/)
-- [sphen/bluesky](https://hub.docker.com/r/sphen/bluesky/)
+- [ghcr.io/blueskytools/blueskyconnect](https://github.com/BlueSkyTools/BlueSkyConnect/pkgs/container/blueskyconnect)
 - [abiosoft/caddy](https://hub.docker.com/r/abiosoft/caddy/)
 
 These are the values being used below - and will need modification from you:
@@ -83,7 +83,7 @@ docker run -d --name bluesky \
   --cap-add=NET_ADMIN \
   -p 3122:3122 \
   --restart always \
-  sphen/bluesky
+  ghcr.io/blueskytools/blueskyconnect
 ```
 
 #### Create Caddyfile
