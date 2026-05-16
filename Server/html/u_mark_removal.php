@@ -28,7 +28,7 @@
 <div class="row">
 <div class="col-md-8 col-lg-10" id="computers_dv_form">
 			<fieldset class="form-horizontal">
-			<input name="selected_ids" type="hidden" value="<?php echo $_REQUEST["selected_ids"];?>">
+			<input name="selected_ids" type="hidden" value="<?php echo htmlspecialchars($_REQUEST["selected_ids"], ENT_QUOTES, 'UTF-8');?>">
 				
 				<div class="form-group">
 					<div class="col-lg-offset-3 col-lg-9">
