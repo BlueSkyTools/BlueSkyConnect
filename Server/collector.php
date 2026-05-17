@@ -26,10 +26,11 @@ if (isset($_POST['serialNum'], $_POST['actionStep']) ) {
     if ($dbc) {
 
         // Sanctify the provided information:
-        $serialNum = mysqli_real_escape_string($dbc, trim($_POST['serialNum']));
-        $actionStep = mysqli_real_escape_string($dbc, trim($_POST['actionStep']));
+        // SQL escaping is handled by processor.sh; here we only need shell escaping.
+        $serialNum = trim($_POST['serialNum']);
+        $actionStep = trim($_POST['actionStep']);
         if (isset($_POST['hostName']) ) {
-        	$hostName = mysqli_real_escape_string($dbc, trim($_POST['hostName']));
+        	$hostName = trim($_POST['hostName']);
         } else {
         	$hostName = "";
         }

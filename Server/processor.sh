@@ -8,9 +8,11 @@
 # See https://github.com/BlueSkyTools/BlueSkyConnect
 # Licensed under the Apache License, Version 2.0
 
-# Escape single quotes for safe MySQL interpolation
+# Escape backslashes and single quotes for safe MySQL interpolation.
+# Backslashes must be escaped first so the quotes we add aren't themselves escaped.
 sanitizeSql() {
-	echo "${1//\'/\'\'}"
+	local s="${1//\\/\\\\}"
+	echo "${s//\'/\'\'}"
 }
 
 # grab the inputs and sanitize for SQL
