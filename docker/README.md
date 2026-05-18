@@ -18,7 +18,7 @@ Variable | Default Value | Note
 --- | --- | ---
 SERVERFQDN | localhost | BlueSky FQDN
 WEBADMINPASS | admin |
-USE_HTTP | 0 | Set to 1 to serve plain HTTP (recommended when running behind a TLS-terminating reverse proxy such as Caddy/nginx; container honors X-Forwarded-Proto)
+USE_HTTP | 0 | Set to 1 to serve plain HTTP (recommended when running behind a TLS-terminating reverse proxy such as Caddy/nginx; container honors X-Forwarded-Proto and X-Forwarded-For so access/error logs and `REMOTE_ADDR` show the real client IP)
 SSL_CERT | | Filename referring to your ssl cert file in /certs
 SSL_KEY | | Filename referring to your ssl key file in /certs
 FAIL2BAN | 1 | Set to 0 to disable fail2ban
@@ -185,6 +185,10 @@ services:
         max-size: "50m"
         max-file: "5"
 ```
+
+### fail2ban behind a reverse proxy
+
+With `USE_HTTP=1`, error-log entries show the *real* attacker IP (via `mod_remoteip` honoring `X-Forwarded-For`) rather than the proxy's docker IP — useful for visibility and audit.  However, fail2ban's iptables actions inside the container can only filter packets it actually receives, which always come from the proxy peer (e.g. Caddy).  In this topology the in-container bans are effectively audit-only; for real enforcement, apply rate limiting or IP banning at the reverse-proxy layer.
 
 ### Links
 

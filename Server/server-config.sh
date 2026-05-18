@@ -236,6 +236,9 @@ if [ "$USE_HTTP" -ne "1" ]; then
   a2enmod ssl
   a2ensite default-ssl
 fi
+if [ "$USE_HTTP" -eq "1" ]; then
+  a2enmod remoteip
+fi
 a2enmod cgi
 sed -i "s/ServerAdmin webmaster@localhost/ServerAdmin $emailAlertAddress/g" /etc/apache2/sites-enabled/"$apacheConf".conf
 
@@ -249,6 +252,12 @@ else
   # Honor an upstream reverse proxy's X-Forwarded-Proto so AppGini's $_SERVER['HTTPS']
   # check sees 'on' and generates https:// redirects instead of http://.
   echo '    SetEnvIf X-Forwarded-Proto "https" HTTPS=on' >> /tmp/"$apacheConf".conf
+  # Honor X-Forwarded-For so access/error logs and REMOTE_ADDR show real client IPs.
+  echo '    RemoteIPHeader X-Forwarded-For' >> /tmp/"$apacheConf".conf
+  echo '    RemoteIPInternalProxy 127.0.0.1' >> /tmp/"$apacheConf".conf
+  echo '    RemoteIPInternalProxy 10.0.0.0/8' >> /tmp/"$apacheConf".conf
+  echo '    RemoteIPInternalProxy 172.16.0.0/12' >> /tmp/"$apacheConf".conf
+  echo '    RemoteIPInternalProxy 192.168.0.0/16' >> /tmp/"$apacheConf".conf
 fi
 #write the bottom half
 tail -n +6 /etc/apache2/sites-enabled/"$apacheConf".conf  >> /tmp/"$apacheConf".conf
