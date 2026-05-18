@@ -7,6 +7,8 @@ ENV IN_DOCKER=1 \
     MYSQLSERVER=db \
     WEBADMINPASS=admin \
     EMAILALERT=root@localhost \
+    LOG_ROTATE_SIZE=100M \
+    LOG_ROTATE_KEEP=7 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     DEBIAN_FRONTEND=noninteractive \
@@ -31,6 +33,7 @@ RUN apt-get update && \
     rsyslog \
     fail2ban \
     iptables \
+    logrotate \
     uuid-runtime \
     libnet-ssleay-perl \
     ca-certificates && \

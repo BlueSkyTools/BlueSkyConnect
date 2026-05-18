@@ -59,6 +59,47 @@ if [[ ${IN_DOCKER} ]]; then
     echo ${TIMEZONE} > /etc/timezone
     dpkg-reconfigure -f noninteractive tzdata
   fi
+
+  ## install consolidated logrotate config for apache/auth/fail2ban
+  : "${LOG_ROTATE_SIZE:=100M}"
+  : "${LOG_ROTATE_KEEP:=7}"
+  # drop distro configs that conflict with our entries
+  rm -f /etc/logrotate.d/apache2 /etc/logrotate.d/fail2ban
+  # rsyslog ships auth.log inside a multi-path block; strip just that path
+  if [[ -f /etc/logrotate.d/rsyslog ]]; then
+    sed -i '\|^/var/log/auth\.log$|d' /etc/logrotate.d/rsyslog
+  fi
+  cat > /etc/logrotate.d/bluesky <<EOF
+/var/log/apache2/*.log {
+  size ${LOG_ROTATE_SIZE}
+  rotate ${LOG_ROTATE_KEEP}
+  missingok
+  notifempty
+  compress
+  delaycompress
+  copytruncate
+}
+
+/var/log/auth.log {
+  size ${LOG_ROTATE_SIZE}
+  rotate ${LOG_ROTATE_KEEP}
+  missingok
+  notifempty
+  compress
+  delaycompress
+  copytruncate
+}
+
+/var/log/fail2ban.log {
+  size ${LOG_ROTATE_SIZE}
+  rotate ${LOG_ROTATE_KEEP}
+  missingok
+  notifempty
+  compress
+  delaycompress
+  copytruncate
+}
+EOF
 fi
 if [ "$USE_HTTP" -eq "1" ]; then
   apacheConf="000-default"

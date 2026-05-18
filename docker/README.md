@@ -29,6 +29,8 @@ SMTP_SERVER | | SMTP Server (Required for email alerts) Port optional
 SMTP_AUTH | | SMTP auth user (Required for email alerts)
 SMTP_PASS | | SMTP auth pass (Required for email alerts)
 TIMEZONE | Etc/UTC | Local Timezone [Reference](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
+LOG_ROTATE_SIZE | 100M | Size threshold for log rotation (applies to Apache, auth, and fail2ban logs)
+LOG_ROTATE_KEEP | 7 | Number of rotated copies to retain (older are deleted)
 DEFAULT_USER | | Default username bluesky uses when connecting to a client
 INSECURE_CIPHERS | | Set to any value to allow the use of chacha20-poly1305 ssh cipher (bluesky <= 2.3.2)
 
@@ -147,6 +149,8 @@ You can also shell into the BlueSky container if needed.  For example:
 ```
 docker exec -it bluesky bash
 ```
+
+Apache request and error logs are mirrored to the container's stdout in addition to being written to `/var/log/apache2/` inside the container, so `docker logs bluesky` is useful for live troubleshooting while the on-disk files remain available via `docker exec`.  All three log groups (`/var/log/apache2/*.log`, `/var/log/auth.log`, `/var/log/fail2ban.log`) are rotated by `logrotate` (run via cron); see `LOG_ROTATE_SIZE` and `LOG_ROTATE_KEEP` above to tune.
 
 ### Links
 
