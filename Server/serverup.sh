@@ -56,7 +56,7 @@ for serialNum in $alertList; do
 		myQry="select blueskyid from computers where serialnum='$serialNum'"
 		myPort=`$myCmd "$myQry"`
 		sshPort=$((22000 + myPort))
-		testSN=`ssh -p $sshPort -o ConnectTimeout=5 -o ConnectionAttempts=5 -o StrictHostKeyChecking=no -l bluesky -i /usr/local/bin/BlueSkyConnect/Server/blueskyd localhost "/usr/bin/defaults read /var/bluesky/settings serial"`
+		testSN=`ssh -p $sshPort -o ConnectTimeout=5 -o ConnectionAttempts=5 -o StrictHostKeyChecking=no -o LogLevel=ERROR -l bluesky -i /usr/local/bin/BlueSkyConnect/Server/blueskyd localhost "/usr/bin/defaults read /var/bluesky/settings serial"`
 		testExit=$?
 		if [ $testExit -ne 0 ]; then
 		  # we did not connect, mark down the counter

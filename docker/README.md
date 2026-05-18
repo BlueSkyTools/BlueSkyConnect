@@ -107,6 +107,8 @@ docker run -d --name bluesky \
   -v /var/docker/bluesky/bluesky.ssh:/home/bluesky/.ssh \
   -v /var/docker/bluesky/pkg:/tmp/pkg \
   --cap-add=NET_ADMIN \
+  --log-opt max-size=50m \
+  --log-opt max-file=5 \
   -p 80:80 \
   -p 443:443 \
   -p 3122:3122 \
@@ -151,6 +153,38 @@ docker exec -it bluesky bash
 ```
 
 Apache request and error logs are mirrored to the container's stdout in addition to being written to `/var/log/apache2/` inside the container, so `docker logs bluesky` is useful for live troubleshooting while the on-disk files remain available via `docker exec`.  All three log groups (`/var/log/apache2/*.log`, `/var/log/auth.log`, `/var/log/fail2ban.log`) are rotated by `logrotate` (run via cron); see `LOG_ROTATE_SIZE` and `LOG_ROTATE_KEEP` above to tune.
+
+### Docker daemon log rotation
+
+Because Apache logs are now mirrored to the container's stdout, anything written to those logs also accumulates on the **host** at `/var/lib/docker/containers/<id>/<id>-json.log`.  Docker's default `json-file` logging driver does not cap or rotate that file, so over time it can fill the host disk — at a busy BlueSky server with frequent client check-ins this can be tens of MB per day.
+
+The example `docker run` command above passes `--log-opt max-size=50m --log-opt max-file=5`, which caps the per-container log footprint on the host at roughly 250 MB and rotates older content automatically.  Adjust to taste; you likely never need more than a few hundred MB of historical `docker logs` for troubleshooting.
+
+If you prefer a host-wide default instead of per-container flags, set it once in `/etc/docker/daemon.json` and restart the Docker daemon:
+
+```json
+{
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "50m",
+    "max-file": "5"
+  }
+}
+```
+
+For `docker-compose` users, the equivalent goes under the service definition:
+
+```yaml
+services:
+  bluesky:
+    image: ghcr.io/blueskytools/blueskyconnect
+    # ...the rest of your existing config...
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+```
 
 ### Links
 
