@@ -80,21 +80,36 @@ signAppBundle() {
   }
 }
 
+isMachO() {
+  # Mach-O magic bytes:
+  #   feedface / feedfacf — thin 32/64 BE
+  #   cefaedfe / cffaedfe — thin 32/64 LE
+  #   cafebabe / bebafeca — fat
+  #   cafebabf / bfbafeca — fat 64
+  # cafebabe also matches Java .class, but no .class files live in the payload.
+  local magic
+  magic=$(head -c 4 "$1" 2> /dev/null | od -An -tx1 | tr -d ' \n')
+  case "$magic" in
+    feedface | feedfacf | cefaedfe | cffaedfe | cafebabe | bebafeca | cafebabf | bfbafeca) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 signMachOPayload() {
   signEnabled || return 0
   local payloadDir="$1"
-  local file
-  while IFS= read -r -d '' file; do
-    if file --mime "$file" 2> /dev/null | grep -q 'application/x-mach-binary'; then
-      echo "Signing Mach-O: $file"
+  local f
+  while IFS= read -r -d '' f; do
+    if isMachO "$f"; then
+      echo "Signing Mach-O: $f"
       rcodesign sign \
         --p12-file "$DEVID_APP_P12" \
         --p12-password "$DEVID_APP_P12_PASSWORD" \
         --code-signature-flags runtime \
         --digest sha256 \
         --for-notarization \
-        "$file" || {
-        echo "rcodesign failed to sign $file" >&2
+        "$f" || {
+        echo "rcodesign failed to sign $f" >&2
         exit 1
       }
     fi

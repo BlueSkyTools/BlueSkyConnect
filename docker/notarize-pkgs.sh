@@ -13,10 +13,9 @@ if [[ "$SIGN_PKG" != "1" || "$SIGN_SKIP_NOTARIZE" == "1" ]]; then
   exit 0
 fi
 
-set -e
-
 NOTARY_KEY_JSON="/tmp/notary-key.json"
 
+# shellcheck disable=SC2329  # invoked via trap below
 cleanup() {
   if [[ -f "$NOTARY_KEY_JSON" ]]; then
     shred -u "$NOTARY_KEY_JSON" 2> /dev/null || rm -f "$NOTARY_KEY_JSON"
@@ -24,10 +23,14 @@ cleanup() {
 }
 trap cleanup EXIT
 
-rcodesign encode-app-store-connect-api-key \
+if ! rcodesign encode-app-store-connect-api-key \
   -o "$NOTARY_KEY_JSON" \
-  "$NOTARY_API_ISSUER_ID" "$NOTARY_API_KEY_ID" "$NOTARY_API_KEY_P8"
+  "$NOTARY_API_ISSUER_ID" "$NOTARY_API_KEY_ID" "$NOTARY_API_KEY_P8"; then
+  echo "Failed to encode ASC API key; aborting notarization" >&2
+  exit 1
+fi
 
+failures=0
 for pkg in "/tmp/pkg/BlueSky-${BLUESKY_VERSION}.pkg" \
   "/tmp/pkg/BlueSkyAdmin-${BLUESKY_VERSION}.pkg"; do
   if [[ ! -f "$pkg" ]]; then
@@ -35,8 +38,13 @@ for pkg in "/tmp/pkg/BlueSky-${BLUESKY_VERSION}.pkg" \
     continue
   fi
   echo "Notarizing + stapling: $pkg"
-  rcodesign notary-submit \
+  if ! rcodesign notary-submit \
     --api-key-path "$NOTARY_KEY_JSON" \
     --staple \
-    "$pkg"
+    "$pkg"; then
+    echo "Notarization failed for $pkg (continuing)" >&2
+    failures=$((failures + 1))
+  fi
 done
+
+exit "$failures"
