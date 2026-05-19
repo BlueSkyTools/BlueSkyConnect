@@ -140,6 +140,8 @@ function reKey {
   if [ "$wmCG" != "" ]; then
   	hostName="$wmCG - $hostName"
   fi
+  # transliterate to ASCII so smart quotes / accents don't mojibake server-side
+  hostName=`echo "$hostName" | iconv -f UTF-8 -t ASCII//TRANSLIT 2>/dev/null`
 
   # upload info to get registered
   uploadResult=`callApi "serialNum=$serialNum" "actionStep=register" "hostName=$hostName"`
