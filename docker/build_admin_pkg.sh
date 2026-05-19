@@ -97,6 +97,12 @@ if signEnabled; then
   fi
 fi
 
+# Tell notarize-pkgs.sh whether this pkg is signed. If anything in the
+# signing chain fell back to unsigned (validation, app sign, pkg sign),
+# leave a sentinel so notarization is skipped instead of wasting an Apple
+# round-trip on a pkg that will be rejected.
+markPkgSignState "${PKG_LOCATION}"
+
 RANDOM_DIR=`uuidgen`
 mkdir /var/www/html/"${RANDOM_DIR}"
 ln -s "${PKG_LOCATION}" /var/www/html/"${RANDOM_DIR}"/

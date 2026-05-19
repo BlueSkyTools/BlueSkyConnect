@@ -37,6 +37,13 @@ for pkg in "/tmp/pkg/BlueSky-${BLUESKY_VERSION}.pkg" \
     echo "Skipping notarization of $pkg (not found)"
     continue
   fi
+  # build_*.sh leaves /tmp/.unsigned-<basename> when its signing chain fell
+  # back to unsigned. Skip those — submitting would just burn a 30+s Apple
+  # round-trip for a guaranteed "binary is not signed" rejection.
+  if [[ -f "/tmp/.unsigned-$(basename "$pkg")" ]]; then
+    echo "Skipping notarization of $pkg (pkg is unsigned)"
+    continue
+  fi
   echo "Notarizing + stapling: $pkg"
   if ! rcodesign notary-submit \
     --api-key-path "$NOTARY_KEY_JSON" \

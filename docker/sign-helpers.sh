@@ -135,3 +135,21 @@ signPkgFile() {
     return 1
   fi
 }
+
+# Sentinel path used to communicate sign-state from build_*.sh to
+# notarize-pkgs.sh across process boundaries (SIGN_PKG=0 set inside a
+# build script is not visible to the later notarize-pkgs.sh invocation).
+pkgSentinelPath() {
+  echo "/tmp/.unsigned-$(basename "$1")"
+}
+
+markPkgSignState() {
+  local pkg="$1"
+  local sentinel
+  sentinel=$(pkgSentinelPath "$pkg")
+  if signEnabled; then
+    rm -f "$sentinel"
+  else
+    touch "$sentinel"
+  fi
+}
