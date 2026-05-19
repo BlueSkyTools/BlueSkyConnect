@@ -100,6 +100,8 @@ if signEnabled; then
   else
     echo "WARN: pkg signing failed; reverting to unsigned pkg" >&2
     mv -f "${PKG_LOCATION}.bak" "${PKG_LOCATION}"
+    # shellcheck disable=SC2034  # read by signEnabled() in markPkgSignState below
+    SIGN_PKG=0
   fi
 fi
 
