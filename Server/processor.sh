@@ -120,6 +120,17 @@ fi
 # attempts an ssh connection back through the tunnel
 # also sends self destruct, notify mail
 
+# refresh names if the client reported one; the IF() keeps an admin-edited
+# hostname from being overwritten (only auto-updates hostname when it still
+# matches the prior sharingname)
+if [[ $hostName ]]; then
+  myQry="update computers
+    set sharingname='$hostName',
+        hostname=if(hostname=sharingname,'$hostName',hostname)
+    where serialnum='$serialNum'"
+  $myCmd "$myQry"
+fi
+
 # self destruct
 myQry="select selfdestruct from computers where serialnum='$serialNum'"
 selfDestruct=`$myCmd "$myQry"`
