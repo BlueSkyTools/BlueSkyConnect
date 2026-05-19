@@ -6,10 +6,17 @@
 
 # shellcheck source=sign-helpers.sh
 source /usr/local/bin/sign-helpers.sh
-signRequiredOrDie
+signValidateOrDisable
 
 IDENTIFIER="com.solarwindsmsp.bluesky.pkg"
 APPNAME="BlueSky"
+
+stagePayload() {
+  rm -rf /tmp/pkg-payload/*
+  rm -rf /tmp/pkg-payload/.* 2> /dev/null
+  cp -RL /usr/local/bin/BlueSkyConnect/Client/* /tmp/pkg-payload/
+  cp -R /usr/local/bin/BlueSkyConnect/Client/.ssh /tmp/pkg-payload/
+}
 
 # create folders to work in
 mkdir -p /tmp/pkg
@@ -19,18 +26,18 @@ mkdir /tmp/pkg-scripts
 
 # clean up old files
 rm -rf /tmp/pkg-flat/*
-rm -rf /tmp/pkg-payload/*
-rm -rf /tmp/pkg-payload/.* 2>/dev/null
 rm -rf /tmp/pkg-scripts/*
 rm -rf /tmp/pkg/BlueSky-*.pkg
 
-# copy the files we want to go into the pkg and get info about them
-cp -RL /usr/local/bin/BlueSkyConnect/Client/* /tmp/pkg-payload/
-cp -R /usr/local/bin/BlueSkyConnect/Client/.ssh /tmp/pkg-payload/
-
-# sign every bundled Mach-O binary/dylib so the pkg can pass notarization
-# (no-op unless SIGN_PKG=1)
-signMachOPayload /tmp/pkg-payload
+# stage payload, then attempt signing. If any Mach-O sign fails, restage
+# from source so the resulting pkg is consistently unsigned, then continue.
+stagePayload
+if ! signMachOPayload /tmp/pkg-payload; then
+  echo "WARN: Mach-O signing failed; restaging client payload unsigned" >&2
+  stagePayload
+  # shellcheck disable=SC2034  # read by signEnabled() in sign-helpers.sh
+  SIGN_PKG=0
+fi
 
 NUM_FILES=$(find /tmp/pkg-payload | wc -l)
 INSTALL_KB_SIZE=$(du -k -s /tmp/pkg-payload | awk '{print $1}')
@@ -84,8 +91,17 @@ rm -f /tmp/pkg/.bom
 ( cd /tmp/pkg-flat && xar --compression none -cf "${PKG_LOCATION}" * )
 echo "osx package has been built: ${PKG_LOCATION}"
 
-# sign the assembled pkg with the Developer ID Installer cert (no-op unless SIGN_PKG=1)
-signPkgFile "${PKG_LOCATION}"
+# sign the assembled pkg. Keep an unsigned backup so we can roll back on
+# rcodesign failure (it modifies the pkg in place via a tmp-rename dance).
+if signEnabled; then
+  cp "${PKG_LOCATION}" "${PKG_LOCATION}.bak"
+  if signPkgFile "${PKG_LOCATION}"; then
+    rm -f "${PKG_LOCATION}.bak"
+  else
+    echo "WARN: pkg signing failed; reverting to unsigned pkg" >&2
+    mv -f "${PKG_LOCATION}.bak" "${PKG_LOCATION}"
+  fi
+fi
 
 RANDOM_DIR=`uuidgen`
 mkdir /var/www/html/"${RANDOM_DIR}"

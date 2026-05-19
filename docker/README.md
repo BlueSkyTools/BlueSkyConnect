@@ -74,7 +74,9 @@ Sample `docker run` (add these to the standard run command from below):
 -e NOTARY_API_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
 ```
 
-Notarization typically adds ~30–90 seconds per pkg to container startup. If any required env var is missing the container exits with a clear error; if signing succeeds but notary submission fails (e.g. revoked key) `docker logs bluesky` will show the rcodesign output.
+Notarization typically adds ~30–90 seconds per pkg to container startup.
+
+The flow is **fail-soft**: a pkg is always produced. If env vars are missing or any `rcodesign sign` call fails, the build warns and falls back to an unsigned pkg for that artifact. If signing succeeds but notarization is rejected, you still get a signed-but-not-notarized pkg (Gatekeeper will warn at install time, but the install still works). Watch `docker logs bluesky` for `WARN:` lines to detect the fallback case.
 
 To verify the result on a Mac after the pkg appears in your mounted `/tmp/pkg/` volume:
 

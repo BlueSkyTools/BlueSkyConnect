@@ -6,7 +6,12 @@
 
 # Helpers for optional code signing + notarization at pkg build time.
 # Sourced by build_pkg.sh and build_admin_pkg.sh. All functions are no-ops
-# unless SIGN_PKG=1, so the default unsigned-pkg flow is unchanged.
+# unless SIGN_PKG=1.
+#
+# Fail-soft model: validation problems or rcodesign errors do NOT abort the
+# build. They log a warning, set SIGN_PKG=0 in the current process so the
+# rest of this build runs unsigned, and the build script restages any
+# partially-signed payload from source so the resulting pkg is consistent.
 
 ENTITLEMENTS_PATH="/tmp/Entitlements.plist"
 
@@ -14,7 +19,7 @@ signEnabled() {
   [[ "$SIGN_PKG" == "1" ]]
 }
 
-signRequiredOrDie() {
+signValidateOrDisable() {
   if ! signEnabled; then
     return 0
   fi
@@ -24,7 +29,7 @@ signRequiredOrDie() {
   for var in DEVID_APP_P12 DEVID_APP_P12_PASSWORD \
     DEVID_INSTALLER_P12 DEVID_INSTALLER_P12_PASSWORD; do
     if [[ -z "${!var}" ]]; then
-      echo "SIGN_PKG=1 but $var is not set" >&2
+      echo "WARN: SIGN_PKG=1 but $var is not set" >&2
       missing=1
     fi
   done
@@ -32,7 +37,7 @@ signRequiredOrDie() {
   if [[ "$SIGN_SKIP_NOTARIZE" != "1" ]]; then
     for var in NOTARY_API_KEY_P8 NOTARY_API_KEY_ID NOTARY_API_ISSUER_ID; do
       if [[ -z "${!var}" ]]; then
-        echo "SIGN_PKG=1 but $var is not set (notarization requires it; set SIGN_SKIP_NOTARIZE=1 to skip)" >&2
+        echo "WARN: SIGN_PKG=1 but $var is not set (notarization requires it; set SIGN_SKIP_NOTARIZE=1 to skip)" >&2
         missing=1
       fi
     done
@@ -40,13 +45,15 @@ signRequiredOrDie() {
 
   for var in DEVID_APP_P12 DEVID_INSTALLER_P12 NOTARY_API_KEY_P8; do
     if [[ -n "${!var}" && ! -f "${!var}" ]]; then
-      echo "$var points to '${!var}' but no such file exists in the container" >&2
+      echo "WARN: $var points to '${!var}' but no such file exists in the container" >&2
       missing=1
     fi
   done
 
   if [[ "$missing" -ne 0 ]]; then
-    exit 1
+    echo "WARN: signing prerequisites missing; pkg will be built unsigned" >&2
+    SIGN_PKG=0
+    return 0
   fi
 
   cat > "$ENTITLEMENTS_PATH" << 'EOF'
@@ -67,17 +74,17 @@ signAppBundle() {
   signEnabled || return 0
   local app="$1"
   echo "Signing app bundle: $app"
-  rcodesign sign \
+  if ! rcodesign sign \
     --p12-file "$DEVID_APP_P12" \
     --p12-password "$DEVID_APP_P12_PASSWORD" \
     --code-signature-flags runtime \
     --entitlements-xml-path "$ENTITLEMENTS_PATH" \
     --digest sha256 \
     --for-notarization \
-    "$app" || {
-    echo "rcodesign failed to sign $app" >&2
-    exit 1
-  }
+    "$app"; then
+    echo "WARN: rcodesign failed to sign $app" >&2
+    return 1
+  fi
 }
 
 isMachO() {
@@ -102,16 +109,16 @@ signMachOPayload() {
   while IFS= read -r -d '' f; do
     if isMachO "$f"; then
       echo "Signing Mach-O: $f"
-      rcodesign sign \
+      if ! rcodesign sign \
         --p12-file "$DEVID_APP_P12" \
         --p12-password "$DEVID_APP_P12_PASSWORD" \
         --code-signature-flags runtime \
         --digest sha256 \
         --for-notarization \
-        "$f" || {
-        echo "rcodesign failed to sign $f" >&2
-        exit 1
-      }
+        "$f"; then
+        echo "WARN: rcodesign failed to sign $f" >&2
+        return 1
+      fi
     fi
   done < <(find "$payloadDir" -type f -print0)
 }
@@ -120,11 +127,11 @@ signPkgFile() {
   signEnabled || return 0
   local pkg="$1"
   echo "Signing pkg: $pkg"
-  rcodesign sign \
+  if ! rcodesign sign \
     --p12-file "$DEVID_INSTALLER_P12" \
     --p12-password "$DEVID_INSTALLER_P12_PASSWORD" \
-    "$pkg" || {
-    echo "rcodesign failed to sign $pkg" >&2
-    exit 1
-  }
+    "$pkg"; then
+    echo "WARN: rcodesign failed to sign $pkg" >&2
+    return 1
+  fi
 }

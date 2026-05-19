@@ -6,40 +6,53 @@
 
 # shellcheck source=sign-helpers.sh
 source /usr/local/bin/sign-helpers.sh
-signRequiredOrDie
+signValidateOrDisable
 
 IDENTIFIER="com.solarwindsmsp.bluesky.admin.pkg"
 APPNAME="BlueSkyAdmin"
 
+stagePayload() {
+  rm -rf /tmp/pkg-payload/*
+  rm -rf /tmp/pkg-payload/.* 2> /dev/null
+
+  cp -RL /usr/local/bin/BlueSkyConnect/Admin\ Tools/*.app /tmp/pkg-payload/
+  cp -L /usr/local/bin/BlueSkyConnect/Admin\ Tools/server.txt /tmp/pkg-payload/
+  cp -L /usr/local/bin/BlueSkyConnect/Admin\ Tools/blueskyadmin.pub /tmp/pkg-payload/
+
+  cp /tmp/pkg-payload/server.txt /tmp/pkg-payload/BlueSky\ Admin\ Setup.app/Contents/Resources/
+  cp /tmp/pkg-payload/server.txt /tmp/pkg-payload/BlueSky\ Admin.app/Contents/Resources/
+  cp /tmp/pkg-payload/server.txt /tmp/pkg-payload/BlueSky\ Temporary\ Client.app/Contents/Resources/
+  cp /tmp/pkg-payload/blueskyadmin.pub /tmp/pkg-payload/BlueSky\ Admin\ Setup.app/Contents/Resources/
+  cp /tmp/pkg-payload/blueskyadmin.pub /tmp/pkg-payload/BlueSky\ Admin.app/Contents/Resources/
+  cp -L /usr/local/bin/BlueSkyConnect/Client/blueskyclient.pub /tmp/pkg-payload/BlueSky\ Temporary\ Client.app/Contents/Resources/
+  rm /tmp/pkg-payload/server.txt /tmp/pkg-payload/blueskyadmin.pub
+}
+
 # create folders to work in
 mkdir -p /tmp/pkg
-mkdir /tmp/pkg-flat 2>/dev/null
-mkdir /tmp/pkg-payload 2>/dev/null
+mkdir /tmp/pkg-flat 2> /dev/null
+mkdir /tmp/pkg-payload 2> /dev/null
 
 # clean up old files
 rm -rf /tmp/pkg-flat/*
-rm -rf /tmp/pkg-payload/*
-rm -rf /tmp/pkg-payload/.* 2>/dev/null
 rm -rf /tmp/pkg/BlueSkyAdmin-*.pkg
 
-# copy the files we want to go into the pkg
-cp -RL /usr/local/bin/BlueSkyConnect/Admin\ Tools/*.app /tmp/pkg-payload/
-cp -L /usr/local/bin/BlueSkyConnect/Admin\ Tools/server.txt /tmp/pkg-payload/
-cp -L /usr/local/bin/BlueSkyConnect/Admin\ Tools/blueskyadmin.pub /tmp/pkg-payload/
-
-# fix up the admin tools for deployment
-cp /tmp/pkg-payload/server.txt /tmp/pkg-payload/BlueSky\ Admin\ Setup.app/Contents/Resources/
-cp /tmp/pkg-payload/server.txt /tmp/pkg-payload/BlueSky\ Admin.app/Contents/Resources/
-cp /tmp/pkg-payload/server.txt /tmp/pkg-payload/BlueSky\ Temporary\ Client.app/Contents/Resources/
-cp /tmp/pkg-payload/blueskyadmin.pub /tmp/pkg-payload/BlueSky\ Admin\ Setup.app/Contents/Resources/
-cp /tmp/pkg-payload/blueskyadmin.pub /tmp/pkg-payload/BlueSky\ Admin.app/Contents/Resources/
-cp -L /usr/local/bin/BlueSkyConnect/Client/blueskyclient.pub /tmp/pkg-payload/BlueSky\ Temporary\ Client.app/Contents/Resources/
-rm /tmp/pkg-payload/server.txt /tmp/pkg-payload/blueskyadmin.pub
-
-# sign each .app after resource injection, before xar packs them (no-op unless SIGN_PKG=1)
+# stage apps + inject resources, then attempt to sign each .app. If any
+# sign fails, restage so the resulting pkg is consistently unsigned.
+stagePayload
+appSigningFailed=0
 for app in /tmp/pkg-payload/*.app; do
-  signAppBundle "$app"
+  if ! signAppBundle "$app"; then
+    appSigningFailed=1
+    break
+  fi
 done
+if [[ "$appSigningFailed" == "1" ]]; then
+  echo "WARN: app bundle signing failed; restaging admin payload unsigned" >&2
+  stagePayload
+  # shellcheck disable=SC2034  # read by signEnabled() in sign-helpers.sh
+  SIGN_PKG=0
+fi
 
 # get info about our payload
 NUM_FILES=$(find /tmp/pkg-payload | wc -l)
@@ -72,8 +85,17 @@ rm -f /tmp/pkg/.bom
 ( cd /tmp/pkg-flat && xar --compression none -cf "${PKG_LOCATION}" * )
 echo "osx package has been built: ${PKG_LOCATION}"
 
-# sign the assembled pkg with the Developer ID Installer cert (no-op unless SIGN_PKG=1)
-signPkgFile "${PKG_LOCATION}"
+# sign the assembled pkg. Keep an unsigned backup so we can roll back on
+# rcodesign failure (it modifies the pkg in place via a tmp-rename dance).
+if signEnabled; then
+  cp "${PKG_LOCATION}" "${PKG_LOCATION}.bak"
+  if signPkgFile "${PKG_LOCATION}"; then
+    rm -f "${PKG_LOCATION}.bak"
+  else
+    echo "WARN: pkg signing failed; reverting to unsigned pkg" >&2
+    mv -f "${PKG_LOCATION}.bak" "${PKG_LOCATION}"
+  fi
+fi
 
 RANDOM_DIR=`uuidgen`
 mkdir /var/www/html/"${RANDOM_DIR}"
