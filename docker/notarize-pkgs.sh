@@ -25,7 +25,7 @@ trap cleanup EXIT
 
 if ! rcodesign encode-app-store-connect-api-key \
   -o "$NOTARY_KEY_JSON" \
-  "$NOTARY_API_ISSUER_ID" "$NOTARY_API_KEY_ID" "$NOTARY_API_KEY_P8"; then
+  "$NOTARY_API_ISSUER_ID" "$NOTARY_API_KEY_ID" "/signing/$NOTARY_API_KEY_P8"; then
   echo "Failed to encode ASC API key; aborting notarization" >&2
   exit 1
 fi

@@ -44,8 +44,8 @@ signValidateOrDisable() {
   fi
 
   for var in DEVID_APP_P12 DEVID_INSTALLER_P12 NOTARY_API_KEY_P8; do
-    if [[ -n "${!var}" && ! -f "${!var}" ]]; then
-      echo "WARN: $var points to '${!var}' but no such file exists in the container" >&2
+    if [[ -n "${!var}" && ! -f "/signing/${!var}" ]]; then
+      echo "WARN: $var='${!var}' but /signing/${!var} does not exist in the container" >&2
       missing=1
     fi
   done
@@ -75,7 +75,7 @@ signAppBundle() {
   local app="$1"
   echo "Signing app bundle: $app"
   if ! rcodesign sign \
-    --p12-file "$DEVID_APP_P12" \
+    --p12-file "/signing/$DEVID_APP_P12" \
     --p12-password "$DEVID_APP_P12_PASSWORD" \
     --code-signature-flags runtime \
     --entitlements-xml-path "$ENTITLEMENTS_PATH" \
@@ -110,7 +110,7 @@ signMachOPayload() {
     if isMachO "$f"; then
       echo "Signing Mach-O: $f"
       if ! rcodesign sign \
-        --p12-file "$DEVID_APP_P12" \
+        --p12-file "/signing/$DEVID_APP_P12" \
         --p12-password "$DEVID_APP_P12_PASSWORD" \
         --code-signature-flags runtime \
         --digest sha256 \
@@ -128,7 +128,7 @@ signPkgFile() {
   local pkg="$1"
   echo "Signing pkg: $pkg"
   if ! rcodesign sign \
-    --p12-file "$DEVID_INSTALLER_P12" \
+    --p12-file "/signing/$DEVID_INSTALLER_P12" \
     --p12-password "$DEVID_INSTALLER_P12_PASSWORD" \
     "$pkg"; then
     echo "WARN: rcodesign failed to sign $pkg" >&2

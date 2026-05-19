@@ -65,11 +65,11 @@ Sample `docker run` (add these to the standard run command from below):
 ```
 -v /host/path/to/signing:/signing:ro \
 -e SIGN_PKG=1 \
--e DEVID_APP_P12=/signing/devid-app.p12 \
+-e DEVID_APP_P12=devid-app.p12 \
 -e DEVID_APP_P12_PASSWORD=appcertpass \
--e DEVID_INSTALLER_P12=/signing/devid-installer.p12 \
+-e DEVID_INSTALLER_P12=devid-installer.p12 \
 -e DEVID_INSTALLER_P12_PASSWORD=installcertpass \
--e NOTARY_API_KEY_P8=/signing/AuthKey_XXXXXXXXXX.p8 \
+-e NOTARY_API_KEY_P8=AuthKey_XXXXXXXXXX.p8 \
 -e NOTARY_API_KEY_ID=XXXXXXXXXX \
 -e NOTARY_API_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
 ```
