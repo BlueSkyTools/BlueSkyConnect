@@ -4,6 +4,10 @@
 # See https://github.com/BlueSkyTools/BlueSkyConnect
 # Licensed under the Apache License, Version 2.0
 
+# shellcheck source=sign-helpers.sh
+source /usr/local/bin/sign-helpers.sh
+signRequiredOrDie
+
 IDENTIFIER="com.solarwindsmsp.bluesky.admin.pkg"
 APPNAME="BlueSkyAdmin"
 
@@ -31,6 +35,11 @@ cp /tmp/pkg-payload/blueskyadmin.pub /tmp/pkg-payload/BlueSky\ Admin\ Setup.app/
 cp /tmp/pkg-payload/blueskyadmin.pub /tmp/pkg-payload/BlueSky\ Admin.app/Contents/Resources/
 cp -L /usr/local/bin/BlueSkyConnect/Client/blueskyclient.pub /tmp/pkg-payload/BlueSky\ Temporary\ Client.app/Contents/Resources/
 rm /tmp/pkg-payload/server.txt /tmp/pkg-payload/blueskyadmin.pub
+
+# sign each .app after resource injection, before xar packs them (no-op unless SIGN_PKG=1)
+for app in /tmp/pkg-payload/*.app; do
+  signAppBundle "$app"
+done
 
 # get info about our payload
 NUM_FILES=$(find /tmp/pkg-payload | wc -l)
@@ -62,6 +71,9 @@ rm -f /tmp/pkg/.bom
 # pkg it up!!
 ( cd /tmp/pkg-flat && xar --compression none -cf "${PKG_LOCATION}" * )
 echo "osx package has been built: ${PKG_LOCATION}"
+
+# sign the assembled pkg with the Developer ID Installer cert (no-op unless SIGN_PKG=1)
+signPkgFile "${PKG_LOCATION}"
 
 RANDOM_DIR=`uuidgen`
 mkdir /var/www/html/"${RANDOM_DIR}"

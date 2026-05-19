@@ -4,6 +4,10 @@
 # See https://github.com/BlueSkyTools/BlueSkyConnect
 # Licensed under the Apache License, Version 2.0
 
+# shellcheck source=sign-helpers.sh
+source /usr/local/bin/sign-helpers.sh
+signRequiredOrDie
+
 IDENTIFIER="com.solarwindsmsp.bluesky.pkg"
 APPNAME="BlueSky"
 
@@ -23,6 +27,11 @@ rm -rf /tmp/pkg/BlueSky-*.pkg
 # copy the files we want to go into the pkg and get info about them
 cp -RL /usr/local/bin/BlueSkyConnect/Client/* /tmp/pkg-payload/
 cp -R /usr/local/bin/BlueSkyConnect/Client/.ssh /tmp/pkg-payload/
+
+# sign every bundled Mach-O binary/dylib so the pkg can pass notarization
+# (no-op unless SIGN_PKG=1)
+signMachOPayload /tmp/pkg-payload
+
 NUM_FILES=$(find /tmp/pkg-payload | wc -l)
 INSTALL_KB_SIZE=$(du -k -s /tmp/pkg-payload | awk '{print $1}')
 
@@ -74,6 +83,9 @@ rm -f /tmp/pkg/.bom
 # pkg it up!!
 ( cd /tmp/pkg-flat && xar --compression none -cf "${PKG_LOCATION}" * )
 echo "osx package has been built: ${PKG_LOCATION}"
+
+# sign the assembled pkg with the Developer ID Installer cert (no-op unless SIGN_PKG=1)
+signPkgFile "${PKG_LOCATION}"
 
 RANDOM_DIR=`uuidgen`
 mkdir /var/www/html/"${RANDOM_DIR}"

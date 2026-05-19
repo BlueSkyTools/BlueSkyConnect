@@ -134,4 +134,7 @@ if [[ ${IN_DOCKER} ]]; then
 	find /var/www/html/ -type d -regextype posix-extended -regex '.*/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' -prune -exec rm -rf {} \;
 	/usr/local/bin/build_pkg.sh
 	/usr/local/bin/build_admin_pkg.sh
+	if [[ "$SIGN_PKG" == "1" && "$SIGN_SKIP_NOTARIZE" != "1" ]]; then
+		/usr/local/bin/notarize-pkgs.sh
+	fi
 fi
