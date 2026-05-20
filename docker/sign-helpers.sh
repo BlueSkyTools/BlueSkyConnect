@@ -153,3 +153,28 @@ markPkgSignState() {
     touch "$sentinel"
   fi
 }
+
+# Compute a stable hash over everything that affects the bytes of a pkg, so
+# build_*.sh can skip the rebuild + sign + notarize pipeline on container
+# restart when nothing has changed. The hash is persisted next to the pkg
+# as ${pkg}.fingerprint; matching it means the cached pkg is reusable.
+#
+# NOTARY_API_KEY_P8 is intentionally not included — it's just submission
+# auth, not material that affects the pkg or its stapled ticket.
+computeBuildFingerprint() {
+  local pkgname="$1" # "BlueSky" or "BlueSkyAdmin"
+  local sourceRoot="/usr/local/bin/BlueSkyConnect"
+  {
+    echo "BLUESKY_VERSION=${BLUESKY_VERSION}"
+    echo "SIGN_PKG=${SIGN_PKG:-0}"
+    if [[ "$pkgname" == "BlueSky" ]]; then
+      ( cd "$sourceRoot/Client" && find . -type f -print0 | sort -z | xargs -0 sha256sum )
+    elif [[ "$pkgname" == "BlueSkyAdmin" ]]; then
+      ( cd "$sourceRoot/Admin Tools" && find . -type f -print0 | sort -z | xargs -0 sha256sum )
+      sha256sum "$sourceRoot/Client/blueskyclient.pub"
+    fi
+    if [[ "$SIGN_PKG" == "1" ]]; then
+      sha256sum "/signing/$DEVID_APP_P12" "/signing/$DEVID_INSTALLER_P12"
+    fi
+  } | sha256sum | awk '{print $1}'
+}

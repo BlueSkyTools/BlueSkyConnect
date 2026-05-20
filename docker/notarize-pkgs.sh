@@ -44,11 +44,20 @@ for pkg in "/tmp/pkg/BlueSky-${BLUESKY_VERSION}.pkg" \
     echo "Skipping notarization of $pkg (pkg is unsigned)"
     continue
   fi
+  # build_*.sh hit its build cache and the pkg was already notarized +
+  # stapled in a previous run. The staple is embedded in the pkg bytes and
+  # stays valid, so skip the redundant Apple round-trip.
+  if [[ -f "${pkg}.notarized" ]]; then
+    echo "Skipping notarization of $pkg (already notarized + stapled)"
+    continue
+  fi
   echo "Notarizing + stapling: $pkg"
-  if ! rcodesign notary-submit \
+  if rcodesign notary-submit \
     --api-key-path "$NOTARY_KEY_JSON" \
     --staple \
     "$pkg"; then
+    touch "${pkg}.notarized"
+  else
     echo "Notarization failed for $pkg (continuing)" >&2
     failures=$((failures + 1))
   fi

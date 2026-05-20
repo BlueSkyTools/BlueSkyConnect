@@ -28,38 +28,48 @@ stagePayload() {
   rm /tmp/pkg-payload/server.txt /tmp/pkg-payload/blueskyadmin.pub
 }
 
-# create folders to work in
 mkdir -p /tmp/pkg
-mkdir /tmp/pkg-flat 2> /dev/null
-mkdir /tmp/pkg-payload 2> /dev/null
+PKG_LOCATION="/tmp/pkg/${APPNAME}-${BLUESKY_VERSION}.pkg"
+FINGERPRINT_FILE="${PKG_LOCATION}.fingerprint"
+newFingerprint=$(computeBuildFingerprint "$APPNAME")
 
-# clean up old files
-rm -rf /tmp/pkg-flat/*
-rm -rf /tmp/pkg/BlueSkyAdmin-*.pkg
+# Cache check: if a previously-built pkg exists with a matching fingerprint
+# over all inputs that affect its bytes, reuse it. Skips ~5s of build plus
+# any signing + ~30-90s of notary round-trip per restart when nothing has
+# changed. To force a fresh build, remove ${PKG_LOCATION}.fingerprint.
+if [[ -f "$PKG_LOCATION" && -f "$FINGERPRINT_FILE" && "$(cat "$FINGERPRINT_FILE")" == "$newFingerprint" ]]; then
+  echo "Using cached ${PKG_LOCATION} (inputs unchanged since last build)"
+else
+  # cache miss — invalidate the notary sidecar and any prior fingerprint
+  # so a partial failure can't leave a stale "cache is valid" signal.
+  rm -f "${PKG_LOCATION}.notarized" "$FINGERPRINT_FILE"
+  rm -rf /tmp/pkg/BlueSkyAdmin-*.pkg
+  mkdir /tmp/pkg-flat /tmp/pkg-payload 2> /dev/null
+  rm -rf /tmp/pkg-flat/*
 
-# stage apps + inject resources, then attempt to sign each .app. If any
-# sign fails, restage so the resulting pkg is consistently unsigned.
-stagePayload
-appSigningFailed=0
-for app in /tmp/pkg-payload/*.app; do
-  if ! signAppBundle "$app"; then
-    appSigningFailed=1
-    break
-  fi
-done
-if [[ "$appSigningFailed" == "1" ]]; then
-  echo "WARN: app bundle signing failed; restaging admin payload unsigned" >&2
+  # stage apps + inject resources, then attempt to sign each .app. If any
+  # sign fails, restage so the resulting pkg is consistently unsigned.
   stagePayload
-  # shellcheck disable=SC2034  # read by signEnabled() in sign-helpers.sh
-  SIGN_PKG=0
-fi
+  appSigningFailed=0
+  for app in /tmp/pkg-payload/*.app; do
+    if ! signAppBundle "$app"; then
+      appSigningFailed=1
+      break
+    fi
+  done
+  if [[ "$appSigningFailed" == "1" ]]; then
+    echo "WARN: app bundle signing failed; restaging admin payload unsigned" >&2
+    stagePayload
+    # shellcheck disable=SC2034  # read by signEnabled() in sign-helpers.sh
+    SIGN_PKG=0
+  fi
 
-# get info about our payload
-NUM_FILES=$(find /tmp/pkg-payload | wc -l)
-INSTALL_KB_SIZE=$(du -k -s /tmp/pkg-payload | awk '{print $1}')
+  # get info about our payload
+  NUM_FILES=$(find /tmp/pkg-payload | wc -l)
+  INSTALL_KB_SIZE=$(du -k -s /tmp/pkg-payload | awk '{print $1}')
 
-# write out the PackageInfo file to flat pkg location
-cat <<EOF > /tmp/pkg-flat/PackageInfo
+  # write out the PackageInfo file to flat pkg location
+  cat << EOF > /tmp/pkg-flat/PackageInfo
 <?xml version="1.0" encoding="utf-8"?>
 <pkg-info postinstall-action="none" format-version="2" identifier="${IDENTIFIER}" version="${BLUESKY_VERSION}" generator-version="InstallCmds-611 (16G1036)" install-location="/Applications/Utilities" auth="root">
     <payload numberOfFiles="${NUM_FILES}" installKBytes="${INSTALL_KB_SIZE}"/>
@@ -73,30 +83,32 @@ cat <<EOF > /tmp/pkg-flat/PackageInfo
 </pkg-info>
 EOF
 
-PKG_LOCATION="/tmp/pkg/${APPNAME}-${BLUESKY_VERSION}.pkg"
+  # compress the payload
+  ( cd /tmp/pkg-payload && find . | cpio -o --format odc --owner 0:80 | gzip -c ) > /tmp/pkg-flat/Payload
+  # create Bom file
+  ( cd /tmp/pkg-payload && ls4mkbom -u 0 -g 80 . ) > /tmp/pkg/.bom
+  mkbom -i /tmp/pkg/.bom /tmp/pkg-flat/Bom
+  rm -f /tmp/pkg/.bom
+  # pkg it up!!
+  ( cd /tmp/pkg-flat && xar --compression none -cf "${PKG_LOCATION}" * )
+  echo "osx package has been built: ${PKG_LOCATION}"
 
-# compress the payload
-( cd /tmp/pkg-payload && find . | cpio -o --format odc --owner 0:80 | gzip -c ) > /tmp/pkg-flat/Payload
-# create Bom file
-( cd /tmp/pkg-payload && ls4mkbom -u 0 -g 80 . ) > /tmp/pkg/.bom
-mkbom -i /tmp/pkg/.bom /tmp/pkg-flat/Bom
-rm -f /tmp/pkg/.bom
-# pkg it up!!
-( cd /tmp/pkg-flat && xar --compression none -cf "${PKG_LOCATION}" * )
-echo "osx package has been built: ${PKG_LOCATION}"
-
-# sign the assembled pkg. Keep an unsigned backup so we can roll back on
-# rcodesign failure (it modifies the pkg in place via a tmp-rename dance).
-if signEnabled; then
-  cp "${PKG_LOCATION}" "${PKG_LOCATION}.bak"
-  if signPkgFile "${PKG_LOCATION}"; then
-    rm -f "${PKG_LOCATION}.bak"
-  else
-    echo "WARN: pkg signing failed; reverting to unsigned pkg" >&2
-    mv -f "${PKG_LOCATION}.bak" "${PKG_LOCATION}"
-    # shellcheck disable=SC2034  # read by signEnabled() in markPkgSignState below
-    SIGN_PKG=0
+  # sign the assembled pkg. Keep an unsigned backup so we can roll back on
+  # rcodesign failure (it modifies the pkg in place via a tmp-rename dance).
+  if signEnabled; then
+    cp "${PKG_LOCATION}" "${PKG_LOCATION}.bak"
+    if signPkgFile "${PKG_LOCATION}"; then
+      rm -f "${PKG_LOCATION}.bak"
+    else
+      echo "WARN: pkg signing failed; reverting to unsigned pkg" >&2
+      mv -f "${PKG_LOCATION}.bak" "${PKG_LOCATION}"
+      # shellcheck disable=SC2034  # read by signEnabled() in markPkgSignState below
+      SIGN_PKG=0
+    fi
   fi
+
+  # record successful build so the next restart can hit cache
+  echo "$newFingerprint" > "$FINGERPRINT_FILE"
 fi
 
 # Tell notarize-pkgs.sh whether this pkg is signed. If anything in the

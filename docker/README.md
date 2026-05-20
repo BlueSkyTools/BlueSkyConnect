@@ -78,6 +78,8 @@ Notarization typically adds ~30–90 seconds per pkg to container startup.
 
 The flow is **fail-soft**: a pkg is always produced. If env vars are missing or any `rcodesign sign` call fails, the build warns and falls back to an unsigned pkg for that artifact. If signing succeeds but notarization is rejected, you still get a signed-but-not-notarized pkg (Gatekeeper will warn at install time, but the install still works). Watch `docker logs bluesky` for `WARN:` lines to detect the fallback case.
 
+**Build caching:** When the `/tmp/pkg` volume is persistent (the recommended setup), each pkg's build inputs are fingerprinted and stored next to it as `${pkg}.fingerprint`. On a later container restart (e.g. nightly maintenance reboots) with unchanged inputs — same `BLUESKY_VERSION`, same source files, same signing certs — the build, signing, and notarization are all skipped and the existing stapled pkg is reused. This avoids re-submitting an unchanged pkg to Apple's notary service on every restart. A `${pkg}.notarized` sidecar marks a pkg that already carries a stapled ticket. To force a full rebuild, delete `${pkg}.fingerprint`; to force re-notarization only, delete `${pkg}.notarized`. The cache invalidates automatically when any input changes (new version, edited source, rotated cert, or toggling `SIGN_PKG`).
+
 To verify the result on a Mac after the pkg appears in your mounted `/tmp/pkg/` volume:
 
 ```bash
