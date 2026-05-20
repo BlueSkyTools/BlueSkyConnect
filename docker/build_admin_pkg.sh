@@ -64,6 +64,14 @@ else
     SIGN_PKG=0
   fi
 
+  # Unsigned path (signing off or fell back): ad-hoc sign each .app so its
+  # arm64 slice launches on Apple Silicon. No-op when real signing succeeded.
+  if ! signEnabled; then
+    for app in /tmp/pkg-payload/*.app; do
+      adhocSignAppBundle "$app"
+    done
+  fi
+
   # get info about our payload
   NUM_FILES=$(find /tmp/pkg-payload | wc -l)
   INSTALL_KB_SIZE=$(du -k -s /tmp/pkg-payload | awk '{print $1}')

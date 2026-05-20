@@ -48,6 +48,13 @@ else
     SIGN_PKG=0
   fi
 
+  # Unsigned path (signing off or fell back): ad-hoc sign every bundled
+  # Mach-O so arm64 slices launch on Apple Silicon. No-op when real signing
+  # succeeded. Best-effort per file — never aborts the build.
+  if ! signEnabled; then
+    adhocSignMachOPayload /tmp/pkg-payload
+  fi
+
   NUM_FILES=$(find /tmp/pkg-payload | wc -l)
   INSTALL_KB_SIZE=$(du -k -s /tmp/pkg-payload | awk '{print $1}')
 

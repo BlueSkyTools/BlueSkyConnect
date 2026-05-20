@@ -136,6 +136,35 @@ signPkgFile() {
   fi
 }
 
+# Ad-hoc signing for the unsigned distribution path. Apple Silicon's kernel
+# refuses to exec an arm64 Mach-O that carries no signature at all, so a
+# wholly-unsigned universal .app dies at launch with a vague "can't be
+# opened" error. An ad-hoc signature (rcodesign sign with no key) carries no
+# identity and needs no cert or notarization, but satisfies that kernel
+# requirement — restoring the old "unsigned just works" behavior on M-series
+# Macs. Used only when real Developer ID signing is off or fell back.
+adhocSignAppBundle() {
+  local app="$1"
+  echo "Ad-hoc signing app bundle: $app"
+  if ! rcodesign sign "$app"; then
+    echo "WARN: rcodesign failed to ad-hoc sign $app" >&2
+    return 1
+  fi
+}
+
+adhocSignMachOPayload() {
+  local payloadDir="$1"
+  local f
+  while IFS= read -r -d '' f; do
+    if isMachO "$f"; then
+      echo "Ad-hoc signing Mach-O: $f"
+      if ! rcodesign sign "$f"; then
+        echo "WARN: rcodesign failed to ad-hoc sign $f" >&2
+      fi
+    fi
+  done < <(find "$payloadDir" -type f -print0)
+}
+
 # Sentinel path used to communicate sign-state from build_*.sh to
 # notarize-pkgs.sh across process boundaries (SIGN_PKG=0 set inside a
 # build script is not visible to the later notarize-pkgs.sh invocation).
