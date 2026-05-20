@@ -130,11 +130,19 @@ if [[ ${IN_DOCKER} ]]; then
 	# stop ssh - as we will be starting later
 	/usr/bin/killall sshd
 
-	# lets make an installer pkg!
-	find /var/www/html/ -type d -regextype posix-extended -regex '.*/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' -prune -exec rm -rf {} \;
-	/usr/local/bin/build_pkg.sh
-	/usr/local/bin/build_admin_pkg.sh
-	if [[ "$SIGN_PKG" == "1" && "$SIGN_SKIP_NOTARIZE" != "1" ]]; then
-		/usr/local/bin/notarize-pkgs.sh
-	fi
+	# Build the installer pkgs in the background so the web service (started
+	# right after this by supervisord) isn't blocked on the build, which can
+	# run for minutes once notarization is enabled. The pkgs only populate the
+	# download links in the web admin; nothing else in startup needs them.
+	# The subshell is orphaned to pid 1 (supervisord) when run execs it, and
+	# reaped there on completion; its stdout still flows to the container log.
+	{
+		# purge any stale download dirs, then (re)build + optionally notarize
+		find /var/www/html/ -type d -regextype posix-extended -regex '.*/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' -prune -exec rm -rf {} \;
+		/usr/local/bin/build_pkg.sh
+		/usr/local/bin/build_admin_pkg.sh
+		if [[ "$SIGN_PKG" == "1" && "$SIGN_SKIP_NOTARIZE" != "1" ]]; then
+			/usr/local/bin/notarize-pkgs.sh
+		fi
+	} &
 fi
