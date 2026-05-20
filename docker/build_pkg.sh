@@ -16,6 +16,12 @@ stagePayload() {
   rm -rf /tmp/pkg-payload/.* 2> /dev/null
   cp -RL /usr/local/bin/BlueSkyConnect/Client/* /tmp/pkg-payload/
   cp -R /usr/local/bin/BlueSkyConnect/Client/.ssh /tmp/pkg-payload/
+  # The bundled curl/openssl are only used on macOS < 10.14 (LetsEncrypt CA
+  # workaround). Omit them by default so the pkg carries no unmaintained
+  # binaries; LEGACY_CLIENT=1 ships them for fleets with pre-Mojave Macs.
+  if [[ "$LEGACY_CLIENT" != "1" ]]; then
+    rm -rf /tmp/pkg-payload/curl /tmp/pkg-payload/openssl
+  fi
 }
 
 mkdir -p /tmp/pkg

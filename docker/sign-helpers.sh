@@ -211,6 +211,7 @@ computeBuildFingerprint() {
       /usr/local/bin/notarize-pkgs.sh \
       /usr/local/bin/rcodesign 2> /dev/null
     if [[ "$pkgname" == "BlueSky" ]]; then
+      echo "LEGACY_CLIENT=${LEGACY_CLIENT:-0}"
       sha256sum /usr/local/bin/build_pkg.sh 2> /dev/null
       ( cd "$sourceRoot/Client" && find . -type f -print0 | sort -z | xargs -0 sha256sum )
     elif [[ "$pkgname" == "BlueSkyAdmin" ]]; then

@@ -9,6 +9,7 @@ ENV IN_DOCKER=1 \
     EMAILALERT=root@localhost \
     LOG_ROTATE_SIZE=100M \
     LOG_ROTATE_KEEP=7 \
+    LEGACY_CLIENT=0 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     DEBIAN_FRONTEND=noninteractive \
