@@ -144,5 +144,12 @@ if [[ ${IN_DOCKER} ]]; then
 		if [[ "$SIGN_PKG" == "1" && "$SIGN_SKIP_NOTARIZE" != "1" ]]; then
 			/usr/local/bin/notarize-pkgs.sh
 		fi
+		# Publish the web admin download links only now, once each pkg is in
+		# its final state (stapled when notarizing), so a download is never
+		# served a pkg that is mid-notarization and would fail Gatekeeper.
+		# shellcheck source=../docker/sign-helpers.sh
+		source /usr/local/bin/sign-helpers.sh
+		publishDownloadLink "/tmp/pkg/BlueSky-${BLUESKY_VERSION}.pkg" "BlueSky" "agent" "Download BlueSky Agent"
+		publishDownloadLink "/tmp/pkg/BlueSkyAdmin-${BLUESKY_VERSION}.pkg" "BlueSkyAdmin" "admin_agent" "Download BlueSky Admin Tools"
 	} &
 fi

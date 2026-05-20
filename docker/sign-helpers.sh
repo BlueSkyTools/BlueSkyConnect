@@ -223,3 +223,36 @@ computeBuildFingerprint() {
     fi
   } | sha256sum | awk '{print $1}'
 }
+
+# Publish a pkg's download link into the web admin nav bar. Call this only
+# once the pkg has reached its final distributable state — built, signed,
+# and (when notarization is enabled) stapled — so the web admin never links
+# a pkg that is still mid-notarization and would be rejected by Gatekeeper.
+# Replaces an existing nav block for this id if present, otherwise appends.
+#
+# The sed/heredoc body lines are intentionally left-justified: their leading
+# characters are literal output, so indenting them would change the HTML.
+publishDownloadLink() {
+  local pkg="$1" appname="$2" navId="$3" label="$4"
+  [[ -f "$pkg" ]] || return 0
+  local linksFile="/var/www/html/hooks/agent-links.php"
+  local randomDir href
+  randomDir=$(uuidgen)
+  mkdir "/var/www/html/${randomDir}"
+  ln -s "$pkg" "/var/www/html/${randomDir}/"
+  href="${randomDir}/${appname}-${BLUESKY_VERSION}.pkg"
+  if grep -q "<ul class=\"nav navbar-nav\" id=\"${navId}\">" "$linksFile"; then
+    sed -i "/<ul class=\"nav navbar-nav\" id=\"${navId}\">/,/<\/ul>/c\\
+<ul class=\"nav navbar-nav\" id=\"${navId}\">\\
+  <a href=\"${href}\" class=\"btn btn-default navbar-btn visible-sm visible-md visible-lg\"><i class=\"glyphicon glyphicon-download-alt\"></i>${label}</a>\\
+  <a href=\"${href}\" class=\"visible-xs btn btn-default navbar-btn btn-lg\"><i class=\"glyphicon glyphicon-download-alt\"></i>${label}</a>\\
+</ul>" "$linksFile"
+  else
+    cat << EOF >> "$linksFile"
+<ul class="nav navbar-nav" id="${navId}">
+  <a href="${href}" class="btn btn-default navbar-btn visible-sm visible-md visible-lg"><i class="glyphicon glyphicon-download-alt"></i>${label}</a>
+  <a href="${href}" class="visible-xs btn btn-default navbar-btn btn-lg"><i class="glyphicon glyphicon-download-alt"></i>${label}</a>
+</ul>
+EOF
+  fi
+}
