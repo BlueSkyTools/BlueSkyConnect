@@ -32,6 +32,65 @@ TIMEZONE | Etc/UTC | Local Timezone [Reference](https://en.wikipedia.org/wiki/Li
 DEFAULT_USER | | Default username bluesky uses when connecting to a client
 INSECURE_CIPHERS | | Set to any value to allow the use of chacha20-poly1305 ssh cipher (bluesky <= 2.3.2)
 
+### Signing & notarization (optional)
+
+By default the two installer pkgs built at container start (`BlueSky-<ver>.pkg`, `BlueSkyAdmin-<ver>.pkg`) are **unsigned**. If you have an Apple Developer account you can have the container sign + notarize them automatically by setting the env vars below.
+
+Signing/notarization runs inside the Linux container via [`rcodesign`](https://github.com/indygreg/apple-platform-rs) — Apple's own `codesign`/`notarytool` are macOS-only and are not used.
+
+You need:
+
+- A **Developer ID Application** cert exported as `.p12` (signs the `.app` bundles and the bundled Mach-O binaries inside the Client pkg).
+- A **Developer ID Installer** cert exported as `.p12` (signs the `.pkg` files themselves — this is a separate cert from the Application one).
+- An **App Store Connect API key** for notarization. Generate one at [App Store Connect → Users and Access → Integrations → Team Keys](https://appstoreconnect.apple.com/access/integrations/api). You'll get a `.p8` file, a 10-character key ID, and a UUID issuer ID. This is NOT an Apple ID app-specific password — that path is locked to `notarytool` and isn't available on Linux.
+
+Export the two `.p12` files from Keychain Access on a Mac (right-click each Developer ID identity → Export). Put all three files (the two `.p12`s and the `.p8`) in a directory and mount it into the container read-only.
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `SIGN_PKG` | yes | Set to `1` to enable. Unset → current unsigned-pkg behavior. |
+| `DEVID_APP_P12` | yes | Path inside container to Developer ID Application `.p12` |
+| `DEVID_APP_P12_PASSWORD` | yes | Cert password |
+| `DEVID_INSTALLER_P12` | yes | Path inside container to Developer ID Installer `.p12` |
+| `DEVID_INSTALLER_P12_PASSWORD` | yes | Cert password |
+| `NOTARY_API_KEY_P8` | yes¹ | Path inside container to the `.p8` API key |
+| `NOTARY_API_KEY_ID` | yes¹ | 10-char key ID from App Store Connect |
+| `NOTARY_API_ISSUER_ID` | yes¹ | UUID issuer ID from App Store Connect |
+| `SIGN_SKIP_NOTARIZE` | no | Set to `1` to sign but skip notary submit (dev iteration). Notary env vars are not required when this is set. |
+
+¹ Required unless `SIGN_SKIP_NOTARIZE=1`.
+
+Sample `docker run` (add these to the standard run command from below):
+
+```
+-v /host/path/to/signing:/signing:ro \
+-e SIGN_PKG=1 \
+-e DEVID_APP_P12=devid-app.p12 \
+-e DEVID_APP_P12_PASSWORD=appcertpass \
+-e DEVID_INSTALLER_P12=devid-installer.p12 \
+-e DEVID_INSTALLER_P12_PASSWORD=installcertpass \
+-e NOTARY_API_KEY_P8=AuthKey_XXXXXXXXXX.p8 \
+-e NOTARY_API_KEY_ID=XXXXXXXXXX \
+-e NOTARY_API_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
+```
+
+Notarization typically adds ~30–90 seconds per pkg to container startup.
+
+The flow is **fail-soft**: a pkg is always produced. If env vars are missing or any `rcodesign sign` call fails, the build warns and falls back to an unsigned pkg for that artifact. If signing succeeds but notarization is rejected, you still get a signed-but-not-notarized pkg (Gatekeeper will warn at install time, but the install still works). Watch `docker logs bluesky` for `WARN:` lines to detect the fallback case.
+
+On the unsigned fallback path (and when `SIGN_PKG` is unset entirely) the `.app` bundles and bundled Mach-O binaries are given an **ad-hoc** signature (`rcodesign sign` with no cert). Ad-hoc carries no identity and needs no Apple credentials, but Apple Silicon's kernel refuses to launch a wholly-unsigned arm64 executable — so a universal `.app` with no signature at all fails with a vague "can't be opened" error on M-series Macs. The ad-hoc signature satisfies that kernel requirement, restoring the old "unsigned just works" behavior; it does not provide Gatekeeper acceptance (that still requires the full sign + notarize flow above).
+
+**Build caching (optional):** `/tmp/pkg` does not have to be a persistent volume — the container builds and serves the pkgs fine without it, rebuilding them on every start as it always has. The cache is purely an opt-in optimization: *if* you bind-mount `/tmp/pkg` to a host directory (so it survives restarts), each pkg's build inputs are fingerprinted and stored next to it as `${pkg}.fingerprint`. On a later restart (e.g. nightly maintenance reboots) with unchanged inputs, the build, signing, and notarization are all skipped and the existing stapled pkg is reused — avoiding a wasted Apple notary round-trip on every restart. Without the mount the sidecars simply vanish each restart and you get the original rebuild-every-time behavior; nothing breaks either way.
+
+A `${pkg}.notarized` sidecar marks a pkg that already carries a stapled ticket. To force a full rebuild, delete `${pkg}.fingerprint`; to force re-notarization only, delete `${pkg}.notarized`. The cache invalidates automatically when anything that affects the pkg's bytes changes: new `BLUESKY_VERSION`, edited source, rotated cert, toggling `SIGN_PKG` or `SIGN_SKIP_NOTARIZE`, or **a new container image** (the build scripts and bundled `rcodesign` are part of the fingerprint, so pulling an image with updated build/signing logic rebuilds even against a persistent `/tmp/pkg` left over from the previous image).
+
+To verify the result on a Mac after the pkg appears in your mounted `/tmp/pkg/` volume:
+
+```bash
+spctl --assess --type install -v BlueSkyAdmin-<ver>.pkg   # → accepted, source=Notarized Developer ID
+xcrun stapler validate BlueSkyAdmin-<ver>.pkg              # → The validate action worked!
+```
+
 ### Docker volumes
 
 The following locations are mappable locations within the container.  These will be used for data that needs to persist between runs.

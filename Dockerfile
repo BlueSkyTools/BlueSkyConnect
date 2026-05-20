@@ -44,12 +44,19 @@ COPY . /usr/local/bin/BlueSkyConnect/
 RUN dpkg -i /usr/local/bin/BlueSkyConnect/docker/libssl1.0.0_1.0.2n-1ubuntu5.8_amd64.deb && \
   rm /usr/local/bin/BlueSkyConnect/docker/libssl1.0.0_1.0.2n-1ubuntu5.8_amd64.deb
 
+ARG RCODESIGN_VERSION=0.27.0
+RUN curl -fsSL -o /tmp/rcodesign.tar.gz \
+      "https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F${RCODESIGN_VERSION}/apple-codesign-${RCODESIGN_VERSION}-x86_64-unknown-linux-musl.tar.gz" && \
+    tar -xzf /tmp/rcodesign.tar.gz -C /tmp && \
+    install -m 0755 /tmp/apple-codesign-*/rcodesign /usr/local/bin/rcodesign && \
+    rm -rf /tmp/rcodesign.tar.gz /tmp/apple-codesign-*
+
 RUN mv /usr/local/bin/BlueSkyConnect/docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf && \
 	mv /usr/local/bin/BlueSkyConnect/docker/* /usr/local/bin/ && \
 	touch /var/log/auth.log /etc/default/locale && \
 	chown syslog:adm /var/log/auth.log && \
 	chmod 640 /var/log/auth.log && \
-	chmod +x /usr/local/bin/run /usr/local/bin/fail2ban-supervisor.sh /usr/local/bin/build_pkg.sh /usr/local/bin/build_admin_pkg.sh && \
+	chmod +x /usr/local/bin/run /usr/local/bin/fail2ban-supervisor.sh /usr/local/bin/build_pkg.sh /usr/local/bin/build_admin_pkg.sh /usr/local/bin/sign-helpers.sh /usr/local/bin/notarize-pkgs.sh && \
 	echo "ServerName CHANGETHIS" >> /etc/apache2/apache2.conf
 
 EXPOSE 22 80 443
