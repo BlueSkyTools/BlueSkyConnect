@@ -83,7 +83,10 @@ else
 	  fi
   fi
   #set update
-  myQry="update computers set registered='$timeStamp', sharingname='$hostName' where id='$compRec'"
+  # refresh names like the status path does: sharingname always tracks the Mac,
+  # hostname only when it still matches the prior sharingname (i.e. unedited).
+  # hostname is assigned first so the IF() reads sharingname before it changes.
+  myQry="update computers set registered='$timeStamp', hostname=if(hostname=sharingname,'$hostName',hostname), sharingname='$hostName' where id='$compRec'"
 fi
 # above if/then should end in the appropriate query - either insert for new, or update for existing
 $myCmd "$myQry"
@@ -119,6 +122,20 @@ fi
 "status")
 # attempts an ssh connection back through the tunnel
 # also sends self destruct, notify mail
+
+# refresh names if the client reported one; the IF() keeps an admin-edited
+# hostname from being overwritten (only auto-updates hostname when it still
+# matches the prior sharingname)
+if [[ $hostName ]]; then
+  # hostname is assigned before sharingname on purpose: MySQL evaluates SET
+  # left-to-right using already-updated values, so the IF() must read the prior
+  # sharingname before we overwrite it
+  myQry="update computers
+    set hostname=if(hostname=sharingname,'$hostName',hostname),
+        sharingname='$hostName'
+    where serialnum='$serialNum'"
+  $myCmd "$myQry"
+fi
 
 # self destruct
 myQry="select selfdestruct from computers where serialnum='$serialNum'"
