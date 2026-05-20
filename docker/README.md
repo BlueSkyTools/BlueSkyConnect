@@ -18,7 +18,7 @@ Variable | Default Value | Note
 --- | --- | ---
 SERVERFQDN | localhost | BlueSky FQDN
 WEBADMINPASS | admin |
-USE_HTTP | 0 | Set to 1 to serve plain HTTP (recommended when running behind a TLS-terminating reverse proxy such as Caddy/nginx; container honors X-Forwarded-Proto)
+USE_HTTP | 0 | Set to 1 to serve plain HTTP (recommended when running behind a TLS-terminating reverse proxy such as Caddy/nginx; container honors X-Forwarded-Proto and X-Forwarded-For so access/error logs and `REMOTE_ADDR` show the real client IP)
 SSL_CERT | | Filename referring to your ssl cert file in /certs
 SSL_KEY | | Filename referring to your ssl key file in /certs
 FAIL2BAN | 1 | Set to 0 to disable fail2ban
@@ -29,6 +29,8 @@ SMTP_SERVER | | SMTP Server (Required for email alerts) Port optional
 SMTP_AUTH | | SMTP auth user (Required for email alerts)
 SMTP_PASS | | SMTP auth pass (Required for email alerts)
 TIMEZONE | Etc/UTC | Local Timezone [Reference](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
+LOG_ROTATE_SIZE | 100M | Size threshold for log rotation (applies to Apache, auth, and fail2ban logs)
+LOG_ROTATE_KEEP | 7 | Number of rotated copies to retain (older are deleted)
 DEFAULT_USER | | Default username bluesky uses when connecting to a client
 INSECURE_CIPHERS | | Set to any value to allow the use of chacha20-poly1305 ssh cipher (bluesky <= 2.3.2)
 
@@ -164,6 +166,8 @@ docker run -d --name bluesky \
   -v /var/docker/bluesky/bluesky.ssh:/home/bluesky/.ssh \
   -v /var/docker/bluesky/pkg:/tmp/pkg \
   --cap-add=NET_ADMIN \
+  --log-opt max-size=50m \
+  --log-opt max-file=5 \
   -p 80:80 \
   -p 443:443 \
   -p 3122:3122 \
@@ -206,6 +210,44 @@ You can also shell into the BlueSky container if needed.  For example:
 ```
 docker exec -it bluesky bash
 ```
+
+Apache request and error logs are mirrored to the container's stdout in addition to being written to `/var/log/apache2/` inside the container, so `docker logs bluesky` is useful for live troubleshooting while the on-disk files remain available via `docker exec`.  All three log groups (`/var/log/apache2/*.log`, `/var/log/auth.log`, `/var/log/fail2ban.log`) are rotated by `logrotate` (run via cron); see `LOG_ROTATE_SIZE` and `LOG_ROTATE_KEEP` above to tune.
+
+### Docker daemon log rotation
+
+Because Apache logs are now mirrored to the container's stdout, anything written to those logs also accumulates on the **host** at `/var/lib/docker/containers/<id>/<id>-json.log`.  Docker's default `json-file` logging driver does not cap or rotate that file, so over time it can fill the host disk — at a busy BlueSky server with frequent client check-ins this can be tens of MB per day.
+
+The example `docker run` command above passes `--log-opt max-size=50m --log-opt max-file=5`, which caps the per-container log footprint on the host at roughly 250 MB and rotates older content automatically.  Adjust to taste; you likely never need more than a few hundred MB of historical `docker logs` for troubleshooting.
+
+If you prefer a host-wide default instead of per-container flags, set it once in `/etc/docker/daemon.json` and restart the Docker daemon:
+
+```json
+{
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "50m",
+    "max-file": "5"
+  }
+}
+```
+
+For `docker-compose` users, the equivalent goes under the service definition:
+
+```yaml
+services:
+  bluesky:
+    image: ghcr.io/blueskytools/blueskyconnect
+    # ...the rest of your existing config...
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+```
+
+### fail2ban behind a reverse proxy
+
+With `USE_HTTP=1`, error-log entries show the *real* attacker IP (via `mod_remoteip` honoring `X-Forwarded-For`) rather than the proxy's docker IP — useful for visibility and audit.  However, fail2ban's iptables actions inside the container can only filter packets it actually receives, which always come from the proxy peer (e.g. Caddy).  In this topology the in-container bans are effectively audit-only; for real enforcement, apply rate limiting or IP banning at the reverse-proxy layer.
 
 ### Links
 
