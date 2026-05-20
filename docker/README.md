@@ -33,6 +33,7 @@ LOG_ROTATE_SIZE | 100M | Size threshold for log rotation (applies to Apache, aut
 LOG_ROTATE_KEEP | 7 | Number of rotated copies to retain (older are deleted)
 DEFAULT_USER | | Default username bluesky uses when connecting to a client
 INSECURE_CIPHERS | | Set to any value to allow the use of chacha20-poly1305 ssh cipher (bluesky <= 2.3.2)
+LEGACY_CLIENT | 0 | Set to 1 to bundle the curl/openssl binaries needed by macOS < 10.14 clients (LetsEncrypt CA workaround). Omitted by default so the client pkg ships no unmaintained binaries
 
 ### Signing & notarization (optional)
 
