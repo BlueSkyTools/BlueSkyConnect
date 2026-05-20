@@ -188,6 +188,14 @@ markPkgSignState() {
 # restart when nothing has changed. The hash is persisted next to the pkg
 # as ${pkg}.fingerprint; matching it means the cached pkg is reusable.
 #
+# The build scripts + rcodesign are hashed too: a new image can reuse a
+# bind-mounted /tmp/pkg from an older image (the volume survives image
+# upgrades), so a change to build logic or the signing tool must invalidate
+# the cache even when the version and source are unchanged.
+#
+# SIGN_SKIP_NOTARIZE is included because it changes the output bytes — a
+# notarized pkg carries an embedded stapled ticket, a skipped one does not.
+#
 # NOTARY_API_KEY_P8 is intentionally not included — it's just submission
 # auth, not material that affects the pkg or its stapled ticket.
 computeBuildFingerprint() {
@@ -196,9 +204,17 @@ computeBuildFingerprint() {
   {
     echo "BLUESKY_VERSION=${BLUESKY_VERSION}"
     echo "SIGN_PKG=${SIGN_PKG:-0}"
+    echo "SIGN_SKIP_NOTARIZE=${SIGN_SKIP_NOTARIZE:-0}"
+    # build environment shared by both pkgs (rcodesign drives ad-hoc signing
+    # on the unsigned path too, so it matters regardless of SIGN_PKG)
+    sha256sum /usr/local/bin/sign-helpers.sh \
+      /usr/local/bin/notarize-pkgs.sh \
+      /usr/local/bin/rcodesign 2> /dev/null
     if [[ "$pkgname" == "BlueSky" ]]; then
+      sha256sum /usr/local/bin/build_pkg.sh 2> /dev/null
       ( cd "$sourceRoot/Client" && find . -type f -print0 | sort -z | xargs -0 sha256sum )
     elif [[ "$pkgname" == "BlueSkyAdmin" ]]; then
+      sha256sum /usr/local/bin/build_admin_pkg.sh 2> /dev/null
       ( cd "$sourceRoot/Admin Tools" && find . -type f -print0 | sort -z | xargs -0 sha256sum )
       sha256sum "$sourceRoot/Client/blueskyclient.pub"
     fi
