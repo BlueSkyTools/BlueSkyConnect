@@ -136,6 +136,9 @@ if [ "$userCheck" == "" ]; then
 fi
 #ensure the permissions are correct on our home
 chown -R bluesky "$ourHome"
+# sshd StrictModes refuses to read .ssh/authorized_keys if the home is group- or
+# other-writable, which breaks the server's serial check (cannot verify serial number)
+chmod g-w,o-w "$ourHome"
 
 #help me help you.  help me... help you.
 dseditgroup -o edit -a bluesky -t user com.apple.access_ssh 2> /dev/null
@@ -155,6 +158,7 @@ fi
 if [ "$helpWithWhat" == "fixPerms" ]; then
     logMe "Fixing permissions on our directory"
     chown -R bluesky "$ourHome"
+    chmod g-w,o-w "$ourHome"
 fi
 
 #GSS API config lines mess up client connections in 10.12+
