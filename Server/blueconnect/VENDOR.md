@@ -2,8 +2,10 @@
 
 These files are a **vendored copy** of the server-side payload from
 [echoparkbaby/BlueConnect-Admin](https://github.com/echoparkbaby/BlueConnect-Admin),
-which backs the BlueConnect-Admin macOS app. They are copied verbatim — do not edit
-them here; change them upstream and re-vendor.
+which backs the BlueConnect-Admin macOS app. They are fetched verbatim and then a
+small set of **local patches** is re-applied on top (see _Local modifications_).
+Don't hand-edit the vendored files; change them upstream and re-vendor, or adjust the
+patch.
 
 ## Pinned version
 
@@ -25,14 +27,40 @@ migration lives here, outside the docroot, so the `.sql` is not web-downloadable
 | `migrations/2026-05-14-computers-blueconnect-columns.sql` | `Server/blueconnect/migrations/2026-05-14-computers-blueconnect-columns.sql` |
 | `migrations/2026-05-03-categories-sort-order.sql`     | `Server/blueconnect/migrations/2026-05-03-categories-sort-order.sql`         |
 
+## Local modifications
+
+Not from upstream; these live in our tree and are re-applied by the refresh script:
+
+| File                                          | What                                                           |
+| --------------------------------------------- | -------------------------------------------------------------- |
+| `Server/html/bs_auth.php`                     | Shared DB-backed HTTP Basic auth helper (a local addition, not fetched). |
+| `Server/blueconnect/patches/db-auth.patch`    | Swaps the four authed endpoints' inline `WEBADMINPASS` check for `require __DIR__ . '/bs_auth.php'`. |
+
+Why: upstream authenticates against the `WEBADMINPASS` env var, which is only a
+snapshot taken at container start — it goes stale the moment the password is changed
+in the AppGini web admin. `bs_auth.php` instead verifies HTTP Basic credentials
+against `membership_users.passMD5` (plain `md5`, matching AppGini's own login in
+`incCommon.php`), restricted to approved, non-banned accounts, so the endpoints
+always honor the live password. `bs_health.json.php` is intentionally unauthenticated
+upstream and is left untouched.
+
+`tools/refresh-blueconnect.sh` applies `patches/*.patch` over the freshly-fetched
+pristine endpoints. The patch is generated against pristine upstream, so if a re-vendor
+fails to apply it, upstream changed the patched code — regenerate the patch
+(`git diff` the four endpoints after re-doing the swap) rather than shipping unpatched
+(env-auth) endpoints. Tracked upstream:
+https://github.com/echoparkbaby/BlueConnect-Admin/issues/4
+
 ## Notes
 
 - **Docker-only.** Integration is wired through `docker/run` (gated on
   `ENABLE_BLUECONNECT=1`) and the `Dockerfile` env default. Bare-metal deploy is not
   supported here — upstream documents its own SCP-based deploy for that.
-- The endpoints read `WEBADMINPASS`, `MYSQLROOTPASS`, `MYSQLSERVER`, and
-  `BLUESKY_VERSION` from the environment; our image already exports these (and
-  `docker/run` exports `MYSQLROOTPASS` for the apache → mod_php chain when enabled).
+- The endpoints read `MYSQLROOTPASS`, `MYSQLSERVER`, and `BLUESKY_VERSION` from the
+  environment; our image already exports these (and `docker/run` exports
+  `MYSQLROOTPASS` for the apache → mod_php chain when enabled). With our local patch,
+  `WEBADMINPASS` is no longer used for endpoint auth (it still seeds the DB password
+  at first setup via `server-config.sh`).
 - `docker/run` applies every `.sql` in this directory in filename order at container
   start. Each migration is idempotent and self-contained, so a failure is logged and
   re-runs cleanly on the next boot rather than blocking the others.

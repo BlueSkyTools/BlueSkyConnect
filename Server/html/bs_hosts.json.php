@@ -1,6 +1,6 @@
 <?php
 // bs_hosts.json.php — JSON list of BlueSky hosts + active-tunnel state
-// Auth: HTTP Basic, password = WEBADMINPASS env var (any username)
+// Auth: HTTP Basic against the AppGini web-admin password (see bs_auth.php)
 // Drop into /var/www/html/ inside the bluesky container.
 
 ini_set('display_errors', '0');
@@ -31,16 +31,7 @@ function bs_fail(int $code, string $msg, array $extra = []): void {
 
 header('Content-Type: application/json');
 
-$expectedPass = trim(bs_env('WEBADMINPASS'));
-if ($expectedPass === '') {
-    bs_fail(500, 'WEBADMINPASS not set on server');
-}
-
-$givenPass = trim($_SERVER['PHP_AUTH_PW'] ?? '');
-if ($givenPass === '' || !hash_equals($expectedPass, $givenPass)) {
-    header('WWW-Authenticate: Basic realm="BlueSky Hosts"');
-    bs_fail(401, 'unauthorized');
-}
+require __DIR__ . '/bs_auth.php';
 
 // Active reverse-tunnel ports = listeners on 127.0.0.1:22000-22999
 $activeIDs = [];

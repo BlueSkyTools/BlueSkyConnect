@@ -1,6 +1,6 @@
 <?php
 // bs_host_action.json.php — POST {action, blueskyid} to mutate a host row.
-// Auth: HTTP Basic, password = WEBADMINPASS env var (any username).
+// Auth: HTTP Basic against the AppGini web-admin password (see bs_auth.php).
 // Actions:
 //   "selfdestruct"  → UPDATE computers SET selfdestruct=1 (client uninstalls on next check-in)
 //   "delete"        → DELETE FROM computers WHERE blueskyid=N (also wipes the corresponding pubkey from /home/bluesky/.ssh/authorized_keys)
@@ -32,14 +32,7 @@ function bs_fail(int $code, string $msg, array $extra = []): void {
 
 header('Content-Type: application/json');
 
-$expectedPass = trim(bs_env('WEBADMINPASS'));
-if ($expectedPass === '') bs_fail(500, 'WEBADMINPASS not set');
-
-$givenPass = trim($_SERVER['PHP_AUTH_PW'] ?? '');
-if ($givenPass === '' || !hash_equals($expectedPass, $givenPass)) {
-    header('WWW-Authenticate: Basic realm="BlueSky Hosts"');
-    bs_fail(401, 'unauthorized');
-}
+require __DIR__ . '/bs_auth.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     bs_fail(405, 'POST required');
