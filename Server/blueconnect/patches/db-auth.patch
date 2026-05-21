@@ -1,0 +1,113 @@
+diff --git a/Server/html/bs_categories.json.php b/Server/html/bs_categories.json.php
+index 25f2710..1645a7c 100644
+--- a/Server/html/bs_categories.json.php
++++ b/Server/html/bs_categories.json.php
+@@ -4,7 +4,7 @@
+ // POST   {name}                        → create a (possibly empty) category
+ // DELETE {name, clearFromHosts?:bool}  → delete a category; optionally null-out
+ //                                          all computers.category that match
+-// Auth: HTTP Basic, password = WEBADMINPASS
++// Auth: HTTP Basic against the AppGini web-admin password (see bs_auth.php)
+ 
+ ini_set('display_errors', '0');
+ ini_set('log_errors', '1');
+@@ -32,13 +32,7 @@ function bs_fail(int $code, string $msg, array $extra = []): void {
+ 
+ header('Content-Type: application/json');
+ 
+-$expectedPass = trim(bs_env('WEBADMINPASS'));
+-if ($expectedPass === '') bs_fail(500, 'WEBADMINPASS not set');
+-$givenPass = trim($_SERVER['PHP_AUTH_PW'] ?? '');
+-if ($givenPass === '' || !hash_equals($expectedPass, $givenPass)) {
+-    header('WWW-Authenticate: Basic realm="BlueSky Hosts"');
+-    bs_fail(401, 'unauthorized');
+-}
++require __DIR__ . '/bs_auth.php';
+ 
+ $dbHost = bs_env('MYSQLSERVER') ?: 'db';
+ $dbPass = bs_env('MYSQLROOTPASS');
+diff --git a/Server/html/bs_host_action.json.php b/Server/html/bs_host_action.json.php
+index 93e439e..9b77c34 100644
+--- a/Server/html/bs_host_action.json.php
++++ b/Server/html/bs_host_action.json.php
+@@ -1,6 +1,6 @@
+ <?php
+ // bs_host_action.json.php — POST {action, blueskyid} to mutate a host row.
+-// Auth: HTTP Basic, password = WEBADMINPASS env var (any username).
++// Auth: HTTP Basic against the AppGini web-admin password (see bs_auth.php).
+ // Actions:
+ //   "selfdestruct"  → UPDATE computers SET selfdestruct=1 (client uninstalls on next check-in)
+ //   "delete"        → DELETE FROM computers WHERE blueskyid=N (also wipes the corresponding pubkey from /home/bluesky/.ssh/authorized_keys)
+@@ -32,14 +32,7 @@ function bs_fail(int $code, string $msg, array $extra = []): void {
+ 
+ header('Content-Type: application/json');
+ 
+-$expectedPass = trim(bs_env('WEBADMINPASS'));
+-if ($expectedPass === '') bs_fail(500, 'WEBADMINPASS not set');
+-
+-$givenPass = trim($_SERVER['PHP_AUTH_PW'] ?? '');
+-if ($givenPass === '' || !hash_equals($expectedPass, $givenPass)) {
+-    header('WWW-Authenticate: Basic realm="BlueSky Hosts"');
+-    bs_fail(401, 'unauthorized');
+-}
++require __DIR__ . '/bs_auth.php';
+ 
+ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+     bs_fail(405, 'POST required');
+diff --git a/Server/html/bs_host_update.json.php b/Server/html/bs_host_update.json.php
+index 14f8e9c..0dd1e27 100644
+--- a/Server/html/bs_host_update.json.php
++++ b/Server/html/bs_host_update.json.php
+@@ -1,6 +1,6 @@
+ <?php
+ // bs_host_update.json.php — POST {blueskyid, hostname?} updates a computers row.
+-// Auth: HTTP Basic, password = WEBADMINPASS env var.
++// Auth: HTTP Basic against the AppGini web-admin password (see bs_auth.php).
+ // Drop into /var/docker/bluesky/ on the host (bind-mounted into /var/www/html/).
+ 
+ ini_set('display_errors', '0');
+@@ -29,13 +29,7 @@ function bs_fail(int $code, string $msg, array $extra = []): void {
+ 
+ header('Content-Type: application/json');
+ 
+-$expectedPass = trim(bs_env('WEBADMINPASS'));
+-if ($expectedPass === '') bs_fail(500, 'WEBADMINPASS not set');
+-$givenPass = trim($_SERVER['PHP_AUTH_PW'] ?? '');
+-if ($givenPass === '' || !hash_equals($expectedPass, $givenPass)) {
+-    header('WWW-Authenticate: Basic realm="BlueSky Hosts"');
+-    bs_fail(401, 'unauthorized');
+-}
++require __DIR__ . '/bs_auth.php';
+ if ($_SERVER['REQUEST_METHOD'] !== 'POST') bs_fail(405, 'POST required');
+ 
+ $body = file_get_contents('php://input');
+diff --git a/Server/html/bs_hosts.json.php b/Server/html/bs_hosts.json.php
+index d94770e..cc1dcfb 100644
+--- a/Server/html/bs_hosts.json.php
++++ b/Server/html/bs_hosts.json.php
+@@ -1,6 +1,6 @@
+ <?php
+ // bs_hosts.json.php — JSON list of BlueSky hosts + active-tunnel state
+-// Auth: HTTP Basic, password = WEBADMINPASS env var (any username)
++// Auth: HTTP Basic against the AppGini web-admin password (see bs_auth.php)
+ // Drop into /var/www/html/ inside the bluesky container.
+ 
+ ini_set('display_errors', '0');
+@@ -31,16 +31,7 @@ function bs_fail(int $code, string $msg, array $extra = []): void {
+ 
+ header('Content-Type: application/json');
+ 
+-$expectedPass = trim(bs_env('WEBADMINPASS'));
+-if ($expectedPass === '') {
+-    bs_fail(500, 'WEBADMINPASS not set on server');
+-}
+-
+-$givenPass = trim($_SERVER['PHP_AUTH_PW'] ?? '');
+-if ($givenPass === '' || !hash_equals($expectedPass, $givenPass)) {
+-    header('WWW-Authenticate: Basic realm="BlueSky Hosts"');
+-    bs_fail(401, 'unauthorized');
+-}
++require __DIR__ . '/bs_auth.php';
+ 
+ // Active reverse-tunnel ports = listeners on 127.0.0.1:22000-22999
+ $activeIDs = [];

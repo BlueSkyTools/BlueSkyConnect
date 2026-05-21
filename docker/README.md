@@ -34,6 +34,37 @@ LOG_ROTATE_KEEP | 7 | Number of rotated copies to retain (older are deleted)
 DEFAULT_USER | | Default username bluesky uses when connecting to a client
 INSECURE_CIPHERS | | Set to any value to allow the use of chacha20-poly1305 ssh cipher (bluesky <= 2.3.2)
 LEGACY_CLIENT | 0 | Set to 1 to bundle the curl/openssl binaries needed by macOS < 10.14 clients (LetsEncrypt CA workaround). Omitted by default so the client pkg ships no unmaintained binaries
+ENABLE_BLUECONNECT | 0 | Set to 1 to enable [BlueConnect-Admin](https://github.com/echoparkbaby/BlueConnect-Admin) support: runs the `computers` column migration at startup and serves the vendored `bs_*.json.php` endpoints. Requires `WEBADMINPASS` and `MYSQLROOTPASS` to be set deliberately (the endpoints use them for HTTP Basic auth and the DB connection); leaving `MYSQLROOTPASS` to the linked-container default is not enough
+
+### BlueConnect-Admin (optional)
+
+Setting `ENABLE_BLUECONNECT=1` turns on server-side support for the
+[BlueConnect-Admin](https://github.com/echoparkbaby/BlueConnect-Admin) macOS app.
+At container start it runs an idempotent migration adding the BlueConnect columns
+to the `computers` table; the five `bs_*.json.php` endpoints (vendored in
+`Server/html/`) are then served from the web root. They authenticate with HTTP
+Basic against `WEBADMINPASS` and connect to MySQL with `MYSQLROOTPASS`, so set
+both explicitly when enabling:
+
+```
+docker run -d --name bluesky --link bluesky_db:db \
+  -e SERVERFQDN=bluesky.example.com \
+  -e ENABLE_BLUECONNECT=1 \
+  -e WEBADMINPASS=somethingsecret \
+  -e MYSQLROOTPASS=yourdbrootpass \
+  -p 80:80 -p 443:443 -p 3122:3122 --cap-add=NET_ADMIN bluesky
+```
+
+Verify after start (expect HTTP 200 + JSON):
+
+```
+curl -i -u admin:somethingsecret https://bluesky.example.com/bs_hosts.json.php
+```
+
+With the flag off (default) the endpoints are present but fail closed behind Basic
+auth. The vendored payload is refreshed from upstream with
+`tools/refresh-blueconnect.sh`; see `Server/blueconnect/VENDOR.md` for the pinned
+version.
 
 ### Signing & notarization (optional)
 

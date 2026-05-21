@@ -23,7 +23,7 @@ do
 	sleep 1;
 	COUNT=$((COUNT+1));
 
-  MYSQL_IS_RUNNING=$(mysqladmin -h "$MYSQLSERVER" -u root -p"$mysqlRootPass" status 2>1 /dev/null | grep Uptime)
+  MYSQL_IS_RUNNING=$(mysqladmin -h "$MYSQLSERVER" -u root -p"$mysqlRootPass" status 2>/dev/null | grep Uptime)
 
   if [[ -z $MYSQL_IS_RUNNING ]]; then
     if [ $COUNT -gt 60 ]; then
@@ -39,6 +39,23 @@ done
 
 # run bluesky server config
 /usr/local/bin/BlueSkyConnect/Server/server-config.sh
+
+# optional BlueConnect-Admin support (endpoints vendored in Server/html/,
+# migrations in Server/blueconnect/migrations/)
+if [[ $ENABLE_BLUECONNECT = 1 ]]; then
+  # the bs_*.json.php endpoints read MYSQLROOTPASS from the environment; we only
+  # resolved it into a local var above, so export it for the supervisord -> apache
+  # -> mod_php chain that serves them.
+  export MYSQLROOTPASS="$mysqlRootPass"
+  # apply migrations in filename order. each is idempotent and uses DATABASE(), so
+  # connecting to BlueSky is enough; a failed migration is logged and re-runs cleanly
+  # on the next boot, so we don't gate the rest on it. stdout is discarded - the
+  # idempotency guards run `SELECT 1` on the no-op branch, which would otherwise print
+  # a `1` per already-applied column on every boot; real errors still go to stderr.
+  for migration in /usr/local/bin/BlueSkyConnect/Server/blueconnect/migrations/*.sql; do
+    mysql -h "$MYSQLSERVER" -u root -p"$mysqlRootPass" BlueSky < "$migration" > /dev/null
+  done
+fi
 
 # purge hanging sockets/pids
 rm -f /var/run/fail2ban/*
