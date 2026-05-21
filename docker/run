@@ -47,6 +47,11 @@ if [[ $ENABLE_BLUECONNECT = 1 ]]; then
   # resolved it into a local var above, so export it for the supervisord -> apache
   # -> mod_php chain that serves them.
   export MYSQLROOTPASS="$mysqlRootPass"
+  # authenticate the endpoints against the live web-admin password in the DB
+  # (membership_users.passMD5) rather than the WEBADMINPASS env snapshot, which
+  # goes stale once the password is changed in the web admin. Operators can set
+  # WEBADMIN_AUTH explicitly to override (e.g. back to the legacy env-var mode).
+  export WEBADMIN_AUTH="${WEBADMIN_AUTH:-db}"
   # apply migrations in filename order. each is idempotent and uses DATABASE(), so
   # connecting to BlueSky is enough; a failed migration is logged and re-runs cleanly
   # on the next boot, so we don't gate the rest on it. stdout is discarded - the

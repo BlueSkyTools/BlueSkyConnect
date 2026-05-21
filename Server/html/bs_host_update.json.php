@@ -1,6 +1,7 @@
 <?php
 // bs_host_update.json.php — POST {blueskyid, hostname?} updates a computers row.
-// Auth: HTTP Basic against the AppGini web-admin password (see bs_auth.php).
+// Auth: HTTP Basic — WEBADMINPASS by default, or the live web-admin password in
+//       the DB when WEBADMIN_AUTH=db (or WEBADMINPASS is unset). See bs_auth.php.
 // Drop into /var/docker/bluesky/ on the host (bind-mounted into /var/www/html/).
 
 ini_set('display_errors', '0');
@@ -70,12 +71,27 @@ $mysqli->set_charset('utf8mb4');
 
 // If a non-empty category is being set, register it in bs_categories so it
 // shows up in the sidebar even if no host currently has it.
+//
+// `CREATE TABLE IF NOT EXISTS` is idempotent and matches the schema that
+// bs_categories.json.php creates — without this, a brand-new BSC where
+// nobody has visited bs_categories.json.php yet would fatal here:
+// prepare() returns false on the missing table and bind_param() throws.
 if (array_key_exists('category', $data)) {
     $cat = trim((string)$data['category']);
     if ($cat !== '') {
-        $up = $mysqli->prepare('INSERT IGNORE INTO bs_categories (name) VALUES (?)');
-        $up->bind_param('s', $cat);
-        $up->execute();
+        $mysqli->query("CREATE TABLE IF NOT EXISTS bs_categories (
+            name        VARCHAR(100) NOT NULL PRIMARY KEY,
+            created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            sort_order  INT NOT NULL DEFAULT 0
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        if ($up = $mysqli->prepare('INSERT IGNORE INTO bs_categories (name) VALUES (?)')) {
+            $up->bind_param('s', $cat);
+            $up->execute();
+            $up->close();
+        }
+        // Silent fallthrough on prepare failure — the column update
+        // below is the user-facing action; the category-registration
+        // side effect can be skipped without breaking the request.
     }
 }
 

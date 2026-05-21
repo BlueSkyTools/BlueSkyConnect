@@ -4,7 +4,8 @@
 // POST   {name}                        → create a (possibly empty) category
 // DELETE {name, clearFromHosts?:bool}  → delete a category; optionally null-out
 //                                          all computers.category that match
-// Auth: HTTP Basic against the AppGini web-admin password (see bs_auth.php)
+// Auth: HTTP Basic — WEBADMINPASS by default, or the live web-admin password in
+//       the DB when WEBADMIN_AUTH=db (or WEBADMINPASS is unset). See bs_auth.php.
 
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
@@ -43,10 +44,10 @@ $mysqli->set_charset('utf8mb4');
 // --- Idempotent schema migration ---
 // Pre-2026-05-02 schemas didn't have bs_categories at all. Older intermediate
 // schemas have the table without sort_order. Both heal here.
-function bs_table_has_column(mysqli $db, string $table, string $col): bool {
+function bs_table_has_column(mysqli $db, string $table, string $col, bool $forceRefresh = false): bool {
     static $cache = [];
     $k = "$table.$col";
-    if (isset($cache[$k])) return $cache[$k];
+    if (!$forceRefresh && isset($cache[$k])) return $cache[$k];
     $stmt = $db->prepare("SELECT 1 FROM information_schema.COLUMNS
                           WHERE TABLE_SCHEMA = DATABASE()
                             AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1");
@@ -66,8 +67,11 @@ $mysqli->query("CREATE TABLE IF NOT EXISTS bs_categories (
 
 if (!bs_table_has_column($mysqli, 'bs_categories', 'sort_order')) {
     $mysqli->query("ALTER TABLE bs_categories ADD COLUMN sort_order INT NOT NULL DEFAULT 0");
-    // Bust the cache after the ALTER.
-    bs_table_has_column($mysqli, 'bs_categories', 'sort_order');
+    // Bust the cache so the post-ALTER read below sees the new column.
+    // Without forceRefresh the helper would return its cached `false`
+    // (the static array key persists for the rest of the request) and
+    // the GET handler would fall back to the unordered fallback query.
+    bs_table_has_column($mysqli, 'bs_categories', 'sort_order', true);
 }
 $hasSortOrder = bs_table_has_column($mysqli, 'bs_categories', 'sort_order');
 
@@ -145,4 +149,4 @@ if ($method === 'DELETE') {
     exit;
 }
 
-bs_fail(405, 'method not allowed', ['allowed' => ['GET', 'POST', 'DELETE']]);
+bs_fail(405, 'method not allowed', ['allowed' => ['GET', 'POST', 'PUT', 'DELETE']]);
