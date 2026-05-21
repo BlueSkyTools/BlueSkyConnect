@@ -47,7 +47,23 @@ ORDER BY name;
 
 -- 4. Backfill: if there are computers.category values that don't appear in
 -- bs_categories yet, add them.
-INSERT IGNORE INTO bs_categories (name, sort_order)
-SELECT DISTINCT category, 0
-FROM computers
-WHERE category IS NOT NULL AND category <> '';
+--
+-- Guarded on `computers.category` existing because filename-ordered runs
+-- apply this 2026-05-03 file BEFORE 2026-05-14-computers-blueconnect-
+-- columns.sql, which is the migration that actually adds the `category`
+-- column on a stock sphen/bluesky schema. Without this guard the seed
+-- fails with `Unknown column 'category' in 'field list'` on a fresh DB
+-- (the earlier statements all succeed; only this final seed errors).
+-- Same `information_schema` pattern used for the ADD COLUMN guards above.
+SET @cat_col_exists := (
+    SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME   = 'computers'
+      AND COLUMN_NAME  = 'category'
+);
+SET @seed := IF(@cat_col_exists = 1,
+    "INSERT IGNORE INTO bs_categories (name, sort_order) SELECT DISTINCT category, 0 FROM computers WHERE category IS NOT NULL AND category <> ''",
+    'SELECT 1');
+PREPARE stmt FROM @seed;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;

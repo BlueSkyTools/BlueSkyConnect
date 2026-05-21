@@ -1,23 +1,26 @@
 <?php
 // bs_health.json.php — unauthenticated lightweight health probe for monitoring.
-// Returns active-tunnel count + total registered hosts + version info.
-// Drop into /var/docker/bluesky/ on the host (bind-mounted into container).
+//
+// Returns ONLY:
+//   - healthy   : always true if the script ran
+//   - active    : count of established reverse-tunnel ports (22000..22999)
+//                 derived from /proc/net/tcp, no DB call
+//   - timestamp : ISO-8601 server time
+//
+// Deliberately excluded from the unauthenticated payload (was here in prior
+// versions; moved to the auth-gated `bs_hosts.json.php` payload instead):
+//   - phpVersion / blueSkyVersion — version fingerprinting CVE-matching aid
+//   - total (host count) — required a MySQL root connection on every hit,
+//     amplifying any unauthenticated request into a DB connect (DoS surface)
+//   - any DB connection at all — this endpoint must not touch the database
+//
+// The Mac client reads versions and counts from `bs_hosts.json.php`, which
+// is HTTP Basic-auth gated. External monitors that need this endpoint
+// only need "is the server returning 200 with a json body" — that's
+// preserved.
 
 ini_set('display_errors', '0');
 error_reporting(E_ALL);
-
-function bs_env(string $name): string {
-    $v = getenv($name);
-    if ($v !== false && $v !== '') return $v;
-    $proc = @file_get_contents('/proc/1/environ');
-    if ($proc === false) return '';
-    foreach (explode("\0", $proc) as $pair) {
-        if (strncmp($pair, $name . '=', strlen($name) + 1) === 0) {
-            return substr($pair, strlen($name) + 1);
-        }
-    }
-    return '';
-}
 
 header('Content-Type: application/json');
 
@@ -33,24 +36,8 @@ if ($tcp !== false) {
     }
 }
 
-$total = 0;
-$dbHost = bs_env('MYSQLSERVER') ?: 'db';
-$dbPass = bs_env('MYSQLROOTPASS');
-if ($dbPass !== '') {
-    $mysqli = @new mysqli($dbHost, 'root', $dbPass, 'BlueSky');
-    if (!$mysqli->connect_errno) {
-        if ($r = $mysqli->query('SELECT COUNT(*) AS c FROM computers')) {
-            $row = $r->fetch_assoc();
-            $total = (int)$row['c'];
-        }
-    }
-}
-
 echo json_encode([
-    'healthy'        => true,
-    'active'         => $active,
-    'total'          => $total,
-    'blueSkyVersion' => bs_env('BLUESKY_VERSION') ?: '',
-    'phpVersion'     => PHP_VERSION,
-    'timestamp'      => date('c'),
+    'healthy'   => true,
+    'active'    => $active,
+    'timestamp' => date('c'),
 ]);

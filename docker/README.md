@@ -34,32 +34,41 @@ LOG_ROTATE_KEEP | 7 | Number of rotated copies to retain (older are deleted)
 DEFAULT_USER | | Default username bluesky uses when connecting to a client
 INSECURE_CIPHERS | | Set to any value to allow the use of chacha20-poly1305 ssh cipher (bluesky <= 2.3.2)
 LEGACY_CLIENT | 0 | Set to 1 to bundle the curl/openssl binaries needed by macOS < 10.14 clients (LetsEncrypt CA workaround). Omitted by default so the client pkg ships no unmaintained binaries
-ENABLE_BLUECONNECT | 0 | Set to 1 to enable [BlueConnect-Admin](https://github.com/echoparkbaby/BlueConnect-Admin) support: runs the `computers` column migration at startup and serves the vendored `bs_*.json.php` endpoints. Requires `WEBADMINPASS` and `MYSQLROOTPASS` to be set deliberately (the endpoints use them for HTTP Basic auth and the DB connection); leaving `MYSQLROOTPASS` to the linked-container default is not enough
+ENABLE_BLUECONNECT | 0 | Set to 1 to enable [BlueConnect-Admin](https://github.com/echoparkbaby/BlueConnect-Admin) support: runs the BlueConnect schema migrations at startup and serves the vendored `bs_*.json.php` endpoints. Authenticates against the live web-admin password in the DB by default (`docker/run` sets `WEBADMIN_AUTH=db`). Requires `MYSQLROOTPASS` to be set deliberately (the endpoints use it for the DB connection); leaving it to the linked-container default is not enough
 
 ### BlueConnect-Admin (optional)
 
 Setting `ENABLE_BLUECONNECT=1` turns on server-side support for the
 [BlueConnect-Admin](https://github.com/echoparkbaby/BlueConnect-Admin) macOS app.
-At container start it runs an idempotent migration adding the BlueConnect columns
-to the `computers` table; the five `bs_*.json.php` endpoints (vendored in
-`Server/html/`) are then served from the web root. They authenticate with HTTP
-Basic against `WEBADMINPASS` and connect to MySQL with `MYSQLROOTPASS`, so set
-both explicitly when enabling:
+At container start it runs the idempotent BlueConnect schema migrations; the
+vendored `bs_*.json.php` endpoints (in `Server/html/`) are then served from the web
+root. They authenticate with HTTP Basic and connect to MySQL with `MYSQLROOTPASS`,
+which must be set explicitly when enabling:
 
 ```
 docker run -d --name bluesky --link bluesky_db:db \
   -e SERVERFQDN=bluesky.example.com \
   -e ENABLE_BLUECONNECT=1 \
-  -e WEBADMINPASS=somethingsecret \
   -e MYSQLROOTPASS=yourdbrootpass \
   -p 80:80 -p 443:443 -p 3122:3122 --cap-add=NET_ADMIN bluesky
 ```
 
-Verify after start (expect HTTP 200 + JSON):
+By default the endpoints authenticate against the **live web-admin password in the
+database** (`docker/run` sets `WEBADMIN_AUTH=db`), so they always honor whatever the
+admin currently logs into the web UI with — even after it's changed there. Verify
+after start with the web-admin username and its current password (expect HTTP 200 +
+JSON):
 
 ```
-curl -i -u admin:somethingsecret https://bluesky.example.com/bs_hosts.json.php
+curl -i -u admin:<web-admin-password> https://bluesky.example.com/bs_hosts.json.php
 ```
+
+To use the legacy shared-password mode instead, set `-e WEBADMIN_AUTH=` (empty) and
+`-e WEBADMINPASS=...`; the endpoints then accept that fixed password with any
+username. The read-only `bs_authkeys_audit.json.php` endpoint additionally needs PHP
+(`www-data`) to read `/home/bluesky/.ssh/authorized_keys`; if it can't, it returns a
+`{"readable": false}` hint rather than failing — those `0600` key-file permissions
+are intentional and not loosened here.
 
 With the flag off (default) the endpoints are present but fail closed behind Basic
 auth. The vendored payload is refreshed from upstream with

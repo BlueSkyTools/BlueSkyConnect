@@ -1,6 +1,7 @@
 <?php
 // bs_host_action.json.php — POST {action, blueskyid} to mutate a host row.
-// Auth: HTTP Basic against the AppGini web-admin password (see bs_auth.php).
+// Auth: HTTP Basic — WEBADMINPASS by default, or the live web-admin password in
+//       the DB when WEBADMIN_AUTH=db (or WEBADMINPASS is unset). See bs_auth.php.
 // Actions:
 //   "selfdestruct"  → UPDATE computers SET selfdestruct=1 (client uninstalls on next check-in)
 //   "delete"        → DELETE FROM computers WHERE blueskyid=N (also wipes the corresponding pubkey from /home/bluesky/.ssh/authorized_keys)
@@ -70,24 +71,91 @@ if ($action === 'selfdestruct') {
 }
 
 if ($action === 'delete') {
-    // Wipe pubkey line from /home/bluesky/.ssh/authorized_keys (best-effort).
-    // Each line ends with comment containing "BlueSky-NN".
+    // Wipe pubkey line(s) from /home/bluesky/.ssh/authorized_keys.
+    //
+    // Two key-comment formats exist in the wild:
+    //   - Modern (dev2xx / 2.5.x+): each line's trailing comment is the
+    //     Mac's hardware serial number, written by keymaster.sh on first
+    //     check-in. Match `\b<serial>\b`.
+    //   - Legacy (older BSC): each line's trailing comment was the
+    //     literal string "BlueSky-NN" where NN is the blueskyid. Match
+    //     `\bBlueSky-NN\b`. The \b word boundary keeps "BlueSky-2" from
+    //     matching "BlueSky-22".
+    //
+    // We try BOTH patterns so the delete works on either layout. The
+    // serial lookup happens BEFORE the DELETE so we still have it.
+    //
+    // BUG HISTORY: an earlier version had a second preg_match clause
+    // intended as a fallback for the legacy format, but its ternary
+    // collapsed to the literal pattern `/\bBlueSky-/` — which matches
+    // EVERY BlueSky-tagged key line, and since array_filter required
+    // BOTH clauses to fail, deleting any single host silently wiped
+    // reverse-tunnel SSH authorization for the entire fleet. The two
+    // explicit boundary-anchored patterns below are the correct version.
     $authKeys = '/home/bluesky/.ssh/authorized_keys';
     $removedKey = false;
+
+    // Look up this host's serial number before we delete the DB row,
+    // so we can match the modern key-comment format too.
+    $serial = '';
+    if ($s = $mysqli->prepare('SELECT serialnum FROM computers WHERE blueskyid=? LIMIT 1')) {
+        $s->bind_param('i', $bid);
+        $s->execute();
+        $res = $s->get_result();
+        if ($res && ($row = $res->fetch_assoc())) {
+            $serial = trim((string)($row['serialnum'] ?? ''));
+        }
+        $s->close();
+    }
+
     if (is_writable($authKeys)) {
-        $needle = 'BlueSky-' . $bid;
-        $lines = @file($authKeys, FILE_IGNORE_NEW_LINES);
-        if ($lines !== false) {
-            $kept = array_filter($lines, function($l) use ($needle) {
-                // Strip lines whose comment exactly matches the BlueSky ID.
-                // Match either "BlueSky-NN" or "BlueSky-NN<space>" or end-of-line.
-                return !preg_match('/\bBlueSky-' . preg_quote((string)(intval($needle) ? '' : ''), '/') . '/', $l)
-                    && !preg_match('/\b' . preg_quote($needle, '/') . '\b/', $l);
-            });
-            if (count($kept) !== count($lines)) {
-                file_put_contents($authKeys, implode("\n", $kept) . "\n");
-                $removedKey = true;
+        // Match by the LAST whitespace-separated token of each line
+        // (the SSH key comment), not by regex against the full line —
+        // base64 key material can incidentally contain the serial
+        // bounded by `+`, `/`, or `=` and a naive `\b<serial>\b`
+        // would match inside it, removing the wrong key.
+        $needles = ['BlueSky-' . $bid];
+        if ($serial !== '') $needles[] = $serial;
+        $needleSet = array_flip($needles);
+
+        // Hold an exclusive flock on the file for the entire
+        // read-modify-write cycle so concurrent BSC keymaster.sh writes
+        // (a host registering, a key rotating) and a delete request
+        // can't interleave and lose updates. The lock is best-effort —
+        // file_put_contents() doesn't honor flock, so we open the file
+        // ourselves, ftruncate + fwrite while holding the lock.
+        $fp = @fopen($authKeys, 'c+');
+        if ($fp !== false) {
+            if (@flock($fp, LOCK_EX)) {
+                // Re-read inside the lock so we see the latest content
+                // even if another writer ran between is_writable and
+                // here.
+                $contents = '';
+                while (!feof($fp)) {
+                    $chunk = fread($fp, 8192);
+                    if ($chunk === false) break;
+                    $contents .= $chunk;
+                }
+                $lines = preg_split("/\r\n|\n|\r/", $contents);
+                if ($lines === false) $lines = [];
+                $kept = array_filter($lines, function($l) use ($needleSet) {
+                    $stripped = trim($l);
+                    if ($stripped === '' || $stripped[0] === '#') return true;
+                    $parts = preg_split('/\s+/', $stripped);
+                    if ($parts === false || count($parts) === 0) return true;
+                    $comment = end($parts);
+                    return !isset($needleSet[$comment]);
+                });
+                if (count($kept) !== count($lines)) {
+                    rewind($fp);
+                    ftruncate($fp, 0);
+                    $bytes = fwrite($fp, implode("\n", $kept) . "\n");
+                    fflush($fp);
+                    if ($bytes !== false) $removedKey = true;
+                }
+                flock($fp, LOCK_UN);
             }
+            fclose($fp);
         }
     }
 

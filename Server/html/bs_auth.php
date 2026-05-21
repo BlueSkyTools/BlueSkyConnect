@@ -1,18 +1,23 @@
 <?php
-// bs_auth.php — DB-backed HTTP Basic auth for the BlueConnect-Admin endpoints.
+// bs_auth.php — shared HTTP Basic auth for the authenticated bs_*.json.php endpoints.
 //
-// LOCAL ADDITION (not part of upstream BlueConnect-Admin). Replaces upstream's
-// static WEBADMINPASS env-var check so the accepted password tracks the live
-// web-admin password AppGini stores in membership_users.passMD5 (plain md5; see
-// the login in incCommon.php). The env var is only a snapshot from container
-// start, so it goes stale once the password is changed in the web admin.
+// Two modes, selected by the WEBADMIN_AUTH env var:
 //
-// Re-applied over the freshly-fetched (pristine) endpoints by
-// tools/refresh-blueconnect.sh via Server/blueconnect/patches/db-auth.patch.
+//   (unset, default)  Compare the supplied password against the WEBADMINPASS env
+//                     var, exactly as before. The username is ignored.
+//                     If WEBADMINPASS is also unset, fall through to "db" so a
+//                     server that only configures the DB still authenticates.
+//   WEBADMIN_AUTH=db  Verify the supplied username/password against the live
+//                     web-admin account in the database — md5(password) vs
+//                     membership_users.passMD5 (matching AppGini's own login),
+//                     restricted to approved, non-banned accounts. This tracks
+//                     the password the admin actually uses, which WEBADMINPASS
+//                     (a snapshot taken at container start) does not once the
+//                     password is changed in the web admin.
 //
-// Included by an endpoint after it has defined bs_env() and bs_fail(); both are
-// reused here. Variables are bsAuth*-prefixed so they don't clash with the
-// including endpoint's own state.
+// Included by an endpoint after it has defined bs_env() and bs_fail() and sent
+// its Content-Type header; both helpers are reused here. All variables are
+// bsAuth*-prefixed so they don't clash with the including endpoint's state.
 
 if (!function_exists('bs_env') || !function_exists('bs_fail')) {
     // direct hit (e.g. GET /bs_auth.php) — nothing to authenticate against.
@@ -20,10 +25,28 @@ if (!function_exists('bs_env') || !function_exists('bs_fail')) {
     exit;
 }
 
+$bsAuthMode = strtolower(trim(bs_env('WEBADMIN_AUTH')));
+$bsAuthEnvPass = trim(bs_env('WEBADMINPASS'));
+$bsAuthUseDb = ($bsAuthMode === 'db') || ($bsAuthMode === '' && $bsAuthEnvPass === '');
+
+if (!$bsAuthUseDb) {
+    // Legacy: shared password from the environment, username ignored.
+    if ($bsAuthEnvPass === '') {
+        bs_fail(500, 'WEBADMINPASS not set on server');
+    }
+    $bsAuthGiven = trim($_SERVER['PHP_AUTH_PW'] ?? '');
+    if ($bsAuthGiven === '' || !hash_equals($bsAuthEnvPass, $bsAuthGiven)) {
+        header('WWW-Authenticate: Basic realm="BlueSky Hosts"');
+        bs_fail(401, 'unauthorized');
+    }
+    return;
+}
+
+// DB-backed: match the web-admin credentials AppGini stores.
 $bsAuthUser = trim($_SERVER['PHP_AUTH_USER'] ?? '');
-$bsAuthPass = (string) ($_SERVER['PHP_AUTH_PW'] ?? '');
-if ($bsAuthUser === '' || $bsAuthPass === '') {
-    header('WWW-Authenticate: Basic realm="BlueSky"');
+$bsAuthGiven = (string) ($_SERVER['PHP_AUTH_PW'] ?? '');
+if ($bsAuthUser === '' || $bsAuthGiven === '') {
+    header('WWW-Authenticate: Basic realm="BlueSky Hosts"');
     bs_fail(401, 'unauthorized');
 }
 
@@ -49,12 +72,12 @@ if ($bsAuthStmt === false) {
 $bsAuthStmt->bind_param('s', $bsAuthUser);
 $bsAuthStmt->execute();
 $bsAuthStmt->bind_result($bsAuthHash);
-$bsAuthOk = $bsAuthStmt->fetch() && hash_equals((string) $bsAuthHash, md5($bsAuthPass));
+$bsAuthOk = $bsAuthStmt->fetch() && hash_equals((string) $bsAuthHash, md5($bsAuthGiven));
 $bsAuthStmt->close();
 $bsAuthDb->close();
 
 if (!$bsAuthOk) {
-    header('WWW-Authenticate: Basic realm="BlueSky"');
+    header('WWW-Authenticate: Basic realm="BlueSky Hosts"');
     bs_fail(401, 'unauthorized');
 }
 // authenticated — fall through to the endpoint body.
