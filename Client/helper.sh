@@ -36,11 +36,39 @@ function logMe {
   fi
 }
 
+# load/unload system LaunchDaemons; macOS 11+ uses bootstrap/bootout, 10.x uses load/unload.
+# Accepts one or more plist paths (globs are fine); each is handled on its own so an
+# already-loaded (or already-unloaded) daemon won't abort the rest.
+function loadDaemon {
+  if [ ${osVersionMajor:-10} -ge 11 ]; then
+    for plistPath in "$@"; do
+      launchctl bootstrap system "$plistPath" 2> /dev/null
+    done
+  else
+    launchctl load -w "$@"
+  fi
+}
+
+function unloadDaemon {
+  if [ ${osVersionMajor:-10} -ge 11 ]; then
+    for plistPath in "$@"; do
+      launchctl bootout system "$plistPath" 2> /dev/null
+    done
+  else
+    launchctl unload "$@"
+  fi
+}
+
 #if server.plist is not present, error and exit
 if [ ! -e "$ourHome/server.plist" ]; then
   echo "server.plist is not installed. Please double-check your setup."
   exit 2
 fi
+
+# get the version of the OS so we can ensure compatiblity (needed before any loadDaemon call)
+osRaw=$(sw_vers -productVersion)
+osVersionMajor=$(echo "$osRaw" | awk -F . '{ print $1 }')
+osVersionMinor=$(echo "$osRaw" | awk -F . '{ print $2 }')
 
 #if BlueSky 1.5 is present, get rid of it
 if [[ -e /Library/Mac-MSP/BlueSky/helper.sh || ! -z $(pkgutil --pkgs | grep com.mac-msp.bluesky) ]]; then
@@ -68,14 +96,10 @@ if [ "$helpWithWhat" == "selfdestruct" ]; then
     rm -rf "$ourHome"
     dscl . -delete /Users/bluesky
     pkgutil --forget com.solarwindsmsp.bluesky.pkg
-    launchctl unload /Library/LaunchDaemons/com.solarwindsmsp.bluesky* && rm -f /Library/LaunchDaemons/com.solarwindsmsp.bluesky*
+    unloadDaemon /Library/LaunchDaemons/com.solarwindsmsp.bluesky*
+    rm -f /Library/LaunchDaemons/com.solarwindsmsp.bluesky*
     exit 0
 fi
-
-# get the version of the OS so we can ensure compatiblity
-osRaw=`sw_vers -productVersion`
-osVersionMajor=`echo "$osRaw" | awk -F . '{ print $1 }'`
-osVersionMinor=`echo "$osRaw" | awk -F . '{ print $2 }'`
 
 #check if user exists and create if necessary
 userCheck=`dscl . -read /Users/bluesky RealName`
@@ -116,19 +140,16 @@ chown -R bluesky "$ourHome"
 #help me help you.  help me... help you.
 dseditgroup -o edit -a bluesky -t user com.apple.access_ssh 2> /dev/null
 systemsetup -setremotelogin on &> /dev/null
-if [ ${osVersionMajor:-10} -eq 10 ] && [ ${osVersionMinor} -lt 15 ]; then
+if [ ${osVersionMajor:-10} -ge 11 ]; then
+  # systemsetup -setremotelogin needs Full Disk Access on modern macOS (issue #54);
+  # enable and start Apple's sshd through launchd instead, which doesn't go through TCC
+  launchctl enable system/com.openssh.sshd
+  launchctl bootstrap system /System/Library/LaunchDaemons/ssh.plist 2> /dev/null
+elif [ ${osVersionMajor:-10} -eq 10 ] && [ ${osVersionMinor} -lt 15 ]; then
   systemsetup -setremotelogin on &> /dev/null
 else
   launchctl load -w /System/Library/LaunchDaemons/ssh.plist
 fi
-
-# commenting out on 1.12
-# re-intro when we can test a more reliable method of determining a VNC server
-# vncOn=`ps -ax | grep ARDAgent | grep -v grep`
-# if [ "$vncOn" == "" ]; then
-#   logMe "Starting ARD agent"
-#   /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -configure -activate -access -on -privs -ControlObserve -allowAccessFor -allUsers -quiet
-# fi
 
 #if permissions are wrong on the home folder, this will fix
 if [ "$helpWithWhat" == "fixPerms" ]; then
@@ -154,9 +175,6 @@ if [ "$setCheck" == "" ]; then
   logMe "Helper is resetting the settings plist"
   rm -f "$ourHome/settings.plist"
   /usr/libexec/PlistBuddy -c "Add :keytime integer 0" "$ourHome/settings.plist"
-  # commenting these out for 1.5, creation of variables should be more robust now
-#  /usr/libexec/PlistBuddy -c "Add :portcache integer -1" "$ourHome/settings.plist"
-#  /usr/libexec/PlistBuddy -c "Add :serial string 0" "$ourHome/settings.plist"
   chown bluesky "$ourHome/settings.plist"
 fi
 
@@ -217,7 +235,7 @@ if [ ${weLaunched:-0} -lt 4 ]; then
   fi
   chmod 644 /Library/LaunchDaemons/com.solarwindsmsp.bluesky.*
   chown root:wheel /Library/LaunchDaemons/com.solarwindsmsp.bluesky.*
-  launchctl load -w /Library/LaunchDaemons/com.solarwindsmsp.bluesky.*
+  loadDaemon /Library/LaunchDaemons/com.solarwindsmsp.bluesky.*
 fi
 
 exit 0
