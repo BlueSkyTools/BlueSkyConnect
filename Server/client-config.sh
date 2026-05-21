@@ -109,17 +109,19 @@ if [ "$reKey" == "" ]; then
 	echo command=\"/var/bluesky/.ssh/wrapper.sh\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty `cat /usr/local/bin/BlueSkyConnect/Server/blueskyd.pub` > /usr/local/bin/BlueSkyConnect/Client/.ssh/authorized_keys
 
 	# create server.plist - wait for sshd to answer on 3122 before scanning so we
-	# never bake a keyless server.plist (clients reject a keyless known_hosts)
+	# never bake a keyless server.plist (clients reject a keyless known_hosts).
+	# Only the ed25519 key is consumed by the client, so gate on it; the rsa key
+	# is written best-effort for legacy compatibility but is no longer required.
 	for _ in $(seq 1 30); do
 		hostKey=`ssh-keyscan -t ed25519 -p 3122 localhost 2> /dev/null | awk '{ print $2,$3 }'`
 		hostKeyRSA=`ssh-keyscan -t rsa -p 3122 localhost 2> /dev/null | awk '{ print $2,$3 }'`
-		if [ "$hostKey" != "" ] && [ "$hostKeyRSA" != "" ]; then
+		if [ "$hostKey" != "" ]; then
 			break
 		fi
 		sleep 1
 	done
-	if [ "$hostKey" == "" ] || [ "$hostKeyRSA" == "" ]; then
-		echo "ERROR: could not read sshd host keys on localhost:3122 - refusing to write a keyless server.plist"
+	if [ "$hostKey" == "" ]; then
+		echo "ERROR: could not read sshd ed25519 host key on localhost:3122 - refusing to write a keyless server.plist"
 		exit 1
 	fi
 	ipAddress=`curl -s http://ipinfo.io/ip`
