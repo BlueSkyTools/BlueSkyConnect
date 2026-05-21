@@ -91,7 +91,11 @@ for serialNum in $alertList; do
 done
 
 ## look for disconnected computers and mark offline
-myQry="select id from computers where datetime < (NOW() - INTERVAL 12 MINUTE) and status='Connection is good'"
+# compare the epoch timestamp (set by processor on a good connection) against a
+# shell-computed threshold, not MySQL NOW() vs the local-time datetime string -
+# the DB may run a different timezone than this container, which skews that compare
+offlineThresh=`date -d "12 minutes ago" "+%s"`
+myQry="select id from computers where timestamp < $offlineThresh and status='Connection is good'"
 offlineList=`$myCmd "$myQry"`
 for thisId in $offlineList; do
 	timeStamp=`date '+%Y-%m-%d %H:%M:%S %Z'`
