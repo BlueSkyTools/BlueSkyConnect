@@ -108,9 +108,20 @@ if [ "$reKey" == "" ]; then
 	chown www-data /usr/local/bin/BlueSkyConnect/Server/blueskyd
 	echo command=\"/var/bluesky/.ssh/wrapper.sh\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty `cat /usr/local/bin/BlueSkyConnect/Server/blueskyd.pub` > /usr/local/bin/BlueSkyConnect/Client/.ssh/authorized_keys
 
-	# create server.plist
-	hostKey=`ssh-keyscan -t ed25519 -p 3122 localhost | awk '{ print $2,$3 }'`
-	hostKeyRSA=`ssh-keyscan -t rsa -p 3122 localhost | awk '{ print $2,$3 }'`
+	# create server.plist - wait for sshd to answer on 3122 before scanning so we
+	# never bake a keyless server.plist (clients reject a keyless known_hosts)
+	for _ in $(seq 1 30); do
+		hostKey=`ssh-keyscan -t ed25519 -p 3122 localhost 2> /dev/null | awk '{ print $2,$3 }'`
+		hostKeyRSA=`ssh-keyscan -t rsa -p 3122 localhost 2> /dev/null | awk '{ print $2,$3 }'`
+		if [ "$hostKey" != "" ] && [ "$hostKeyRSA" != "" ]; then
+			break
+		fi
+		sleep 1
+	done
+	if [ "$hostKey" == "" ] || [ "$hostKeyRSA" == "" ]; then
+		echo "ERROR: could not read sshd host keys on localhost:3122 - refusing to write a keyless server.plist"
+		exit 1
+	fi
 	ipAddress=`curl -s http://ipinfo.io/ip`
 	echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
