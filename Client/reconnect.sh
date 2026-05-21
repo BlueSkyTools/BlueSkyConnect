@@ -31,8 +31,17 @@ if [ "$1" == "wake" ]; then
 else
   logMe "Network state change detected, Reloading bluesky service..."
 fi
+
+# macOS 11+ uses bootout/bootstrap; 10.x uses the legacy unload/load
+osVersionMajor=$(sw_vers -productVersion | awk -F . '{ print $1 }')
+
 sleep 3
-launchctl unload /Library/LaunchDaemons/com.solarwindsmsp.bluesky.plist
-launchctl load -w /Library/LaunchDaemons/com.solarwindsmsp.bluesky.plist
+if [ ${osVersionMajor:-10} -ge 11 ]; then
+  launchctl bootout system /Library/LaunchDaemons/com.solarwindsmsp.bluesky.plist 2> /dev/null
+  launchctl bootstrap system /Library/LaunchDaemons/com.solarwindsmsp.bluesky.plist
+else
+  launchctl unload /Library/LaunchDaemons/com.solarwindsmsp.bluesky.plist
+  launchctl load -w /Library/LaunchDaemons/com.solarwindsmsp.bluesky.plist
+fi
 
 exit 0
