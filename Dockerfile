@@ -14,7 +14,7 @@ ENV IN_DOCKER=1 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     DEBIAN_FRONTEND=noninteractive \
-    BLUESKY_VERSION=2.6.0-rc.3
+    BLUESKY_VERSION=2.6.0
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y apache2 \
