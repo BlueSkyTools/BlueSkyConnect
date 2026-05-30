@@ -39,7 +39,11 @@ if (!is_array($data)) bs_fail(400, 'bad json body');
 $bid = (int)($data['blueskyid'] ?? 0);
 if ($bid <= 0) bs_fail(400, 'invalid blueskyid');
 
-$allowed = ['hostname', 'username', 'notes', 'email', 'category', 'favorite', 'notify', 'alert'];
+// sharingname is the "subtitle" column BSC displays underneath hostname
+// in clients like BlueConnect Admin. Kept aligned with hostname when
+// the operator renames a Mac so the host card shows a single name
+// instead of "newname / oldname".
+$allowed = ['hostname', 'sharingname', 'username', 'notes', 'email', 'category', 'favorite', 'notify', 'alert'];
 
 // Build update set from allowed fields only.
 $updates = [];

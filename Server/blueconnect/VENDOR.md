@@ -8,8 +8,8 @@ Don't hand-edit the vendored files; change them upstream and re-vendor.
 
 ## Pinned version
 
-- **Ref:** `v1.2.0`
-- **Commit:** `6cfa0c09095fab1838cec5bef77e07f3ed30a20b`
+- **Ref:** `v1.5.1`
+- **Commit:** `12e344b9042c372171b7648fabc008ab8572362e`
 
 ## Files and destinations
 
@@ -20,6 +20,7 @@ migrations live here, outside the docroot, so the `.sql` is not web-downloadable
 | --------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | `bs_auth.php`                                             | `Server/html/bs_auth.php`                                                    |
 | `bs_authkeys_audit.json.php`                              | `Server/html/bs_authkeys_audit.json.php`                                     |
+| `bs_blocklist.json.php`                                   | `Server/html/bs_blocklist.json.php`                                          |
 | `bs_categories.json.php`                                  | `Server/html/bs_categories.json.php`                                         |
 | `bs_health.json.php`                                      | `Server/html/bs_health.json.php`                                             |
 | `bs_host_action.json.php`                                 | `Server/html/bs_host_action.json.php`                                        |
@@ -27,6 +28,7 @@ migrations live here, outside the docroot, so the `.sql` is not web-downloadable
 | `bs_hosts.json.php`                                       | `Server/html/bs_hosts.json.php`                                              |
 | `migrations/2026-05-03-categories-sort-order.sql`         | `Server/blueconnect/migrations/2026-05-03-categories-sort-order.sql`         |
 | `migrations/2026-05-14-computers-blueconnect-columns.sql` | `Server/blueconnect/migrations/2026-05-14-computers-blueconnect-columns.sql` |
+| `migrations/2026-05-27-blocked-serials.sql`               | `Server/blueconnect/migrations/2026-05-27-blocked-serials.sql`               |
 
 ## Authentication
 
@@ -75,6 +77,23 @@ is intentionally unauthenticated and does not include `bs_auth.php`.
   `0600`-mode keys file owned by the in-container `bluesky` user, it returns
   `{"readable": false, ...}` with a fix hint rather than 500 — we deliberately do not
   loosen those key-file permissions.
+- **Host blocklist (v1.5.0+).** `bs_host_action.json.php` gains `block`/`unblock`
+  actions and `bs_blocklist.json.php` (new) lists the blocklist for the app's "Blocked
+  Hosts" UI. `block` records the host's serial in `blocked_serials`, runs the normal
+  `delete` teardown (row + `authorized_keys` line), and relies on a `BEFORE INSERT`
+  trigger (`bc_block_rogue_insert`) to reject re-registration of the same serial;
+  `unblock` is keyed on serial since the row is already gone. The table and trigger are
+  created by `migrations/2026-05-27-blocked-serials.sql` (the v1.3.x builds created them
+  inline in PHP; v1.5.0 moved them to the migration as single source of truth). The
+  trigger's `CREATE TRIGGER` needs `SUPER` on some MySQL builds; our `mysql:5.7` `root`
+  has it, so the migration installs cleanly via `docker/run`'s `mysql … < file` runner
+  (which honors the migration's `DELIMITER //`). If the trigger ever fails to install,
+  `block` still records the serial and tears the host down — the endpoint surfaces
+  `triggerInstalled: false` and upstream's `purge-blocked.sh` cron sweeper is the
+  belt-and-suspenders fallback (that sweeper lives outside `server/` and is **not**
+  vendored here).
+- `bs_host_update.json.php` (v1.5.0) adds `sharingname` to its allow-list of updatable
+  `computers` columns (the BSC "subtitle" kept aligned with hostname on rename).
 - **Out of scope** (not vendored): `catalog.php`, the MunkiReport module, and the
   Swift app.
 

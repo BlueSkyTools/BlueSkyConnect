@@ -18,7 +18,7 @@
 set -euo pipefail
 
 # pinned upstream ref - keep in sync with Server/blueconnect/VENDOR.md
-DEFAULT_REF="v1.2.0"
+DEFAULT_REF="v1.5.1"
 REF="${1:-$DEFAULT_REF}"
 
 REPO="echoparkbaby/BlueConnect-Admin"
@@ -34,6 +34,7 @@ MIGRATIONS_DIR="$REPO_ROOT/Server/blueconnect/migrations"
 DOCROOT_FILES=(
   bs_auth.php
   bs_authkeys_audit.json.php
+  bs_blocklist.json.php
   bs_categories.json.php
   bs_health.json.php
   bs_host_action.json.php
@@ -44,6 +45,7 @@ DOCROOT_FILES=(
 MIGRATIONS=(
   2026-05-03-categories-sort-order.sql
   2026-05-14-computers-blueconnect-columns.sql
+  2026-05-27-blocked-serials.sql
 )
 
 fetchFile() {
