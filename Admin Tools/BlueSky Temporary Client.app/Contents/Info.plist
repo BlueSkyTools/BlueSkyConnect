@@ -5,10 +5,12 @@
 	<key>CFBundleAllowMixedLocalizations</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>English</string>
+	<string>en</string>
 	<key>CFBundleExecutable</key>
 	<string>applet</string>
 	<key>CFBundleIconFile</key>
+	<string>applet</string>
+	<key>CFBundleIconName</key>
 	<string>applet</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.apple.ScriptEditor.id.BlueSky-Temporary-Client</string>
@@ -29,6 +31,32 @@
 	</dict>
 	<key>LSRequiresCarbon</key>
 	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>This script needs to control other applications to run.</string>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>This script needs access to your music to run.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>This script needs access to your calendars to run.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This script needs access to your camera to run.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>This script needs access to your contacts to run.</string>
+	<key>NSHomeKitUsageDescription</key>
+	<string>This script needs access to your HomeKit Home to run.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This script needs access to your microphone to run.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This script needs access to your photos to run.</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>This script needs access to your reminders to run.</string>
+	<key>NSSiriUsageDescription</key>
+	<string>This script needs access to Siri to run.</string>
+	<key>NSSystemAdministrationUsageDescription</key>
+	<string>This script needs access to administer this system to run.</string>
+	<key>OSAAppletShowStartupScreen</key>
+	<false/>
+	<key>OSAAppletStayOpen</key>
+	<true/>
 	<key>WindowState</key>
 	<dict>
 		<key>bundleDividerCollapsed</key>
@@ -44,7 +72,7 @@
 		<key>positionOfDivider</key>
 		<real>421</real>
 		<key>savedFrame</key>
-		<string>83 422 700 672 0 0 1920 1178 </string>
+		<string>187 610 700 672 0 0 3440 1410 </string>
 		<key>selectedTab</key>
 		<string>description</string>
 	</dict>

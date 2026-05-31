@@ -83,7 +83,10 @@ else
 	  fi
   fi
   #set update
-  myQry="update computers set registered='$timeStamp', sharingname='$hostName' where id='$compRec'"
+  # refresh names like the status path does: sharingname always tracks the Mac,
+  # hostname only when it still matches the prior sharingname (i.e. unedited).
+  # hostname is assigned first so the IF() reads sharingname before it changes.
+  myQry="update computers set registered='$timeStamp', hostname=if(hostname=sharingname,'$hostName',hostname), sharingname='$hostName' where id='$compRec'"
 fi
 # above if/then should end in the appropriate query - either insert for new, or update for existing
 $myCmd "$myQry"
@@ -120,6 +123,20 @@ fi
 # attempts an ssh connection back through the tunnel
 # also sends self destruct, notify mail
 
+# refresh names if the client reported one; the IF() keeps an admin-edited
+# hostname from being overwritten (only auto-updates hostname when it still
+# matches the prior sharingname)
+if [[ $hostName ]]; then
+  # hostname is assigned before sharingname on purpose: MySQL evaluates SET
+  # left-to-right using already-updated values, so the IF() must read the prior
+  # sharingname before we overwrite it
+  myQry="update computers
+    set hostname=if(hostname=sharingname,'$hostName',hostname),
+        sharingname='$hostName'
+    where serialnum='$serialNum'"
+  $myCmd "$myQry"
+fi
+
 # self destruct
 myQry="select selfdestruct from computers where serialnum='$serialNum'"
 selfDestruct=`$myCmd "$myQry"`
@@ -137,7 +154,7 @@ fi
 myQry="select blueskyid from computers where serialnum='$serialNum'"
 myPort=`$myCmd "$myQry"`
 sshPort=$((22000 + myPort))
-testConn=`ssh -p $sshPort -o StrictHostKeyChecking=no -o ConnectTimeout=10 -l bluesky -o BatchMode=yes -i /usr/local/bin/BlueSkyConnect/Server/blueskyd localhost "/usr/bin/defaults read /var/bluesky/settings serial"`
+testConn=`ssh -p $sshPort -o StrictHostKeyChecking=no -o LogLevel=ERROR -o ConnectTimeout=10 -l bluesky -o BatchMode=yes -i /usr/local/bin/BlueSkyConnect/Server/blueskyd localhost "/usr/bin/defaults read /var/bluesky/settings serial"`
 testExit=$?
 if [ $testExit -eq 0 ]; then
   if [ "$testConn" == "$serialNum" ]; then
@@ -146,7 +163,7 @@ if [ $testExit -eq 0 ]; then
     snMismatch
   fi
 else #either down or defaults is messed up, try using PlistBuddy
-	testConn2=`ssh -p $sshPort -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes -l bluesky -i /usr/local/bin/BlueSkyConnect/Server/blueskyd localhost "/usr/libexec/PlistBuddy -c 'Print serial' /var/bluesky/settings.plist" 2>&1`
+	testConn2=`ssh -p $sshPort -o StrictHostKeyChecking=no -o LogLevel=ERROR -o ConnectTimeout=10 -o BatchMode=yes -l bluesky -i /usr/local/bin/BlueSkyConnect/Server/blueskyd localhost "/usr/libexec/PlistBuddy -c 'Print serial' /var/bluesky/settings.plist" 2>&1`
 	testExit2=$?
 	if [ $testExit2 -eq 0 ]; then
 		if [ "$testConn2" == "$serialNum" ]; then

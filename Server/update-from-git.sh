@@ -171,9 +171,22 @@ if [ "$rsaKeyPresent" == "" ]; then
     fi
 fi
 if [ $remakePlist -eq 1 ]; then
-    # remake Client/server.plist
-    hostKey=`ssh-keyscan -t ed25519 localhost | awk '{ print $2,$3 }'`
-    hostKeyRSA=`ssh-keyscan -t rsa localhost | awk '{ print $2,$3 }'`
+    # remake Client/server.plist - sshd listens on 3122 (server-config.sh), so
+    # scan that port and wait for it to answer; only the ed25519 key is consumed
+    # by the client, so gate on it and write rsa best-effort. This avoids baking
+    # a keyless server.plist (which makes clients fail host key verification).
+    for _ in $(seq 1 30); do
+        hostKey=`ssh-keyscan -t ed25519 -p 3122 localhost 2> /dev/null | awk '{ print $2,$3 }'`
+        hostKeyRSA=`ssh-keyscan -t rsa -p 3122 localhost 2> /dev/null | awk '{ print $2,$3 }'`
+        if [ "$hostKey" != "" ]; then
+            break
+        fi
+        sleep 1
+    done
+    if [ "$hostKey" == "" ]; then
+        echo "ERROR: could not read sshd ed25519 host key on localhost:3122 - refusing to write a keyless server.plist"
+        exit 1
+    fi
     ipAddress=`curl ipinfo.io | grep '"ip":' | awk '{ print $NF }' | tr -d \",`
     echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">

@@ -56,7 +56,7 @@ for serialNum in $alertList; do
 		myQry="select blueskyid from computers where serialnum='$serialNum'"
 		myPort=`$myCmd "$myQry"`
 		sshPort=$((22000 + myPort))
-		testSN=`ssh -p $sshPort -o ConnectTimeout=5 -o ConnectionAttempts=5 -o StrictHostKeyChecking=no -l bluesky -i /usr/local/bin/BlueSkyConnect/Server/blueskyd localhost "/usr/bin/defaults read /var/bluesky/settings serial"`
+		testSN=`ssh -p $sshPort -o ConnectTimeout=5 -o ConnectionAttempts=5 -o StrictHostKeyChecking=no -o LogLevel=ERROR -l bluesky -i /usr/local/bin/BlueSkyConnect/Server/blueskyd localhost "/usr/bin/defaults read /var/bluesky/settings serial"`
 		testExit=$?
 		if [ $testExit -ne 0 ]; then
 		  # we did not connect, mark down the counter
@@ -91,7 +91,11 @@ for serialNum in $alertList; do
 done
 
 ## look for disconnected computers and mark offline
-myQry="select id from computers where datetime < (NOW() - INTERVAL 12 MINUTE) and status='Connection is good'"
+# compare the epoch timestamp (set by processor on a good connection) against a
+# shell-computed threshold, not MySQL NOW() vs the local-time datetime string -
+# the DB may run a different timezone than this container, which skews that compare
+offlineThresh=`date -d "12 minutes ago" "+%s"`
+myQry="select id from computers where timestamp < $offlineThresh and status='Connection is good'"
 offlineList=`$myCmd "$myQry"`
 for thisId in $offlineList; do
 	timeStamp=`date '+%Y-%m-%d %H:%M:%S %Z'`

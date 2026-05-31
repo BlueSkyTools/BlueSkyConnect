@@ -11,7 +11,7 @@
 # Set this to a different location if you'd prefer it live somewhere else
 ourHome="/var/bluesky"
 
-bVer="2.5.1"
+bVer="2.6.0"
 
 # planting a debug flag runs bash in -x so you get all the output
 if [ -e "$ourHome/.debug" ]; then
@@ -39,6 +39,15 @@ function callApi {
     "https://$blueskyServer/cgi-bin/collector.php")
 
   echo "$result"
+}
+
+buildHostName() {
+  hostName=$(scutil --get ComputerName)
+  [[ -z $hostName ]] && hostName=$(hostname)
+  wmCG=$(defaults read /Library/MonitoringClient/ClientSettings ClientGroup)
+  [[ $wmCG ]] && hostName="$wmCG - $hostName"
+  # transliterate to ASCII so smart quotes / accents don't mojibake server-side
+  hostName=$(echo "$hostName" | iconv -f UTF-8 -t ASCII//TRANSLIT 2>/dev/null)
 }
 
 function getAutoPid {
@@ -131,15 +140,8 @@ function reKey {
     exit 1
   fi
 
-  # get sharing name and Watchman Monitoring client group if present
-  hostName=`scutil --get ComputerName`
-  if [ "$hostName" == "" ]; then
- 	hostName=`hostname`
-  fi
-  wmCG=`defaults read /Library/MonitoringClient/ClientSettings ClientGroup`
-  if [ "$wmCG" != "" ]; then
-  	hostName="$wmCG - $hostName"
-  fi
+  # build host name (sharing name + optional Watchman Monitoring client group)
+  buildHostName
 
   # upload info to get registered
   uploadResult=`callApi "serialNum=$serialNum" "actionStep=register" "hostName=$hostName"`
@@ -151,6 +153,10 @@ function reKey {
 
   /usr/libexec/PlistBuddy -c "Add :keytime integer `date +%s`" "$ourHome/settings.plist" 2> /dev/null
   /usr/libexec/PlistBuddy -c "Set :keytime `date +%s`" "$ourHome/settings.plist"
+
+  # seed hostnamecache so the next status check-in doesn't redundantly resend
+  /usr/libexec/PlistBuddy -c "Add :hostnamecache string $hostName" "$ourHome/settings.plist" 2> /dev/null
+  /usr/libexec/PlistBuddy -c "Set :hostnamecache $hostName" "$ourHome/settings.plist"
 }
 
 function restartConnection {
@@ -439,7 +445,19 @@ if [ "$defaultUser" != "" ]; then
 fi
 
 #autossh is running - check against server
-connStat=`callApi "serialNum=$serialNum" "actionStep=status"`
+# include hostName on status only when the ComputerName has actually changed
+buildHostName
+cachedName=$(/usr/libexec/PlistBuddy -c "Print :hostnamecache" "$ourHome/settings.plist" 2> /dev/null)
+if [[ $hostName != "$cachedName" ]]; then
+  connStat=$(callApi "serialNum=$serialNum" "actionStep=status" "hostName=$hostName")
+else
+  connStat=$(callApi "serialNum=$serialNum" "actionStep=status")
+fi
+# cache the value once the server has acknowledged it (any non-empty response)
+if [[ $connStat ]]; then
+  /usr/libexec/PlistBuddy -c "Add :hostnamecache string $hostName" "$ourHome/settings.plist" 2> /dev/null
+  /usr/libexec/PlistBuddy -c "Set :hostnamecache $hostName" "$ourHome/settings.plist"
+fi
 if [ "$connStat" != "OK" ]; then
   if [ "$connStat" == "selfdestruct" ]; then
     killShells
