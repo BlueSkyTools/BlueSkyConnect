@@ -1,0 +1,40 @@
+name: Cleanup GHCR package versions
+
+on:
+  schedule:
+    - cron: '23 4 * * 0'
+  workflow_dispatch:
+    inputs:
+      retention_days:
+        description: Number of days to keep untagged package versions.
+        required: true
+        default: '30'
+      dry_run:
+        description: Report what would be deleted without deleting it.
+        required: true
+        type: boolean
+        default: true
+
+concurrency:
+  group: ghcr-cleanup
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cleanup old untagged GHCR versions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PACKAGE_NAME: blueskyconnect
+          RETENTION_DAYS: ${{ inputs.retention_days || '30' }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+        run: bash scripts/cleanup-ghcr-untagged.sh
