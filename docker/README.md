@@ -8,6 +8,8 @@ We have a full example setup utilizing Caddy for automatic SSL cert generation [
 
 We also have a Docker [troubleshooting page](https://github.com/BlueSkyTools/BlueSkyConnect/wiki/Docker-Troubleshooting).
 
+> **Upgrading an existing server?** Read [UPGRADING.md](UPGRADING.md) first — it consolidates every breaking change since v2.3.2 (SSH port mapping, registry move, cipher flags) into one checklist.
+
 > **Image location:** Releases are published to GitHub Container Registry as `ghcr.io/blueskytools/blueskyconnect`. The legacy Docker Hub repo (`sphen/bluesky`) is no longer updated — please switch any `docker pull` / `docker-compose` references.
 
 ### Environment variables
