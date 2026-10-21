@@ -453,10 +453,10 @@
 			$csvCharsPerLine=intval($_POST['csvCharsPerLine']);
 			if($csvCharsPerLine<1000)  $csvCharsPerLine=1000;
 
-			$csvFieldSeparator=(get_magic_quotes_gpc() ? stripslashes($_POST['csvFieldSeparator']) : $_POST['csvFieldSeparator']);
+			$csvFieldSeparator=$_POST['csvFieldSeparator'];
 			if($csvFieldSeparator=='') $csvFieldSeparator=',';
 
-			$csvFieldDelimiter=(get_magic_quotes_gpc() ? stripslashes($_POST['csvFieldDelimiter']) : $_POST['csvFieldDelimiter']);
+			$csvFieldDelimiter=$_POST['csvFieldDelimiter'];
 			if($csvFieldDelimiter=='') $csvFieldDelimiter='"';
 
 			$csvFieldNamesOnTop=($_POST['csvFieldNamesOnTop'] ? 1 : 0);

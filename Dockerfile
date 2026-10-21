@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 ENV IN_DOCKER=1 \
     USE_HTTP=0 \
@@ -14,7 +14,7 @@ ENV IN_DOCKER=1 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     DEBIAN_FRONTEND=noninteractive \
-    BLUESKY_VERSION=2.6.1
+    BLUESKY_VERSION=2.7.0
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y apache2 \
@@ -26,11 +26,10 @@ RUN apt-get update && \
     php-mysql \
     php \
     libapache2-mod-php \
-    php-mysql \
     inoticoming \
     supervisor \
     cpio \
-    netcat \
+    netcat-openbsd \
     swaks \
     rsyslog \
     fail2ban \
@@ -42,7 +41,7 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN mkdir /usr/local/bin/BlueSkyConnect /var/run/sshd  /var/run/fail2ban
+RUN mkdir -p /usr/local/bin/BlueSkyConnect /var/run/sshd /var/run/fail2ban
 
 COPY . /usr/local/bin/BlueSkyConnect/
 

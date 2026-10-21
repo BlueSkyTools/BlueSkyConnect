@@ -119,7 +119,8 @@
 		}
 
 		// get image data
-		if(!$imgData=imagecreatefromstring(implode('', file($img)))) return FALSE;
+		$imgString=@file_get_contents($img);
+		if(!$imgString || !$imgData=imagecreatefromstring($imgString)) return FALSE;
 
 		// finally, create thumbnail
 		$thumbData=imagecreatetruecolor($w, $h);
@@ -162,7 +163,6 @@
 	}
 	########################################################################
 	function makeSafe($string, $is_gpc = true){
-		if($is_gpc) $string = (get_magic_quotes_gpc() ? stripslashes($string) : $string);
 		if(!db_link()){ sql("select 1+1", $eo); }
 		return db_escape($string);
 	}
@@ -568,7 +568,8 @@
 	########################################################################
 	function toBytes($val){
 		$val = trim($val);
-		$last = strtolower($val{strlen($val)-1});
+		$last = strtolower($val[strlen($val)-1]);
+		$val = (int)$val; // PHP 8 warns on arithmetic with strings like '8M'
 		switch($last){
 			 // The 'G' modifier is available since PHP 5.1.0
 			 case 'g':
@@ -608,7 +609,7 @@
 	}
 	########################################################################
 	function undo_magic_quotes($str){
-		return (get_magic_quotes_gpc() ? stripslashes($str) : $str);
+		return $str;
 	}
 	########################################################################
 	function time24($t = false){

@@ -61,13 +61,13 @@ function computers_insert(){
 		}
 		$data['selectedID'] = makeSafe($recID);
 		$args=array();
-		if(!computers_after_insert($data, getMemberInfo(), $args)){ return (get_magic_quotes_gpc() ? stripslashes($recID) : $recID); }
+		if(!computers_after_insert($data, getMemberInfo(), $args)){ return $recID; }
 	}
 
 	// mm: save ownership data
 	sql("insert into membership_userrecords set tableName='computers', pkValue='$recID', memberID='".getLoggedMemberID()."', dateAdded='".time()."', dateUpdated='".time()."', groupID='".getLoggedGroupID()."'", $eo);
 
-	return (get_magic_quotes_gpc() ? stripslashes($recID) : $recID);
+	return $recID;
 }
 
 function computers_delete($selected_id, $AllowDeleteOfParents=false, $skipChecks=false){

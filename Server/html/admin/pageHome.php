@@ -98,63 +98,6 @@
 <!-- ####################################################### -->
 
 
-<!-- ################# Add-ons available ######################## -->
-	<?php
-		// do we have a cache file that was recently updated?
-		$addOnsCache = "$currDir/add-ons.cache";
-		$addOnXML = '';
-		if(is_file($addOnsCache) && filemtime($addOnsCache) >= (time() - 86400 * 2)){
-			// read feed from cache
-			$addOnXML = @file_get_contents($addOnsCache);
-		}else{
-			// read live feed and store to cache
-			$addOnXML = @file_get_contents('http://bigprof.com/appgini/taxonomy/term/6/0/feed');
-			@file_put_contents($addOnsCache, $addOnXML);
-			clearstatcache();
-		}
-
-		$xml = @simplexml_load_string($addOnXML);
-		if(count($xml->channel->item)){
-			?>
-		<div class="col-md-6">
-		<div class="panel panel-info">
-			<div class="panel-heading">
-				<h3 class="panel-title">Available add-ons</h3>
-			</div>
-			<div class="panel-body">
-			<table class="table table-striped">
-			<?php
-				$addOnId = 0;
-				foreach($xml->channel->item as $indx => $data){
-					$addOnId++; if($addOnId > 10) break;
-					?>
-					<tr>
-						<td>
-							<?php echo (strtotime($data->pubDate) > (@time() - 60 * 24 * 60 * 60) ? '<img src="../new.png" align="top" /> ' : ''); ?><a href="#" onclick="return showDialog('add-on-<?php echo $addOnId; ?>');"><?php echo $data->title; ?></a><br/>
-							<div class="dialog-box hidden-block" id="add-on-<?php echo $addOnId; ?>">
-								<h3><a href="<?php echo $data->link; ?>" target="_blank"><?php echo $data->title; ?></a></h3>
-								<p><?php echo $data->description; ?></p>
-								<div align="right">
-									[<a href="<?php echo $data->link; ?>" target="_blank">More info</a>]
-									[<a onclick="return hideDialogs();" href="#" target="_blank">Close</a>]
-								</div>
-							</div>
-						</td>
-					</tr>
-					<?php
-				}
-			?>
-				<tr><td class="text-center"><a href="http://bigprof.com/appgini/add-ons" target="_blank">View all add-ons</a></td></tr>
-			</table>
-			</div>
-		</div>
-		</div>
-			<?php
-		}
-	?>
-<!-- ####################################################### -->
-
-
 <!-- ################# Top Members ######################## -->
 <div class="col-md-6">
 <div class="panel panel-info">

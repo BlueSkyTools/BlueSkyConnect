@@ -20,8 +20,10 @@ Want to contribute?  Here's our [Trello board](https://trello.com/invite/b/aM8Y7
 
 BlueSky's web admin runs on the distro PHP under Apache `mod_php`, the configuration most exposed to these bugs. On a non-Docker server:
 
-1. Patch PHP. On Ubuntu 20.04 the fixed `php7.4` (`7.4.3-4ubuntu2.29+esm5`) is only available through Ubuntu Pro (free for up to 5 machines): `sudo pro attach <token>`, then `sudo apt update && sudo apt upgrade` and `sudo systemctl restart apache2`.
+1. Patch PHP. On Ubuntu 20.04 the fixed `php7.4` (`7.4.3-4ubuntu2.29+esm5`) is only available through Ubuntu Pro (free for up to 5 machines): `sudo pro attach <token>`, then `sudo apt update && sudo apt upgrade` and `sudo systemctl restart apache2`. Ubuntu 22.04 and 24.04 get the fix through normal updates.
 2. Run `Server/update-from-git.sh` twice (the first run pulls the new script, the second applies it). This installs `Server/php-hardening.ini`, which disables PHP's session upload-progress hook. It narrows the exposure but does not replace step 1.
+
+From 2.7.0 BlueSky runs on PHP 8 as well as PHP 7.4, so new servers should use Ubuntu 24.04, where PHP security updates don't need Ubuntu Pro.
 
 Docker users, see the [Docker README](docker/README.md).
 

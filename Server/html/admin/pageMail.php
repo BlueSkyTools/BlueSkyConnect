@@ -37,8 +37,8 @@
 		$groupID=intval($_POST['groupID']);
 		$sendToAll=intval($_POST['sendToAll']);
 
-		$mailSubject=(get_magic_quotes_gpc() ? $_POST['mailSubject'] : addslashes($_POST['mailSubject']));
-		$mailMessage=(get_magic_quotes_gpc() ? $_POST['mailMessage'] : addslashes($_POST['mailMessage']));
+		$mailSubject=addslashes($_POST['mailSubject']);
+		$mailMessage=addslashes($_POST['mailMessage']);
 		$mailMessage=str_replace("\n", "\\n", $mailMessage);
 		$mailMessage=str_replace("\r", "\\r", $mailMessage);
 

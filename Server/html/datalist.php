@@ -67,7 +67,7 @@ class DataList{
 		$ContentType,    // set by DataList to 'tableview', 'detailview', 'tableview+detailview', 'print-tableview', 'print-detailview' or 'filters'
 		$HTML;           // generated html after calling Render()
 
-	function DataList(){     // Constructor function
+	function __construct(){     // Constructor function
 		$this->DataHeight = 150;
 
 		$this->AllowSelection = 1;
@@ -128,7 +128,7 @@ class DataList{
 			$CancelFilter = $_GET["CancelFilter"];
 			$ApplyFilter = $_GET["ApplyFilter"];
 			$Search_x = $_GET["Search_x"];
-			$SearchString = (get_magic_quotes_gpc() ? stripslashes($_GET['SearchString']) : $_GET['SearchString']);
+			$SearchString = $_GET['SearchString'];
 			$CSV_x = $_GET["CSV_x"];
 
 			$FilterAnd = $_GET["FilterAnd"];
@@ -136,14 +136,14 @@ class DataList{
 			$FilterOperator = $_GET["FilterOperator"];
 			if(is_array($_GET['FilterValue'])){
 				foreach($_GET['FilterValue'] as $fvi=>$fv){
-					$FilterValue[$fvi]=(get_magic_quotes_gpc() ? stripslashes($fv) : $fv);
+					$FilterValue[$fvi]=$fv;
 				}
 			}
 
 			$Print_x = $_GET['Print_x'];
 			$PrintTV = $_GET['PrintTV'];
 			$PrintDV = $_GET['PrintDV'];
-			$SelectedID = (get_magic_quotes_gpc() ? stripslashes($_GET['SelectedID']) : $_GET['SelectedID']);
+			$SelectedID = $_GET['SelectedID'];
 			$insert_x = $_GET['insert_x'];
 			$update_x = $_GET['update_x'];
 			$delete_x = $_GET['delete_x'];
@@ -166,7 +166,7 @@ class DataList{
 			$CancelFilter = $_POST['CancelFilter'];
 			$ApplyFilter = $_POST['ApplyFilter'];
 			$Search_x = $_POST['Search_x'];
-			$SearchString = (get_magic_quotes_gpc() ? stripslashes($_POST['SearchString']) : $_POST['SearchString']);
+			$SearchString = $_POST['SearchString'];
 			$CSV_x = $_POST['CSV_x'];
 
 			$FilterAnd = $_POST['FilterAnd'];
@@ -174,14 +174,14 @@ class DataList{
 			$FilterOperator = $_POST['FilterOperator'];
 			if(is_array($_POST['FilterValue'])){
 				foreach($_POST['FilterValue'] as $fvi=>$fv){
-					$FilterValue[$fvi]=(get_magic_quotes_gpc() ? stripslashes($fv) : $fv);
+					$FilterValue[$fvi]=$fv;
 				}
 			}
 
 			$Print_x = $_POST['Print_x'];
 			$PrintTV = $_POST['PrintTV'];
 			$PrintDV = $_POST['PrintDV'];
-			$SelectedID = (get_magic_quotes_gpc() ? stripslashes($_POST['SelectedID']) : $_POST['SelectedID']);
+			$SelectedID = $_POST['SelectedID'];
 			$insert_x = $_POST['insert_x'];
 			$update_x = $_POST['update_x'];
 			$delete_x = $_POST['delete_x'];
@@ -868,13 +868,13 @@ class DataList{
 			if(!$Print_x) $this->HTML .= '<th style="width: 18px;" class="text-center"><input class="hidden-print" type="checkbox" title="' . htmlspecialchars($Translation['Select all records']) . '" id="select_all_records"></th>';
 		// Templates
 			if($this->Template!=''){
-				$rowTemplate = @implode('', @file('./'.$this->Template));
+				$rowTemplate = @file_get_contents('./'.$this->Template);
 				if(!$rowTemplate){
 					$rowTemplate='';
 					$selrowTemplate = '';
 				}else{
 					if($this->SelectedTemplate!=''){
-						$selrowTemplate = @implode('', @file('./'.$this->SelectedTemplate));
+						$selrowTemplate = @file_get_contents('./'.$this->SelectedTemplate);
 						if(!$selrowTemplate){
 							$selrowTemplate='';
 						}
@@ -1023,7 +1023,7 @@ class DataList{
 					$attr_id = htmlspecialchars($row[$FieldCountTV], ENT_QUOTES, 'UTF-8'); /* pk value suitable for inserting into html tag attributes */
 					$js_id = addslashes($row[$FieldCountTV]); /* pk value suitable for inserting into js strings */
 					$alt = (($i - $FirstRecord) % 2);
-					if(($PrintTV || $Print_x) && count($_POST['record_selector']) && !in_array($row[$FieldCountTV], $_POST['record_selector'])) continue;
+					if(($PrintTV || $Print_x) && is_array($_POST['record_selector']) && count($_POST['record_selector']) && !in_array($row[$FieldCountTV], $_POST['record_selector'])) continue;
 					$class = "TableBody".($alt ? 'Selected' : '').($fNumeric ? 'Numeric' : '');
 
 					if($Print_x != ''){ $this->HTML .= '<tr>'; }

@@ -28,7 +28,7 @@
 
 	/* some function definitions */
 	function undo_magic_quotes($str){
-		return (get_magic_quotes_gpc() ? stripslashes($str) : $str);
+		return $str;
 	}
 
 	function isEmail($email){

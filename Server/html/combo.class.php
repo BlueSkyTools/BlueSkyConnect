@@ -28,7 +28,7 @@ class Combo{
 
 		$HTML; // the resulting output HTML code to use
 
-	function Combo(){ // Constructor function
+	function __construct(){ // Constructor function
 		$this->Class = 'form-control';
 		$this->SelectedClass = 'active';
 		$this->HTML = '';

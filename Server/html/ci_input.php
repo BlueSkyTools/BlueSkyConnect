@@ -62,7 +62,7 @@ class CI_Input {
 	*
 	* @access	public
 	*/
-	function CI_Input()
+	function __construct()
 	{
 		$this->use_xss_clean	= FALSE;
 		$this->allow_get_array	= TRUE;
@@ -173,12 +173,6 @@ class CI_Input {
 				$new_array[$this->_clean_input_keys($key)] = $this->_clean_input_data($val);
 			}
 			return $new_array;
-		}
-
-		// We strip slashes if magic quotes is on to keep things consistent
-		if (get_magic_quotes_gpc())
-		{
-			$str = stripslashes($str);
 		}
 
 		// Should we filter the input data?
@@ -532,9 +526,9 @@ class CI_Input {
 		*/
 		if (is_array($str))
 		{
-			while (list($key) = each($str))
+			foreach ($str as $key => $val)
 			{
-				$str[$key] = $this->xss_clean($str[$key]);
+				$str[$key] = $this->xss_clean($val);
 			}
 
 			return $str;

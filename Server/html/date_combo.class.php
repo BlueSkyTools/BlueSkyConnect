@@ -14,7 +14,7 @@ class DateCombo{
 		$CSSSelectedClass,
 		$CSSCommentClass;
 
-	function DateCombo(){
+	function __construct(){
 		// set default values
 		$this->DateFormat = "ymd";
 		$this->DefaultDate = '';

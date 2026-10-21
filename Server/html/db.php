@@ -22,6 +22,18 @@
 
 	define('mysql_charset', 'utf8');
 
+	/* PHP 8.1+ makes mysqli throw on errors; the functions below check return values instead */
+	if(DATABASE == 'mysqli') mysqli_report(MYSQLI_REPORT_OFF);
+
+	/*
+		PHP 8 raised these from notices to warnings. Keep them out of the log the way
+		error_reporting(E_ERROR | E_WARNING | E_PARSE) did on PHP 7; any other warning
+		falls through to PHP's own handler.
+	*/
+	set_error_handler(function($errno, $errstr){
+		return (bool)preg_match('/^(Undefined (variable|array key|property)|Trying to access array offset|Attempt to read property|Uninitialized string offset)/', $errstr);
+	}, E_WARNING);
+
 	function db_link($link = NULL){
 		static $db_link;
 		if($link) $db_link = $link;

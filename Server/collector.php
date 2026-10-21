@@ -17,6 +17,9 @@
 // This script runs server side, gets the data from HTTP POST, cleans it for MySQL, and runs processor.
 // TODO: code for receiving debug info has to be added to bluesky.sh on client, mysql tables added
 
+// PHP 8.1+ makes mysqli throw on errors; this script checks return values instead
+mysqli_report(MYSQLI_REPORT_OFF);
+
 // Minimal validation:
 if (isset($_POST['serialNum'], $_POST['actionStep']) ) {
     // Connect to the database:

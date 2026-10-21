@@ -36,7 +36,7 @@
 		@unlink($queueFile);
 		?>
 		<div class="page-header"><h1>Done!</h1></div>You may close this page now or browse to some other page.
-		<br><br><pre style="text-align: left;"><?php echo "Mail log:\n".@implode("", @file("$currDir/mailLog.log")); ?></pre>
+		<br><br><pre style="text-align: left;"><?php echo "Mail log:\n".@file_get_contents("$currDir/mailLog.log"); ?></pre>
 		<?php
 		@unlink("$currDir/mailLog.log");
 		include("$currDir/incFooter.php");

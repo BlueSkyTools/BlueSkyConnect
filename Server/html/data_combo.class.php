@@ -21,7 +21,7 @@ class DataCombo{
 		$HTML,      // this is returned. The combo html source after calling Render().
 		$MatchText; // will store the parent caption value of the matching item.
 
-	function DataCombo(){ // Constructor function
+	function __construct(){ // Constructor function
 		$this->FirstItem = '';
 		$this->HTML = '';
 		$this->Class = 'form-control Lookup';
