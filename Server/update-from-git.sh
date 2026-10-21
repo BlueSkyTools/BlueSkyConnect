@@ -202,6 +202,13 @@ if [ $remakePlist -eq 1 ]; then
 </plist>" > /usr/local/bin/BlueSkyConnect/Client/server.plist
 fi
 
+## PHP hardening for mod_php (see Server/php-hardening.ini); refreshed on every run
+## so installs that predate it pick it up
+for phpConfDir in /etc/php/*/apache2/conf.d; do
+  cp /usr/local/bin/BlueSkyConnect/Server/php-hardening.ini "$phpConfDir/99-bluesky-hardening.ini"
+done
+service apache2 restart
+
 ## get emailAlertAddress from mysql
 myQry="select defaultemail from global"
 emailAlertAddress=`$myCmd "$myQry"`

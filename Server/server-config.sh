@@ -196,6 +196,11 @@ if [[ -z ${IN_DOCKER} ]]; then
   apt-get -y install apache2 fail2ban mysql-server php-mysql php libapache2-mod-php php-mysql inoticoming swaks curl
 fi
 
+## PHP hardening for mod_php (see Server/php-hardening.ini)
+for phpConfDir in /etc/php/*/apache2/conf.d; do
+  cp /usr/local/bin/BlueSkyConnect/Server/php-hardening.ini "$phpConfDir/99-bluesky-hardening.ini"
+done
+
 ## setup user accounts/folders
 groupadd admin 2> /dev/null # will already be there on DO
 useradd -m -g admin admin
