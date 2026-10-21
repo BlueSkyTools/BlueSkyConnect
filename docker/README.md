@@ -10,6 +10,8 @@ We also have a Docker [troubleshooting page](https://github.com/BlueSkyTools/Blu
 
 > **Image location:** Releases are published to GitHub Container Registry as `ghcr.io/blueskytools/blueskyconnect`. The legacy Docker Hub repo (`sphen/bluesky`) is no longer updated — please switch any `docker pull` / `docker-compose` references.
 
+> **Security notice — php2shell (CVE-2026-109618 / CVE-2026-109619):** images up to and including 2.6.x are built on Ubuntu 20.04, whose PHP 7.4 only receives the php2shell fix through Ubuntu Pro ESM, so rebuilding does not patch it. 2.6.1 disables PHP's session upload-progress hook (`Server/php-hardening.ini`), which closes one path to these bugs but is **not a complete fix**. Until an image on a patched PHP is released, keep the web UI off the open internet where you can: allow-list admin source IPs or put it behind a WAF at your reverse proxy. Client check-ins (`/cgi-bin/collector.php`) still need to reach the server.
+
 ### Environment variables
 
 These variables can be overridden when you run the BlueSky docker container.
